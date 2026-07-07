@@ -30,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
+        suppressHydrationWarning
         className={`${notoSansTc.variable} ${notoSerifTc.variable} flex min-h-full flex-col`}
       >
         <AppShell>{children}</AppShell>
