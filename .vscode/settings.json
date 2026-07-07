@@ -77,8 +77,5 @@
     "*.tsx": "typescriptreact",
     "*.jsx": "javascriptreact",
     "*.css": "tailwindcss"
-  },
-  "editor.quickSuggestions": {
-    "strings": "on"
   }
 }

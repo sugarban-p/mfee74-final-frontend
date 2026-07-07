@@ -68,7 +68,7 @@ const socialLinks: SocialLink[] = [
 export function Footer() {
   return (
     <footer className="w-full bg-[#2D1F01] text-[#C9A07A]">
-      <div className="mx-auto w-full max-w-[1620px] px-8 py-20">
+      <div className="mx-auto w-full max-w-screen-2xl px-4 py-20 md:px-6">
         {/* 上半部：品牌區、連結欄位、電子報 */}
         {/*
           外層先分成 3 大區：
@@ -93,7 +93,11 @@ export function Footer() {
                 alt="MOFU"
                 width={116}
                 height={48}
+<<<<<<< HEAD
                 className="h-auto w-[140px]"
+=======
+                className="h-auto w-35"
+>>>>>>> origin/main
               />
             </Link>
 
@@ -155,11 +159,19 @@ export function Footer() {
               訂閱電子報
             </h2>
 
+<<<<<<< HEAD
             <p className="mb-6 max-w-[360px] text-sm leading-7">
               新品上架、毛孩照護秘訣與專屬優惠資訊。
             </p>
 
             <form className="flex max-w-[360px] gap-2">
+=======
+            <p className="mb-6 max-w-90 text-sm leading-7">
+              新品上架、毛孩照護秘訣與專屬優惠資訊。
+            </p>
+
+            <form className="flex max-w-90 gap-2">
+>>>>>>> origin/main
               <input
                 type="email"
                 name="email"
