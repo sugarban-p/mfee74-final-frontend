@@ -25,3 +25,104 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@layer utilities {
+  /* Display / Noto Serif TC / Bold / 67px / line-height 73.7px / spacing 1px */
+  .typo-display {
+    font-family: var(--font-noto-serif-tc), serif;
+    font-size: 67px;
+    font-weight: 700;
+    line-height: 73.7px;
+    letter-spacing: 1px;
+  }
+
+  /* H1 / Noto Serif TC / Bold / 96px */
+  .typo-h1 {
+    font-family: var(--font-noto-serif-tc), serif;
+    font-size: 96px;
+    font-weight: 700;
+    line-height: 112px;
+    letter-spacing: 0;
+  }
+
+  /* H2 / Noto Serif TC / Bold / 48px */
+  .typo-h2 {
+    font-family: var(--font-noto-serif-tc), serif;
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 52.8px;
+    letter-spacing: 0;
+  }
+
+  /* H3 / Noto Serif TC / Bold / 30px */
+  .typo-h3 {
+    font-family: var(--font-noto-serif-tc), serif;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 41.3px;
+    letter-spacing: 0;
+  }
+
+  /* H4 / Noto Serif TC / Bold / 16px */
+  .typo-h4 {
+    font-family: var(--font-noto-serif-tc), serif;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 20px;
+    letter-spacing: 0;
+  }
+
+  /* 大型內文 / Noto Sans TC / Bold / 30px */
+  .typo-body-lg-bold {
+    font-family: var(--font-noto-sans-tc), sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 36px;
+    letter-spacing: 0;
+  }
+
+  /* 內文 / Noto Sans TC / Regular / 18px */
+  .typo-body {
+    font-family: var(--font-noto-sans-tc), sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 29.3px;
+    letter-spacing: 0.5px;
+  }
+
+  /* 內文粗體 / Noto Sans TC / Medium / 18px */
+  .typo-body-medium {
+    font-family: var(--font-noto-sans-tc), sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 29.3px;
+    letter-spacing: 0.5px;
+  }
+
+  /* 卡片標題 / Noto Serif TC / Bold / 18px */
+  .typo-card-title {
+    font-family: var(--font-noto-serif-tc), serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 22px;
+    letter-spacing: 0;
+  }
+
+  /* 卡片內文 / Noto Sans TC / Regular / 16px */
+  .typo-card-body {
+    font-family: var(--font-noto-sans-tc), sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 22.8px;
+    letter-spacing: 0;
+  }
+
+  /* Tab 分類文字 / Noto Sans TC / Medium / 15px */
+  .typo-tab {
+    font-family: var(--font-noto-sans-tc), sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 20px;
+    letter-spacing: 0;
+  }
+}
