@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import '@radix-ui/themes/styles.css';
-import { Theme } from '@radix-ui/themes';
+import Header from '@/src/components/common/header';
 
 export const metadata: Metadata = {
   title: 'Team3 專題',
@@ -16,15 +15,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="flex min-h-full flex-col">
-        <Theme
-          appearance="dark"
-          accentColor="orange"
-          radius="medium"
-          grayColor="sand"
-          scaling="100%"
-        >
-          {children}
-        </Theme>
+        <Header />
+        {children}
       </body>
     </html>
   );
