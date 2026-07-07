@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Noto_Sans_TC, Noto_Serif_TC } from 'next/font/google';
 import './globals.css';
+import AppShell from '@/src/components/common/AppShell';
 
 const notoSansTc = Noto_Sans_TC({
   weight: ['400', '500', '700'],
@@ -29,9 +30,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
+        suppressHydrationWarning
         className={`${notoSansTc.variable} ${notoSerifTc.variable} flex min-h-full flex-col`}
       >
-        {children}
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
