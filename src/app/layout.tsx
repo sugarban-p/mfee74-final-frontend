@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Header from '@/src/components/common/header';
+import Header from '@/src/components/common/Header';
 
 export const metadata: Metadata = {
   title: 'Team3 專題',
