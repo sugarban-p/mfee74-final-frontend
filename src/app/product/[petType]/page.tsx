@@ -1,4 +1,8 @@
+'use client';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { type SyntheticEvent, useEffect, useState } from 'react';
 
 import {
   LuArrowDownUp,
@@ -37,7 +41,6 @@ const products = Array.from({ length: 16 }, (_, index) => ({
 interface ProductCardProps {
   product: (typeof products)[number];
 }
-
 function ProductCard({ product }: ProductCardProps) {
   return (
     <article className="w-full overflow-hidden rounded-lg bg-card-primary">
@@ -94,25 +97,47 @@ function ProductCard({ product }: ProductCardProps) {
   );
 }
 
-interface PetTypePageProps {
-  searchParams?: Promise<{
-    category?: string;
-    tags?: string;
-  }>;
+interface ProductSearchParams {
+  category?: string;
+  tags?: string;
+  keywords?: string;
 }
 
-export default async function PetTypePage({ searchParams }: PetTypePageProps) {
-  const params = await searchParams;
+interface PetTypePageProps {
+  searchParams?: Promise<ProductSearchParams>;
+}
+
+export default function PetTypePage({ searchParams }: PetTypePageProps) {
+  const router = useRouter();
+  const [params, setParams] = useState<ProductSearchParams>({});
+
+  useEffect(() => {
+    let ignore = false;
+
+    if (!searchParams) return;
+
+    void searchParams.then((nextParams) => {
+      if (!ignore) setParams(nextParams);
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [searchParams]);
+
   const selectedCategory = params?.category ?? categories[0].slug;
   const selectedTags = params?.tags?.split(',').filter(Boolean) ?? [];
+  const keywords = params?.keywords ?? '';
   const selectedTagSet = new Set(selectedTags);
-  const selectedCategoryName =
-    categories.find(({ slug }) => slug === selectedCategory)?.category ??
-    categories[0].category;
+  const currentCategory =
+    categories.find(({ slug }) => slug === selectedCategory) ?? categories[0];
+  const selectedCategoryName = currentCategory.category;
+  const pageCount = Math.ceil(currentCategory.count / 16);
   const createCategoryHref = (category: string) => {
     const nextParams = new URLSearchParams({ category });
 
     if (selectedTags.length) nextParams.set('tags', selectedTags.join(','));
+    if (keywords) nextParams.set('keywords', keywords);
 
     return `?${nextParams.toString()}`;
   };
@@ -123,14 +148,43 @@ export default async function PetTypePage({ searchParams }: PetTypePageProps) {
     const nextParams = new URLSearchParams({ category: selectedCategory });
 
     if (nextTags.length) nextParams.set('tags', nextTags.join(','));
+    if (keywords) nextParams.set('keywords', keywords);
 
     return `?${nextParams.toString()}`;
   };
+  const handleSearchSubmit = (
+    event: SyntheticEvent<HTMLFormElement, SubmitEvent>
+  ) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const nextKeywords = String(formData.get('keywords') ?? '').trim();
+    const nextParams = new URLSearchParams({ category: selectedCategory });
+    const nextState: ProductSearchParams = { category: selectedCategory };
+
+    if (selectedTags.length) {
+      const tags = selectedTags.join(',');
+
+      nextParams.set('tags', tags);
+      nextState.tags = tags;
+    }
+    if (nextKeywords) {
+      nextParams.set('keywords', nextKeywords);
+      nextState.keywords = nextKeywords;
+    }
+
+    setParams(nextState);
+    router.push(`?${nextParams.toString()}`);
+  };
 
   return (
-    <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:gap-24">
-      <aside className="w-full shrink-0 lg:w-[250px]">
-        <form className="flex flex-col gap-12">
+    <div className="flex flex-row items-start gap-24">
+      <aside className="w-[250px] shrink-0">
+        <form className="flex flex-col gap-12" onSubmit={handleSearchSubmit}>
+          <input type="hidden" name="category" value={selectedCategory} />
+          {selectedTags.length > 0 && (
+            <input type="hidden" name="tags" value={selectedTags.join(',')} />
+          )}
           <label
             htmlFor="keyword"
             className="flex h-8 items-center gap-2 rounded border border-secondary bg-transparent px-2 text-xs text-secondary"
@@ -138,12 +192,15 @@ export default async function PetTypePage({ searchParams }: PetTypePageProps) {
             <LuSearch className="size-4 shrink-0" />
             <input
               id="keyword"
-              name="keyword"
+              name="keywords"
               inputMode="search"
               className="min-w-0 grow bg-transparent text-text-primary outline-none placeholder:text-text-secondary"
               placeholder="想尋找什麼商品呢?"
+              defaultValue={keywords}
             />
-            <LuSendHorizontal className="size-4 shrink-0" />
+            <button type="submit" aria-label="搜尋商品">
+              <LuSendHorizontal className="size-4 shrink-0" />
+            </button>
           </label>
 
           <section className="flex flex-col gap-3">
@@ -237,10 +294,16 @@ export default async function PetTypePage({ searchParams }: PetTypePageProps) {
           </ul>
         </div>
 
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+        <div className="flex justify-between">
           <div className="flex flex-wrap items-end gap-2.5">
-            <h2 className="typo-h2 text-text-primary">所有商品</h2>
+            <h2 className="typo-h2 text-text-primary">
+              {selectedCategoryName}
+            </h2>
             <p className="typo-body text-text-secondary">
+              {/* todo: 同步category數量
+              - 總計數量要隨當前category 的 count 變化
+              -- 每一頁的顯示數量最多16項
+              */}
               (共55項，顯示第01~16項)
             </p>
           </div>
@@ -257,7 +320,7 @@ export default async function PetTypePage({ searchParams }: PetTypePageProps) {
           </label>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[repeat(4,258.5px)]">
+        <div className="grid grid-cols-4 gap-8">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
@@ -267,15 +330,17 @@ export default async function PetTypePage({ searchParams }: PetTypePageProps) {
           aria-label="Pagination"
           className="typo-body-medium flex items-center justify-center gap-8"
         >
-          {[1, 2, 3, 4].map((page) => (
-            <button
-              key={page}
-              type="button"
-              className={page === 1 ? 'text-text-primary' : 'text-primary'}
-            >
-              {page}
-            </button>
-          ))}
+          {Array.from({ length: pageCount }, (_, index) => index + 1).map(
+            (page) => (
+              <button
+                key={page}
+                type="button"
+                className={page === 1 ? 'text-text-primary' : 'text-primary'}
+              >
+                {page}
+              </button>
+            )
+          )}
         </nav>
       </section>
     </div>
