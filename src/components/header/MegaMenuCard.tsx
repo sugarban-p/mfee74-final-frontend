@@ -10,6 +10,7 @@ interface MegaMenuCardProps {
   image: string;
   imageAlt: string;
   title: string;
+  href: string;
   items: MenuItem[];
 }
 
@@ -17,11 +18,12 @@ export default function MegaMenuCard({
   image,
   imageAlt,
   title,
+  href,
   items,
 }: MegaMenuCardProps) {
   return (
     <div className="card w-75 gap-4 bg-base-300 p-5">
-      <div className="card-image relative">
+      <Link href={href} className="card-image relative">
         <Image
           src={image}
           alt={imageAlt}
@@ -33,7 +35,7 @@ export default function MegaMenuCard({
         <h2 className="absolute bottom-3 left-1.5 text-xl font-bold">
           {title}
         </h2>
-      </div>
+      </Link>
 
       <div className="card-body p-0">
         <ul>
