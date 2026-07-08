@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { LuUser, LuHeart, LuShoppingCart } from 'react-icons/lu';
-import MegaMenuCard from '@/src/components/header/megamenu-card';
+import MegaMenuCard from '@/src/components/header/MegaMenuCard';
 
 export default function Header() {
   return (
@@ -13,7 +13,7 @@ export default function Header() {
         <div className="navbar mx-auto flex h-full max-w-[1620px] items-center justify-between px-5 md:px-16">
           <div className="navbar-start">
             <Image
-              src={'/mofu.svg'}
+              src={'/images/logo/mofu-logo-final.svg'}
               alt=""
               width={135}
               height={64}
@@ -27,7 +27,9 @@ export default function Header() {
               popover="auto"
             >
               <span className="megamenu-active"></span>
-              <button popoverTarget="products">所有產品</button>
+              <button className="text-text-primary" popoverTarget="products">
+                所有產品
+              </button>
               <div id="products" className="w-150 rounded-xl" popover="auto">
                 <div className="items-start max-sm:flex-col">
                   <ul className="menu-vertical flex md:menu-horizontal">
@@ -62,7 +64,9 @@ export default function Header() {
                   </ul>
                 </div>
               </div>
-              <button popoverTarget="events">最新活動</button>
+              <button className="text-text-primary" popoverTarget="events">
+                最新活動
+              </button>
               <div id="events" className="w-75" popover="auto">
                 <MegaMenuCard
                   image="/events.png"
@@ -79,12 +83,12 @@ export default function Header() {
             </div>
             <ul className="menu menu-horizontal p-0">
               <li>
-                <Link href={'/'} className="btn btn-ghost">
+                <Link href={'/'} className="btn btn-ghost text-text-primary">
                   AI 導購
                 </Link>
               </li>
               <li>
-                <Link href={'/'} className="btn btn-ghost">
+                <Link href={'/'} className="btn btn-ghost text-text-primary">
                   聯繫我們
                 </Link>
               </li>

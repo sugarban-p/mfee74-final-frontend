@@ -1,16 +1,14 @@
 'use client';
 
-import Header from '@/src/components/common/header';
+import Header from '@/src/components/common/Header';
 import { Footer } from '@/src/components/common/Footer';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <Header />
-      <main className="bg-background pb-64 pt-8 md:pb-70 md:pt-10">
-        <div className="mx-auto w-full max-w-screen-2xl px-4 md:px-6">
-          {children}
-        </div>
+      <main className="px-auto bg-(--color-background) py-16">
+        <div className="mx-auto max-w-[1520px]">{children}</div>
       </main>
       <Footer />
     </div>
