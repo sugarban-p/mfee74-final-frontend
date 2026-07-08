@@ -106,6 +106,7 @@ interface ProductSearchParams {
   keywords?: string;
   page?: string;
   sort?: string;
+  title?: string;
 }
 
 interface PetTypePageProps {
@@ -134,6 +135,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   const selectedTags = params?.tags?.split(',').filter(Boolean) ?? [];
   const keywords = params?.keywords ?? '';
   const selectedSort = params?.sort ?? '';
+  const breadcrumbTitle = params?.title ?? '狗勾專區';
   const selectedTagSet = new Set(selectedTags);
   const currentCategory =
     categories.find(({ slug }) => slug === selectedCategory) ?? categories[0];
@@ -171,6 +173,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     if (nextKeywords) nextParams.set('keywords', nextKeywords);
     if (sort) nextParams.set('sort', sort);
     if (page) nextParams.set('page', String(page));
+    if (params?.title) nextParams.set('title', params.title);
 
     return `?${nextParams.toString()}`;
   };
@@ -317,7 +320,9 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
               <Link href="/">首頁</Link>
             </li>
             <li>
-              <Link href="/product/dog?category=all-products">狗勾專區</Link>
+              <Link href={createHref({ category: categories[0].slug })}>
+                {breadcrumbTitle}
+              </Link>
             </li>
             <li className="text-text-primary">{selectedCategoryName}</li>
           </ul>

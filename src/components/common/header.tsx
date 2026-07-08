@@ -38,7 +38,7 @@ export default function Header() {
                         image="/cat-category.png"
                         imageAlt="貓咪專區"
                         title="貓咪專區"
-                        href="/product/cat"
+                        href={`/product/cat?title=${encodeURIComponent('貓咪專區')}`}
                         items={[
                           { title: '主食', href: '/' },
                           { title: '零食/點心', href: '/' },
@@ -53,7 +53,7 @@ export default function Header() {
                         image="/dog-category.png"
                         imageAlt="狗勾專區"
                         title="狗勾專區"
-                        href="/product/dog"
+                        href={`/product/dog?title=${encodeURIComponent('狗勾專區')}`}
                         items={[
                           { title: '主食', href: '/' },
                           { title: '零食/點心', href: '/' },
