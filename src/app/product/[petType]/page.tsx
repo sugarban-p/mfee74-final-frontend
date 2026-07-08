@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { type SyntheticEvent, useEffect, useState } from 'react';
 
 import {
-  LuArrowDownUp,
   LuHeart,
   LuSearch,
   LuSendHorizontal,
+  LuArrowDownWideNarrow,
 } from 'react-icons/lu';
+
+const PRODUCTS_PER_PAGE = 16;
 
 const categories = [
   { category: '所有商品', count: 55, slug: 'all-products' },
@@ -29,7 +31,8 @@ const tags = [
   { tag: '無穀', slug: 'grain-free' },
 ];
 
-const products = Array.from({ length: 16 }, (_, index) => ({
+const productCount = Math.max(...categories.map(({ count }) => count));
+const products = Array.from({ length: productCount }, (_, index) => ({
   id: index + 1,
   image: index === 0 ? '/蔬肉糧產品圖_01-510x510.jpg' : '',
   tags: index === 0 ? ['幼齡', '低敏'] : [],
@@ -101,6 +104,8 @@ interface ProductSearchParams {
   category?: string;
   tags?: string;
   keywords?: string;
+  page?: string;
+  sort?: string;
 }
 
 interface PetTypePageProps {
@@ -128,29 +133,64 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   const selectedCategory = params?.category ?? categories[0].slug;
   const selectedTags = params?.tags?.split(',').filter(Boolean) ?? [];
   const keywords = params?.keywords ?? '';
+  const selectedSort = params?.sort ?? '';
   const selectedTagSet = new Set(selectedTags);
   const currentCategory =
     categories.find(({ slug }) => slug === selectedCategory) ?? categories[0];
   const selectedCategoryName = currentCategory.category;
-  const pageCount = Math.ceil(currentCategory.count / 16);
-  const createCategoryHref = (category: string) => {
+  const pageCount = Math.max(
+    1,
+    Math.ceil(currentCategory.count / PRODUCTS_PER_PAGE)
+  );
+  const pageFromParams = Number(params?.page);
+  const currentPage = Number.isInteger(pageFromParams)
+    ? Math.min(Math.max(pageFromParams, 1), pageCount)
+    : 1;
+  const displayStart = (currentPage - 1) * PRODUCTS_PER_PAGE + 1;
+  const displayEnd = Math.min(
+    currentPage * PRODUCTS_PER_PAGE,
+    currentCategory.count
+  );
+  const displayedProducts = products.slice(displayStart - 1, displayEnd);
+  const createHref = ({
+    category = selectedCategory,
+    tagSlugs = selectedTags,
+    nextKeywords = keywords,
+    sort = selectedSort,
+    page,
+  }: {
+    category?: string;
+    tagSlugs?: string[];
+    nextKeywords?: string;
+    sort?: string;
+    page?: number;
+  }) => {
     const nextParams = new URLSearchParams({ category });
 
-    if (selectedTags.length) nextParams.set('tags', selectedTags.join(','));
-    if (keywords) nextParams.set('keywords', keywords);
+    if (tagSlugs.length) nextParams.set('tags', tagSlugs.join(','));
+    if (nextKeywords) nextParams.set('keywords', nextKeywords);
+    if (sort) nextParams.set('sort', sort);
+    if (page) nextParams.set('page', String(page));
 
     return `?${nextParams.toString()}`;
   };
-  const createTagHref = (tag: string) => {
-    const nextTags = selectedTagSet.has(tag)
-      ? selectedTags.filter((selectedTag) => selectedTag !== tag)
-      : [...selectedTags, tag];
-    const nextParams = new URLSearchParams({ category: selectedCategory });
+  const pushHref = (href: string) => {
+    setParams(
+      Object.fromEntries(
+        new URLSearchParams(href.slice(1))
+      ) as ProductSearchParams
+    );
+    router.push(href);
+  };
+  const createCategoryHref = (category: string) => {
+    return createHref({ category });
+  };
+  const createTagHref = (tagSlug: string) => {
+    const nextTags = selectedTagSet.has(tagSlug)
+      ? selectedTags.filter((selectedTag) => selectedTag !== tagSlug)
+      : [...selectedTags, tagSlug];
 
-    if (nextTags.length) nextParams.set('tags', nextTags.join(','));
-    if (keywords) nextParams.set('keywords', keywords);
-
-    return `?${nextParams.toString()}`;
+    return createHref({ tagSlugs: nextTags });
   };
   const handleSearchSubmit = (
     event: SyntheticEvent<HTMLFormElement, SubmitEvent>
@@ -159,22 +199,11 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
 
     const formData = new FormData(event.currentTarget);
     const nextKeywords = String(formData.get('keywords') ?? '').trim();
-    const nextParams = new URLSearchParams({ category: selectedCategory });
-    const nextState: ProductSearchParams = { category: selectedCategory };
 
-    if (selectedTags.length) {
-      const tags = selectedTags.join(',');
-
-      nextParams.set('tags', tags);
-      nextState.tags = tags;
-    }
-    if (nextKeywords) {
-      nextParams.set('keywords', nextKeywords);
-      nextState.keywords = nextKeywords;
-    }
-
-    setParams(nextState);
-    router.push(`?${nextParams.toString()}`);
+    pushHref(createHref({ nextKeywords }));
+  };
+  const handleSortChange = (event: SyntheticEvent<HTMLSelectElement>) => {
+    pushHref(createHref({ sort: event.currentTarget.value }));
   };
 
   return (
@@ -300,28 +329,29 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
               {selectedCategoryName}
             </h2>
             <p className="typo-body text-text-secondary">
-              {/* todo: 同步category數量
-              - 總計數量要隨當前category 的 count 變化
-              -- 每一頁的顯示數量最多16項
-              */}
-              (共55項，顯示第01~16項)
+              (共{currentCategory.count}項，顯示第
+              {String(displayStart).padStart(2, '0')}~{displayEnd}項)
             </p>
           </div>
 
           <label className="typo-tab flex items-center gap-2 text-text-primary">
-            <LuArrowDownUp className="size-4" />
+            <LuArrowDownWideNarrow className="size-4" />
             排序方式:
-            <select className="h-8 rounded border border-secondary bg-transparent px-3 text-text-primary outline-none">
-              <option>熱銷</option>
-              <option>最新</option>
-              <option>價格(低到高)</option>
-              <option>價格(高到低)</option>
+            <select
+              value={selectedSort}
+              onChange={handleSortChange}
+              className="h-8 rounded border border-secondary bg-transparent px-3 text-text-primary outline-none"
+            >
+              <option value="">熱銷</option>
+              <option value="latest">最新</option>
+              <option value="price-asc">價格(低到高)</option>
+              <option value="price-desc">價格(高到低)</option>
             </select>
           </label>
         </div>
 
         <div className="grid grid-cols-4 gap-8">
-          {products.map((product) => (
+          {displayedProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
@@ -332,13 +362,15 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
         >
           {Array.from({ length: pageCount }, (_, index) => index + 1).map(
             (page) => (
-              <button
+              <Link
                 key={page}
-                type="button"
-                className={page === 1 ? 'text-text-primary' : 'text-primary'}
+                href={createHref({ page })}
+                className={
+                  page === currentPage ? 'text-text-primary' : 'text-primary'
+                }
               >
                 {page}
-              </button>
+              </Link>
             )
           )}
         </nav>
