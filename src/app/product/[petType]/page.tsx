@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { type SyntheticEvent, useEffect, useState } from 'react';
 
 import {
-  LuHeart,
   LuSearch,
   LuSendHorizontal,
   LuArrowDownWideNarrow,
 } from 'react-icons/lu';
+
+import { FilterButton } from '@/src/components/product/FilterButton';
+import { ProductCard } from '@/src/components/product/ProductCard';
 
 const PRODUCTS_PER_PAGE = 16;
 
@@ -23,11 +25,11 @@ const categories = [
 ];
 
 const tags = [
-  { tag: '幼齡', slug: 'juvenile' },
-  { tag: '毛髮養護', slug: 'coat-care' },
+  { tag: '幼齡(0~1歲)', slug: 'kitten' },
+  { tag: '孕貓', slug: 'pregnant-cat' },
   { tag: '室內', slug: 'indoor' },
   { tag: '室外', slug: 'outdoor' },
-  { tag: '低敏', slug: 'hypoallergenic' },
+  { tag: '低敏', slug: 'hypo-allergenic' },
   { tag: '無穀', slug: 'grain-free' },
 ];
 
@@ -35,70 +37,11 @@ const productCount = Math.max(...categories.map(({ count }) => count));
 const products = Array.from({ length: productCount }, (_, index) => ({
   id: index + 1,
   image: index === 0 ? '/蔬肉糧產品圖_01-510x510.jpg' : '',
-  tags: index === 0 ? ['幼齡', '低敏'] : [],
+  tags: index === 0 ? ['幼齡(0~1歲)', '低敏'] : [],
   name: index === 0 ? '慢烘鮮食蔬肉糧' : '商品名稱',
   description: index === 0 ? '最接近鮮食的天然慢烘糧!' : '簡短標語敘述',
   price: index === 0 ? 'NT$229' : 'NT$9999',
 }));
-
-interface ProductCardProps {
-  product: (typeof products)[number];
-}
-function ProductCard({ product }: ProductCardProps) {
-  return (
-    <article className="w-full overflow-hidden rounded-lg bg-card-primary">
-      <div
-        className={[
-          'h-[149px] w-full bg-button-disabled',
-          product.image ? 'bg-cover bg-center' : '',
-        ].join(' ')}
-        style={
-          product.image
-            ? { backgroundImage: `url(${product.image})` }
-            : undefined
-        }
-      />
-
-      <div className="flex flex-col gap-1 p-6">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex h-[18px] gap-1 overflow-hidden">
-            {product.tags.map((tag) => (
-              <span
-                key={tag}
-                className="shrink-0 rounded-full bg-card-secondary px-2 text-xs leading-[18px] text-text-secondary"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            aria-label="加入收藏"
-            className="flex size-6 items-center justify-center text-secondary"
-          >
-            <LuHeart className="size-4" />
-          </button>
-        </div>
-
-        <h2 className="typo-card-title truncate text-[#3d4451]">
-          {product.name}
-        </h2>
-        <p className="typo-card-body truncate text-[#3d4451]">
-          {product.description}
-        </p>
-        <p className="typo-card-body text-[#3d4451]">{product.price}</p>
-
-        <button
-          type="button"
-          className="mt-1 rounded-full bg-primary px-3 py-2 text-center text-base leading-[22.75px] text-white"
-        >
-          加入購物車
-        </button>
-      </div>
-    </article>
-  );
-}
 
 interface ProductSearchParams {
   category?: string;
@@ -242,20 +185,15 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
                 const active = selectedCategory === slug;
 
                 return (
-                  <Link
+                  <FilterButton
                     key={slug}
                     href={createCategoryHref(slug)}
-                    role="button"
-                    className={[
-                      'typo-tab flex items-center justify-between rounded-lg px-3 py-2 font-bold transition-all',
-                      active
-                        ? 'bg-primary text-white'
-                        : 'border border-secondary text-text-primary hover:bg-base-200 hover:text-base-content focus:bg-base-200 focus:text-base-content',
-                    ].join(' ')}
+                    active={active}
+                    className="flex items-center justify-between"
                   >
                     <span>{category}</span>
                     <span>{count}</span>
-                  </Link>
+                  </FilterButton>
                 );
               })}
             </div>
@@ -271,20 +209,14 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
                 const active = selectedTagSet.has(slug);
 
                 return (
-                  <Link
+                  <FilterButton
                     key={slug}
                     href={createTagHref(slug)}
-                    role="button"
+                    active={active}
                     aria-pressed={active}
-                    className={[
-                      'typo-tab rounded-lg px-3 py-2 font-bold transition-all',
-                      active
-                        ? 'bg-primary text-text-button'
-                        : 'border border-secondary text-text-primary hover:bg-base-200 hover:text-base-content',
-                    ].join(' ')}
                   >
                     {tag}
-                  </Link>
+                  </FilterButton>
                 );
               })}
             </div>
@@ -335,7 +267,8 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
             </h2>
             <p className="typo-body text-text-secondary">
               (共{currentCategory.count}項，顯示第
-              {String(displayStart).padStart(2, '0')}~{displayEnd}項)
+              {String(displayStart).padStart(2, '0')}~
+              {String(displayEnd).padStart(2, '0')}項)
             </p>
           </div>
 
