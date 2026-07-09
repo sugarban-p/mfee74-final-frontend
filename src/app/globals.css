@@ -217,6 +217,33 @@ body {
     color: var(--color-text-button-disabled);
   }
 
+  .link-button {
+    text-align: center;
+    max-width: 100%;
+    border-radius: 8px;
+    padding: 0.5em 0.75em;
+    cursor: pointer;
+
+    background-color: var(--primary);
+    color: var(--color-text-button);
+
+    transition-property:
+      color, background-color, border-color, text-decoration-color, fill,
+      stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .link-button:hover {
+    background-color: var(--color-button-primary-hover);
+  }
+
+  .link-button:disabled {
+    cursor: not-allowed;
+    background-color: var(--color-button-disabled);
+    color: var(--color-text-button-disabled);
+  }
+
   .back-button {
     text-align: center;
     cursor: pointer;
