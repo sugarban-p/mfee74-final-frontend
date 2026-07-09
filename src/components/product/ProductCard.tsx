@@ -55,7 +55,7 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <article className="w-full overflow-hidden rounded-lg bg-card-primary">
+    <article className="w-[250px] overflow-hidden rounded-lg bg-card-primary">
       <div
         className={[
           'h-[150px] w-full bg-button-disabled',
@@ -86,15 +86,18 @@ export function ProductCard({ product }: ProductCardProps) {
             aria-pressed={isFavorite}
             aria-label={isFavorite ? '取消收藏' : '加入收藏'}
             className={[
-              'flex size-6 items-center justify-center',
-              isFavorite ? 'text-primary' : 'text-secondary',
+              'group flex size-6 items-center justify-center cursor-pointer',
+              isFavorite ? 'text-primary' : 'text-secondary hover:text-primary',
             ].join(' ')}
             onClick={handleFavoriteClick}
           >
             {isFavorite ? (
               <RiHeartFill className="size-full" />
             ) : (
-              <RiHeartLine className="size-full" />
+              <>
+                <RiHeartLine className="size-full group-hover:hidden" />
+                <RiHeartFill className="hidden size-full group-hover:block" />
+              </>
             )}
           </button>
         </div>

@@ -35,7 +35,7 @@ export default function MegaMenuCard({
   };
 
   return (
-    <div className="card w-75 gap-4 bg-base-300 p-5" onClick={handleClick}>
+    <div className="card w-75 gap-4 p-5" onClick={handleClick}>
       <Link href={href} className="card-image relative">
         <Image
           src={image}
@@ -45,7 +45,7 @@ export default function MegaMenuCard({
           className="rounded-xl"
         />
 
-        <h2 className="absolute bottom-3 left-1.5 text-xl font-bold">
+        <h2 className="absolute bottom-3 left-1.5 text-xl font-bold text-text-button">
           {title}
         </h2>
       </Link>
@@ -53,9 +53,15 @@ export default function MegaMenuCard({
       <div className="card-body p-0">
         <ul>
           {items.map((item) => (
-            <li key={item.title}>
-              <Link href={item.href} className="flex">
-                <LuChevronRight className="w-5" />
+            <li
+              className="rounded-lg hover:bg-button-secondary-hover"
+              key={item.title}
+            >
+              <Link
+                href={item.href}
+                className="flex items-center text-text-primary gap-2"
+              >
+                <LuChevronRight className="size-5" />
                 <h3 className="card-title">{item.title}</h3>
               </Link>
             </li>

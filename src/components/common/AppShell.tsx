@@ -9,7 +9,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <Header />
-      <main className="px-auto bg-(--color-background) py-16">
+      <main className="px-auto bg-background py-16">
         <div className="mx-auto max-w-[1520px]">{children}</div>
       </main>
       <Footer />
