@@ -1,21 +1,6 @@
 import type { Metadata } from 'next';
-import { Noto_Sans_TC, Noto_Serif_TC } from 'next/font/google';
 import './globals.css';
 import AppShell from '@/src/components/common/AppShell';
-
-const notoSansTc = Noto_Sans_TC({
-  weight: ['400', '500', '700'],
-  subsets: ['latin'],
-  variable: '--font-noto-sans-tc',
-  display: 'swap',
-});
-
-const notoSerifTc = Noto_Serif_TC({
-  weight: ['700'],
-  subsets: ['latin'],
-  variable: '--font-noto-serif-tc',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: 'Team3 專題',
@@ -29,10 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        suppressHydrationWarning
-        className={`${notoSansTc.variable} ${notoSerifTc.variable} flex min-h-full flex-col`}
-      >
+      <body suppressHydrationWarning className="flex min-h-full flex-col">
         <AppShell>{children}</AppShell>
       </body>
     </html>
