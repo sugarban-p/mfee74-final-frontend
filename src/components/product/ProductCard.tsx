@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { RiHeartFill, RiHeartLine } from 'react-icons/ri';
 
@@ -11,11 +13,13 @@ interface ProductCardProps {
     name: string;
     description: string;
     price: string;
+    slug: string;
   };
 }
 
 export function ProductCard({ product }: ProductCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
+  const { petType } = useParams<{ petType: string }>();
   const addFavoriteSuccess = (productName: string) =>
     toast.success(`${productName} 已加入收藏清單`, {
       style: {
@@ -55,7 +59,7 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <article className="w-[250px] overflow-hidden rounded-lg bg-card-primary">
+    <article className="w-[250px] overflow-hidden rounded-lg bg-card-primary border border-secondary/50 transition hover:border-primary hover:-translate-y-0.5 hover:scale-[1.02]">
       <div
         className={[
           'h-[150px] w-full bg-button-disabled',
@@ -66,7 +70,7 @@ export function ProductCard({ product }: ProductCardProps) {
             ? { backgroundImage: `url(${product.image})` }
             : undefined
         }
-      />
+      ></div>
 
       <div className="flex flex-col gap-4 p-4">
         <div className="flex items-center justify-between gap-3">
@@ -102,12 +106,17 @@ export function ProductCard({ product }: ProductCardProps) {
           </button>
         </div>
         <div className="flex flex-col gap-2">
-          <h2 className="typo-card-title truncate">{product.name}</h2>
+          <Link
+            href={`/product/${petType}/${product.slug}`}
+            className="cursor-pointer hover:underline"
+          >
+            <h2 className="typo-card-title truncate">{product.name}</h2>
+          </Link>
           <p className="typo-card-body truncate">{product.description}</p>
         </div>
         <p className="typo-card-body">{product.price}</p>
         <button type="button" className="next-button typo-tab">
-          加入購物車
+          快速選購
         </button>
       </div>
     </article>
