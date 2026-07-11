@@ -91,6 +91,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const load = async () => {
+      if (!ENABLE_MEMBER_API) {
+        setUser(MOCK_USER);
+        setStats(MOCK_STATS);
+        setSecurity(MOCK_SECURITY);
+        return;
+      }
+
       try {
         const [uRes, sRes, secRes] = await Promise.all([
           fetch('/api/user/profile'),
@@ -112,12 +119,6 @@ export default function DashboardPage() {
         setStats(s);
         setSecurity(sec);
       } catch {
-        if (!ENABLE_MEMBER_API) {
-          setUser(MOCK_USER);
-          setStats(MOCK_STATS);
-          setSecurity(MOCK_SECURITY);
-          return;
-        }
         setUser(MOCK_USER);
         setStats(MOCK_STATS);
         setSecurity(MOCK_SECURITY);
@@ -194,7 +195,13 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {tab === 'overview' && <OverviewTab stats={stats} />}
+      {tab === 'overview' && (
+        <OverviewTab
+          stats={stats}
+          onOpenProfile={() => setTab('profile')}
+          onOpenSecurity={() => setTab('security')}
+        />
+      )}
       {tab === 'profile' && <ProfileTab user={user} onUpdate={setUser} />}
       {tab === 'security' && <SecurityTab user={user} security={security} />}
     </div>
@@ -203,15 +210,23 @@ export default function DashboardPage() {
 
 // ── Overview ──────────────────────────────────────────────────────────────
 
-function OverviewTab({ stats }: { stats: DashboardStats }) {
+function OverviewTab({
+  stats,
+  onOpenProfile,
+  onOpenSecurity,
+}: {
+  stats: DashboardStats;
+  onOpenProfile: () => void;
+  onOpenSecurity: () => void;
+}) {
   const cards = [
     {
       href: '/member/orders',
       icon: LuPackage,
       watermarkTone: 'text-orange-100',
-      chipBg: 'bg-orange-50',
+      chipBg: 'bg-orange-100',
       chipText: 'text-orange-500',
-      chipLabel: '訂單概覽',
+      chipLabel: '訂單總覽',
       title: '訂單',
       num: stats.orders.total,
       unit: '筆',
@@ -241,7 +256,7 @@ function OverviewTab({ stats }: { stats: DashboardStats }) {
       href: '/member/favorites',
       icon: LuHeart,
       watermarkTone: 'text-rose-100',
-      chipBg: 'bg-rose-50',
+      chipBg: 'bg-rose-100',
       chipText: 'text-rose-500',
       chipLabel: '收藏總覽',
       title: '收藏',
@@ -254,7 +269,7 @@ function OverviewTab({ stats }: { stats: DashboardStats }) {
       href: '/member/pets',
       icon: LuPawPrint,
       watermarkTone: 'text-amber-100',
-      chipBg: 'bg-amber-50',
+      chipBg: 'bg-amber-100',
       chipText: 'text-amber-600',
       chipLabel: '寵物總覽',
       title: '寵物',
@@ -267,9 +282,9 @@ function OverviewTab({ stats }: { stats: DashboardStats }) {
       href: '/member/coupons',
       icon: LuTicketPercent,
       watermarkTone: 'text-purple-100',
-      chipBg: 'bg-purple-50',
+      chipBg: 'bg-purple-100',
       chipText: 'text-purple-500',
-      chipLabel: '優惠券概覽',
+      chipLabel: '優惠券總覽',
       title: '優惠券',
       num: stats.coupons.available,
       unit: '張可用',
@@ -366,7 +381,7 @@ function OverviewTab({ stats }: { stats: DashboardStats }) {
                 )}
 
                 {tags.length === 0 && (
-                  <div className="rounded-xl px-2 py-1.5 bg-gray-50 text-center">
+                  <div className="rounded-xl px-2 py-1.5 bg-gray-100 text-center">
                     <div className="text-[10px] text-gray-400 leading-tight">
                       前往查看完整{title}內容
                     </div>
@@ -378,10 +393,10 @@ function OverviewTab({ stats }: { stats: DashboardStats }) {
         )}
       </div>
 
-      <div className="card bg-[#FDFBF6]-100 border border-[#EDE1D6] rounded-[20px]">
+      <div className="card bg-[#FDFBF6]-100">
         <div className="card-body px-6 py-5">
           <h2
-            className="text-sm font-semibold text-base-content mb-3"
+            className="text-[16px] font-semibold text-base-content mb-3"
             style={JP}
           >
             快速操作
@@ -390,32 +405,32 @@ function OverviewTab({ stats }: { stats: DashboardStats }) {
             {[
               {
                 label: '編輯個人資料',
-                onClick: () => {},
+                onClick: onOpenProfile,
                 icon: Edit2,
                 chipLabel: '個人資料',
-                chipBg: 'bg-rose-50',
-                chipText: 'text-rose-500',
-                watermarkTone: 'text-rose-100',
+                chipBg: 'bg-blue-100',
+                chipText: 'text-blue-500',
+                watermarkTone: 'text-blue-100',
                 hint: '更新姓名、手機與地址',
               },
               {
                 label: '帳號安全設定',
-                onClick: () => {},
+                onClick: onOpenSecurity,
                 icon: Shield,
                 chipLabel: '安全設定',
-                chipBg: 'bg-amber-50',
-                chipText: 'text-amber-600',
-                watermarkTone: 'text-amber-100',
+                chipBg: 'bg-gray-200',
+                chipText: 'text-black-600',
+                watermarkTone: 'text-gray-300',
                 hint: '修改密碼與登入安全',
               },
               {
                 label: '聯繫客服中心',
-                href: '/support/chat',
+                href: '/member/support',
                 icon: LuMessageCircleQuestion,
                 chipLabel: '客服入口',
-                chipBg: 'bg-orange-50',
-                chipText: 'text-orange-500',
-                watermarkTone: 'text-orange-100',
+                chipBg: 'bg-cyan-100',
+                chipText: 'text-cyan-500',
+                watermarkTone: 'text-cyan-200',
                 hint: '前往即時客服與紀錄查詢',
               },
             ].map(
@@ -550,7 +565,7 @@ function ProfileTab({
     <div className="space-y-5">
       {success && <SuccessBox message="個人資料已成功更新。" />}
 
-      <div className="card bg-base-100 border border-base-300 rounded-2xl">
+      <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl">
         <div className="card-body p-5">
           <div className="flex items-start gap-4">
             <div className="relative shrink-0">
@@ -640,7 +655,7 @@ function ProfileTab({
                     )}
                     {user.googleLinked && (
                       <span className="badge badge-info badge-outline gap-1 text-[10px] px-2 py-2 font-medium">
-                        G Google 已連結
+                        Google 已連結
                       </span>
                     )}
                   </div>
@@ -651,7 +666,7 @@ function ProfileTab({
         </div>
       </div>
 
-      <div className="card bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
+      <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl overflow-hidden">
         <div className="px-5 py-3 border-b border-base-300 bg-base-200/50">
           <h3 className="text-sm font-semibold text-base-content" style={JP}>
             帳號資訊
@@ -741,7 +756,7 @@ function ChangePasswordSection() {
   };
 
   return (
-    <div className="card bg-base-100 border border-base-300 rounded-2xl">
+    <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl">
       <div className="card-body p-5">
         {success && <SuccessBox message="密碼已成功更新。" />}
         <div className="flex items-start justify-between">
@@ -825,7 +840,7 @@ function SecurityTab({
   return (
     <div className="space-y-5">
       {/* Email verification */}
-      <div className="card bg-base-100 border border-base-300 rounded-2xl">
+      <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl">
         <div className="card-body p-5">
           <div className="flex items-center gap-3">
             <div
@@ -857,12 +872,12 @@ function SecurityTab({
       </div>
 
       {/* Login history */}
-      <div className="card bg-base-100 border border-base-300 rounded-2xl overflow-hidden">
+      <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl overflow-hidden">
         <div className="px-5 py-3 border-b border-base-300 bg-base-200/50 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-base-content" style={JP}>
             登入紀錄
           </h3>
-          <span className="badge badge-outline text-[10px] text-base-content/60">
+          <span className="badge badge-outline text-[13px] text-base-content/60">
             最近 10 筆
           </span>
         </div>
@@ -897,7 +912,7 @@ function SecurityTab({
                 </div>
               </div>
               <span
-                className={`badge text-[10px] font-semibold px-2.5 py-1 ${log.success ? 'badge-success badge-outline' : 'badge-error badge-outline'}`}
+                className={`badge text-[13px] font-semibold px-2.5 py-1 ${log.success ? 'badge-success badge-outline' : 'badge-error badge-outline'}`}
               >
                 {log.success ? '成功' : '失敗'}
               </span>
@@ -907,7 +922,7 @@ function SecurityTab({
       </div>
 
       {/* Security policy */}
-      <div className="card bg-base-100 border border-base-300 rounded-2xl">
+      <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl">
         <div className="card-body p-5">
           <h3
             className="text-sm font-semibold text-base-content mb-4"
@@ -930,8 +945,10 @@ function SecurityTab({
                 className="flex items-center gap-3 py-2.5 border-b border-base-300 last:border-0"
               >
                 <Icon size={14} className="text-primary shrink-0" />
-                <div className="flex-1 text-sm text-base-content">{label}</div>
-                <div className="badge badge-ghost text-xs text-base-content/70 font-medium">
+                <div className="flex-1 text-[14px] text-base-content">
+                  {label}
+                </div>
+                <div className="badge badge-ghost text-[13px] text-base-content/70 font-medium">
                   {value}
                 </div>
               </div>

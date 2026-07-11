@@ -43,6 +43,24 @@ const MOCK_CASES: ChatCaseSummary[] = [
   },
 ];
 
+function filterCasesByRange(
+  source: ChatCaseSummary[],
+  range: 'today' | 'week' | 'all'
+) {
+  if (range === 'all') return source;
+
+  const now = new Date();
+  const start = new Date(now);
+
+  if (range === 'today') {
+    start.setHours(0, 0, 0, 0);
+  } else {
+    start.setDate(start.getDate() - 7);
+  }
+
+  return source.filter((item) => new Date(item.lastMessageAt) >= start);
+}
+
 export default function MemberSupportHistoryPage() {
   const [cases, setCases] = useState<ChatCaseSummary[]>(
     ENABLE_MEMBER_API ? [] : MOCK_CASES
@@ -70,6 +88,10 @@ export default function MemberSupportHistoryPage() {
       minute: '2-digit',
     });
 
+  const visibleCases = ENABLE_MEMBER_API
+    ? cases
+    : filterCasesByRange(MOCK_CASES, filter);
+
   return (
     <div className="space-y-4">
       <div className="space-y-3">
@@ -87,11 +109,13 @@ export default function MemberSupportHistoryPage() {
           {(['today', 'week', 'all'] as const).map((f) => (
             <button
               key={f}
+              type="button"
               onClick={() => {
-                setLoading(true);
+                if (f === filter) return;
+                if (ENABLE_MEMBER_API) setLoading(true);
                 setFilter(f);
               }}
-              className={`tab rounded-xl px-4 text-[16px] ${filter === f ? 'tab-active bg-base-100 shadow-sm' : 'text-base-content/60'}`}
+              className={`tab tab-sm rounded-xl 2xl:rounded-[12px] px-4 2xl:px-6 h-6 2xl:h-8 min-h-8 2xl:min-h-10 text-[14px] font-medium transition-all whitespace-nowrap inline-flex items-center justify-center text-center ${filter === f ? 'tab-active bg-base-100 shadow-sm' : 'text-base-content/60'}`}
               style={SANS_TC_MEDIUM}
             >
               {f === 'today' ? '今天' : f === 'week' ? '最近 7 天' : '全部紀錄'}
@@ -104,7 +128,7 @@ export default function MemberSupportHistoryPage() {
         <div className="flex items-center justify-center py-16">
           <span className="loading loading-spinner loading-md text-primary" />
         </div>
-      ) : cases.length === 0 ? (
+      ) : visibleCases.length === 0 ? (
         <div className="card bg-base-100 border border-base-300 rounded-3xl">
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-14 h-14 bg-primary/15 rounded-2xl flex items-center justify-center mb-4">
@@ -123,7 +147,7 @@ export default function MemberSupportHistoryPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {cases.map((item) => (
+          {visibleCases.map((item) => (
             <Link
               key={item.caseId}
               href={`/member/support/chat?caseId=${encodeURIComponent(item.caseId)}`}
@@ -140,11 +164,11 @@ export default function MemberSupportHistoryPage() {
                         諮詢 {item.caseId.slice(0, 14)}
                       </h3>
                       {item.status === 'OPEN' ? (
-                        <span className="badge badge-warning badge-sm">
+                        <span className="badge badge-warning badge-sm px-2">
                           處理中
                         </span>
                       ) : (
-                        <span className="badge badge-success badge-sm gap-1">
+                        <span className="badge badge-success badge-sm gap-1 px-2">
                           <LuCircleCheck size={12} />
                           已結案
                         </span>

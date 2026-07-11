@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import {
   LuMessageCircleQuestion,
+  LuMessageCircleMore,
   LuClipboardList,
   LuPhone,
   LuMail,
@@ -24,9 +25,9 @@ export default function MemberSupportPage() {
     {
       href: '/member/support/chat',
       icon: LuMessageCircleQuestion,
-      watermarkTone: 'text-orange-100',
-      chipBg: 'bg-orange-50',
-      chipText: 'text-orange-500',
+      watermarkTone: 'text-cyan-100',
+      chipBg: 'bg-cyan-100',
+      chipText: 'text-cyan-500',
       chipLabel: '客服入口',
       title: '即時客服聊天',
       desc: 'AI 智能 + 人工客服，快速解決您的問題。',
@@ -36,7 +37,7 @@ export default function MemberSupportPage() {
       href: '/member/support/history',
       icon: LuClipboardList,
       watermarkTone: 'text-blue-100',
-      chipBg: 'bg-blue-50',
+      chipBg: 'bg-blue-100',
       chipText: 'text-blue-500',
       chipLabel: '紀錄查詢',
       title: '聊天紀錄查詢',
@@ -79,7 +80,7 @@ export default function MemberSupportPage() {
             <Link
               key={href}
               href={href}
-              className="relative bg-white border border-[#ECE3DA] rounded-2xl shadow-sm overflow-hidden hover:border-primary/40 hover:shadow-md transition-all"
+              className="relative bg-[#FDFBF6] border border-[#ECE3DA] rounded-2xl shadow-sm overflow-hidden hover:border-primary/40 hover:shadow-md transition-all"
             >
               <div
                 className={`absolute top-1 right-2 ${watermarkTone} pointer-events-none select-none`}
@@ -96,7 +97,7 @@ export default function MemberSupportPage() {
                 </div>
 
                 <div className="mb-1">
-                  <span className="text-3xl font-bold text-gray-900 tracking-tight">
+                  <span className="text-2xl font-bold text-gray-900 tracking-tight">
                     {title}
                   </span>
                 </div>
@@ -111,13 +112,13 @@ export default function MemberSupportPage() {
                 <div className="border-t border-gray-100 my-3" />
 
                 {badge ? (
-                  <div className="rounded-xl px-2 py-1.5 bg-gray-50 text-center">
+                  <div className="rounded-xl px-2 py-1.5 bg-gray-100 text-center">
                     <div className="text-[10px] text-gray-400 leading-tight">
                       {badge}
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl px-2 py-1.5 bg-gray-50 text-center">
+                  <div className="rounded-xl px-2 py-1.5 bg-gray-100 text-center">
                     <div className="text-[10px] text-gray-400 leading-tight">
                       進入查看詳細內容
                     </div>
@@ -129,14 +130,14 @@ export default function MemberSupportPage() {
         )}
       </div>
 
-      <div className="relative bg-white border border-[#ECE3DA] rounded-2xl shadow-sm overflow-hidden">
+      <div className="relative bg-[#FDFBF6] border border-[#ECE3DA] rounded-2xl shadow-sm overflow-hidden">
         <div className="absolute top-1 right-2 text-amber-100 pointer-events-none select-none">
-          <LuMessageCircleQuestion size={88} strokeWidth={1.2} />
+          <LuMessageCircleMore size={88} strokeWidth={1.2} />
         </div>
 
         <div className="relative px-5 pt-4 pb-4">
-          <div className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-500 text-xs font-medium px-2.5 py-1 rounded-full mb-3">
-            <LuMessageCircleQuestion size={13} strokeWidth={2} />
+          <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-500 text-xs font-medium px-2.5 py-1 rounded-full mb-3">
+            <LuMessageCircleMore size={13} strokeWidth={2} />
             <span>常見問題</span>
           </div>
 
@@ -146,10 +147,10 @@ export default function MemberSupportPage() {
                 <Link
                   key={q}
                   href={`/member/support/chat?q=${encodeURIComponent(q)}`}
-                  className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/70 px-4 py-3 transition-colors hover:border-primary/30 hover:bg-amber-50/50 group"
+                  className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-100/40 px-4 py-3 transition-colors hover:border-primary/30 hover:bg-amber-50/50 group"
                 >
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-amber-500 shadow-sm">
-                    <LuMessageCircleQuestion size={14} strokeWidth={2} />
+                    <LuMessageCircleMore size={14} strokeWidth={2} />
                   </div>
                   <span
                     className="flex-1 text-[16px] leading-tight text-base-content"
@@ -176,7 +177,7 @@ export default function MemberSupportPage() {
             value: '0800-XXX-XXX',
             sub: '週一至週五 09:00–18:00',
             watermarkTone: 'text-green-100',
-            chipBg: 'bg-green-50',
+            chipBg: 'bg-green-100',
             chipText: 'text-green-600',
             chipLabel: '電話聯絡',
           },
@@ -186,7 +187,7 @@ export default function MemberSupportPage() {
             value: 'support@petfull.com',
             sub: '24 小時內回覆',
             watermarkTone: 'text-indigo-100',
-            chipBg: 'bg-indigo-50',
+            chipBg: 'bg-indigo-100',
             chipText: 'text-indigo-600',
             chipLabel: '信箱聯絡',
           },
@@ -203,7 +204,7 @@ export default function MemberSupportPage() {
           }) => (
             <div
               key={label}
-              className="relative bg-white border border-[#ECE3DA] rounded-2xl shadow-sm overflow-hidden hover:border-primary/40 hover:shadow-md transition-all"
+              className="relative bg-[#FDFBF6] border border-[#ECE3DA] rounded-2xl shadow-sm overflow-hidden hover:border-primary/40 hover:shadow-md transition-all"
             >
               <div
                 className={`absolute top-1 right-2 ${watermarkTone} pointer-events-none select-none`}
@@ -220,7 +221,7 @@ export default function MemberSupportPage() {
                 </div>
 
                 <div className="mb-1">
-                  <span className="text-3xl font-bold text-gray-900 tracking-tight">
+                  <span className="text-2xl font-bold text-gray-900 tracking-tight">
                     {label}
                   </span>
                 </div>
@@ -240,7 +241,7 @@ export default function MemberSupportPage() {
 
                 <div className="border-t border-gray-100 my-3" />
 
-                <div className="rounded-xl px-2 py-1.5 bg-gray-50 text-center">
+                <div className="rounded-xl px-2 py-1.5 bg-gray-100 text-center">
                   <div className="text-[10px] text-gray-400 leading-tight">
                     立即聯繫客服
                   </div>

@@ -92,7 +92,7 @@ export function FieldInput({
   return (
     <div className="w-full space-y-2.5">
       <Label.Root
-        className="block text-[18px] leading-[1.2] text-[#3C3631]"
+        className="block text-[14px] leading-[1.2] text-[#3C3631]"
         style={AUTH_SERIF_TC_TITLE}
       >
         {label}
@@ -112,7 +112,7 @@ export function FieldInput({
           autoComplete={autoComplete}
           onChange={(e) => onChange?.(e.target.value)}
           placeholder={placeholder}
-          className="field-input h-full w-full border-0 bg-transparent p-0 text-[16px] leading-[1.35] text-[#2F2A26] placeholder:text-[#AFA59D] focus:outline-none focus:ring-0"
+          className="field-input h-full w-full border-0 bg-transparent p-0 text-[14px] leading-[1.35] text-[#2F2A26] placeholder:text-[#AFA59D] focus:outline-none focus:ring-0"
           style={AUTH_SANS_TC_MEDIUM}
         />
         {right && (
@@ -202,7 +202,7 @@ export function Btn({
   type?: 'button' | 'submit';
   className?: string;
 }) {
-  const base = `inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-60 ${sm ? 'h-[40px] px-4 text-[16px]' : 'h-[46px] px-5 text-[16px] leading-none'} ${full ? 'w-full' : ''}`;
+  const base = `inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-60 ${sm ? 'h-[40px] px-4 text-[14px]' : 'h-[46px] px-5 text-[16px] leading-none'} ${full ? 'w-full' : ''}`;
   const variants: Record<BtnVariant, string> = {
     primary:
       'border border-transparent !bg-[#E97C37] !text-white hover:!bg-[#DF6F2A] hover:!text-white focus-visible:ring-[#F6C6A0]',
