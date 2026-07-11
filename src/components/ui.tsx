@@ -270,7 +270,7 @@ export function SuccessBox({ message }: { message: string }) {
 
 export function Divider({ label = '或' }: { label?: string }) {
   return (
-    <div className="my-3 text-center">
+    <div className="text-center">
       <span
         className="inline-block text-[16px] leading-none text-[#A0968E]"
         style={AUTH_SANS_TC_MEDIUM}

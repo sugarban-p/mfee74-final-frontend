@@ -17,7 +17,7 @@ export default function LockStatusPage() {
 
   return (
     <AuthShell title="帳號暫時鎖定" subtitle="為保護您的帳號安全">
-      <div className="text-center space-y-6 py-4">
+      <div className="text-center space-y-6 py-4 px-5">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
           <Shield size={28} className="text-red-500" />
         </div>
