@@ -16,7 +16,6 @@ import { ProductCard } from '@/src/components/product/ProductCard';
 const product = {
   name: '慢烘鮮食蔬肉糧',
   price: 'NT$229',
-  subtotal: 'NT$458',
   image: '/images/product/蔬肉糧產品圖_01-510x510.jpg',
 };
 
@@ -93,11 +92,15 @@ const recommendationProducts = Array.from({ length: 4 }, (_, index) => ({
   description: '簡短標語敘述',
   price: 'NT$9999',
   id: index,
+  slug: 'prod_x',
 }));
 
 export default function ProductPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showAllDescriptions, setShowAllDescriptions] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const unitPrice = Number(product.price.replace(/\D/g, ''));
+  const subtotal = `NT$${(unitPrice * quantity).toLocaleString()}`;
 
   return (
     <div className="flex flex-col gap-12">
@@ -184,7 +187,7 @@ export default function ProductPage() {
 
             <button
               type="button"
-              className="typo-tab flex h-10 items-center gap-2 rounded-lg border border-secondary bg-white px-3 text-text-primary"
+              className="cursor-pointer hover:scale-[1.02] hover:bg-button-secondary-hover typo-tab flex h-10 items-center gap-2 rounded-lg border border-secondary bg-white px-3 text-text-primary"
             >
               <LuHeart className="size-5" />
               加入收藏
@@ -242,30 +245,44 @@ export default function ProductPage() {
             </fieldset>
 
             <div className="flex items-center gap-3">
-              <label
-                htmlFor="quantity"
+              <span
+                id="quantity-label"
                 className="typo-body-medium text-text-primary"
               >
                 數量
-              </label>
-              <button type="button" aria-label="減少數量">
-                <LuMinus className="size-4 text-secondary" />
-              </button>
-              <input
-                id="quantity"
-                type="number"
-                min="1"
-                defaultValue="1"
-                className="typo-tab h-8 w-14 rounded-lg border border-secondary bg-white text-center text-text-primary outline-none"
-              />
-              <button type="button" aria-label="增加數量">
-                <LuPlus className="size-4 text-secondary" />
-              </button>
+              </span>
+              <div className="flex h-7 w-[120px] items-center justify-between px-2">
+                <button
+                  className="flex size-7 cursor-pointer items-center justify-center rounded-lg border border-secondary bg-white text-secondary disabled:cursor-not-allowed disabled:opacity-40"
+                  type="button"
+                  aria-label="減少數量"
+                  disabled={quantity === 1}
+                  onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                >
+                  <LuMinus className="size-3.5" />
+                </button>
+                <div
+                  id="quantity"
+                  aria-live="polite"
+                  aria-labelledby="quantity-label"
+                  className="typo-tab flex flex-1 items-center justify-center text-text-primary"
+                >
+                  {quantity}
+                </div>
+                <button
+                  className="flex size-7 cursor-pointer items-center justify-center rounded-lg border border-secondary bg-white text-secondary"
+                  type="button"
+                  aria-label="增加數量"
+                  onClick={() => setQuantity((prev) => prev + 1)}
+                >
+                  <LuPlus className="size-3.5" />
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center justify-between border-t border-secondary pt-5">
               <p className="typo-body-medium text-text-secondary">
-                小計：{product.subtotal}
+                小計：{subtotal}
               </p>
               <button
                 type="button"
@@ -300,28 +317,18 @@ export default function ProductPage() {
               className="h-auto w-full"
             />
           ))}
-          {!showAllDescriptions && (
-            <div className="absolute inset-x-0 bottom-0 flex h-24 items-end justify-center bg-gradient-to-t from-black/45 to-transparent pb-7">
-              <button
-                type="button"
-                className="typo-tab flex items-center gap-1 text-white"
-                onClick={() => setShowAllDescriptions(true)}
-              >
-                展開全部
-                <LuChevronRight className="size-4 rotate-90" />
-              </button>
-            </div>
-          )}
-          {showAllDescriptions && (
-            <button
-              type="button"
-              className="typo-tab mx-auto mt-6 flex items-center gap-1 text-primary"
-              onClick={() => setShowAllDescriptions(false)}
-            >
-              收合內容
-              <LuChevronRight className="size-4 -rotate-90" />
-            </button>
-          )}
+          <button
+            type="button"
+            className={`group absolute inset-x-0 bottom-0 flex gap-2 h-24 justify-center items-center bg-linear-to-t from-black/85 to-transparent pt-7 cursor-pointer transition-transform hover:scale-[1.05] ${showAllDescriptions ? 'pb-7' : 'pt-7'}`}
+            onClick={() => setShowAllDescriptions((prev) => !prev)}
+          >
+            <span className="typo-tab text-text-button group-hover:underline">
+              {showAllDescriptions ? '收合內容' : '展開全部'}
+            </span>
+            <LuChevronRight
+              className={`text-text-button size-6 ${showAllDescriptions ? '-rotate-90' : 'rotate-90'}`}
+            />
+          </button>
         </div>
       </section>
 

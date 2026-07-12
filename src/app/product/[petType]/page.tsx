@@ -2,7 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type SyntheticEvent, useEffect, useState } from 'react';
+import {
+  type KeyboardEvent,
+  type SyntheticEvent,
+  useEffect,
+  useState,
+} from 'react';
 
 import {
   LuSearch,
@@ -41,16 +46,21 @@ const products = Array.from({ length: productCount }, (_, index) => ({
   name: index === 0 ? '慢烘鮮食蔬肉糧' : '商品名稱',
   description: index === 0 ? '最接近鮮食的天然慢烘糧!' : '簡短標語敘述',
   price: index === 0 ? 'NT$229' : 'NT$9999',
+  slug: index === 0 ? 'slow-roast-mixed-food' : 'prod_x',
 }));
 
 interface ProductSearchParams {
   category?: string;
   tags?: string;
   keywords?: string;
+  'min-value'?: string;
+  'max-value'?: string;
   page?: string;
   sort?: string;
   title?: string;
 }
+
+type PriceParam = 'min-value' | 'max-value';
 
 interface PetTypePageProps {
   searchParams?: Promise<ProductSearchParams>;
@@ -59,6 +69,9 @@ interface PetTypePageProps {
 export default function PetTypePage({ searchParams }: PetTypePageProps) {
   const router = useRouter();
   const [params, setParams] = useState<ProductSearchParams>({});
+  const [keywordInput, setKeywordInput] = useState('');
+  const [minPriceInput, setMinPriceInput] = useState('');
+  const [maxPriceInput, setMaxPriceInput] = useState('');
 
   useEffect(() => {
     let ignore = false;
@@ -66,7 +79,12 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     if (!searchParams) return;
 
     void searchParams.then((nextParams) => {
-      if (!ignore) setParams(nextParams);
+      if (!ignore) {
+        setParams(nextParams);
+        setKeywordInput(nextParams.keywords ?? '');
+        setMinPriceInput(nextParams['min-value'] ?? '');
+        setMaxPriceInput(nextParams['max-value'] ?? '');
+      }
     });
 
     return () => {
@@ -77,6 +95,9 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   const selectedCategory = params?.category ?? categories[0].slug;
   const selectedTags = params?.tags?.split(',').filter(Boolean) ?? [];
   const keywords = params?.keywords ?? '';
+  const minPrice = params?.['min-value'] ?? '';
+  const maxPrice = params?.['max-value'] ?? '';
+  const searchDisabled = keywordInput.trim() === '';
   const selectedSort = params?.sort ?? '';
   const breadcrumbTitle = params?.title ?? '狗勾專區';
   const selectedTagSet = new Set(selectedTags);
@@ -101,12 +122,16 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     category = selectedCategory,
     tagSlugs = selectedTags,
     nextKeywords = keywords,
+    minPriceValue = minPrice,
+    maxPriceValue = maxPrice,
     sort = selectedSort,
     page,
   }: {
     category?: string;
     tagSlugs?: string[];
     nextKeywords?: string;
+    minPriceValue?: string;
+    maxPriceValue?: string;
     sort?: string;
     page?: number;
   }) => {
@@ -114,6 +139,8 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
 
     if (tagSlugs.length) nextParams.set('tags', tagSlugs.join(','));
     if (nextKeywords) nextParams.set('keywords', nextKeywords);
+    if (minPriceValue) nextParams.set('min-value', minPriceValue);
+    if (maxPriceValue) nextParams.set('max-value', maxPriceValue);
     if (sort) nextParams.set('sort', sort);
     if (page) nextParams.set('page', String(page));
     if (params?.title) nextParams.set('title', params.title);
@@ -146,11 +173,58 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     const formData = new FormData(event.currentTarget);
     const nextKeywords = String(formData.get('keywords') ?? '').trim();
 
+    setKeywordInput(nextKeywords);
     pushHref(createHref({ nextKeywords }));
   };
   const handleSortChange = (event: SyntheticEvent<HTMLSelectElement>) => {
     pushHref(createHref({ sort: event.currentTarget.value }));
   };
+  const handlePriceSubmit = (param: PriceParam, value: string) => {
+    const nextValue = value.replace(/\D/g, '');
+
+    if (!nextValue) return;
+
+    if (param === 'min-value') {
+      setMinPriceInput(nextValue);
+      pushHref(createHref({ minPriceValue: nextValue }));
+      return;
+    }
+
+    setMaxPriceInput(nextValue);
+    pushHref(createHref({ maxPriceValue: nextValue }));
+  };
+  const handlePriceKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+    param: PriceParam,
+    value: string
+  ) => {
+    if (event.key !== 'Enter') return;
+
+    event.preventDefault();
+    handlePriceSubmit(param, value);
+  };
+  const priceFilters = [
+    {
+      label: '最低金額',
+      param: 'min-value',
+      value: minPriceInput,
+      onChange: setMinPriceInput,
+      ariaLabel: '套用最低金額',
+    },
+    {
+      label: '最高金額',
+      param: 'max-value',
+      value: maxPriceInput,
+      onChange: setMaxPriceInput,
+      ariaLabel: '套用最高金額',
+    },
+  ] satisfies {
+    label: string;
+    param: PriceParam;
+    value: string;
+    onChange: (value: string) => void;
+    ariaLabel: string;
+  }[];
 
   return (
     <div className="flex flex-row items-start gap-24">
@@ -169,11 +243,17 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
               id="keyword"
               name="keywords"
               inputMode="search"
-              className="min-w-0 grow bg-transparent text-text-primary outline-none placeholder:text-text-secondary"
+              className="min-w-0 grow bg-transparent typo-card-body text-text-primary outline-none placeholder:text-text-secondary"
               placeholder="想尋找什麼商品呢?"
-              defaultValue={keywords}
+              value={keywordInput}
+              onChange={(event) => setKeywordInput(event.currentTarget.value)}
             />
-            <button type="submit" aria-label="搜尋商品">
+            <button
+              type="submit"
+              aria-label="搜尋商品"
+              disabled={searchDisabled}
+              className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+            >
               <LuSendHorizontal className="size-4 shrink-0" />
             </button>
           </label>
@@ -224,20 +304,42 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
 
           <section className="flex flex-col gap-3 border-t border-secondary py-4">
             <h4 className="typo-body-medium text-text-primary">價格區間</h4>
-            {['最低金額', '最高金額'].map((label) => (
-              <label
-                key={label}
-                className="typo-tab flex flex-col gap-1 text-[#3d4451]"
-              >
-                {label}
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  className="typo-card-body rounded border border-secondary bg-transparent px-4 py-[9px] text-[#3d4451] outline-none placeholder:text-[#3d4451]"
-                  placeholder="輸入數字"
-                />
-              </label>
-            ))}
+            {priceFilters.map(
+              ({ label, param, value, onChange, ariaLabel }) => (
+                <label
+                  key={label}
+                  className="typo-tab flex flex-col gap-1 text-[#3d4451]"
+                >
+                  {label}
+                  <span className="flex px-4 h-8 items-center gap-2 rounded border border-secondary bg-transparent text-[#3d4451]">
+                    <input
+                      type="text"
+                      name={param}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      className="typo-card-body min-w-0 grow bg-transparent outline-none placeholder:text-[#3d4451]"
+                      placeholder="輸入數字"
+                      value={value}
+                      onChange={(event) =>
+                        onChange(event.currentTarget.value.replace(/\D/g, ''))
+                      }
+                      onKeyDown={(event) =>
+                        handlePriceKeyDown(event, param, value)
+                      }
+                    />
+                    <button
+                      type="button"
+                      aria-label={ariaLabel}
+                      disabled={value === ''}
+                      className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={() => handlePriceSubmit(param, value)}
+                    >
+                      <LuSendHorizontal className="size-4 shrink-0" />
+                    </button>
+                  </span>
+                </label>
+              )
+            )}
           </section>
         </form>
       </aside>
@@ -278,7 +380,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
             <select
               value={selectedSort}
               onChange={handleSortChange}
-              className="h-8 rounded border border-secondary bg-transparent px-3 text-text-primary outline-none"
+              className="cursor-pointer h-8 rounded border border-secondary bg-transparent px-3 text-text-primary outline-none"
             >
               <option value="">熱銷</option>
               <option value="latest">最新</option>

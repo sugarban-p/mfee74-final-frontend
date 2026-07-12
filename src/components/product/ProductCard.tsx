@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { LuShoppingCart } from 'react-icons/lu';
 import { RiHeartFill, RiHeartLine } from 'react-icons/ri';
 
 interface ProductCardProps {
@@ -115,7 +116,11 @@ export function ProductCard({ product }: ProductCardProps) {
           <p className="typo-card-body truncate">{product.description}</p>
         </div>
         <p className="typo-card-body">{product.price}</p>
-        <button type="button" className="next-button typo-tab">
+        <button
+          type="button"
+          className="next-button typo-tab flex items-center justify-center gap-2"
+        >
+          <LuShoppingCart className="size-4" />
           快速選購
         </button>
       </div>
