@@ -15,12 +15,16 @@ interface ProductCardProps {
     description: string;
     price: string;
     slug: string;
+    petType?: string;
+    isFavorite?: boolean;
+    soldOut?: boolean;
   };
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
-  const { petType } = useParams<{ petType: string }>();
+  const [isFavorite, setIsFavorite] = useState(product.isFavorite ?? false);
+  const params = useParams<{ petType?: string }>();
+  const petType = product.petType ?? params.petType ?? 'dog';
   const addFavoriteSuccess = (productName: string) =>
     toast.success(`${productName} 已加入收藏清單`, {
       style: {
@@ -118,10 +122,17 @@ export function ProductCard({ product }: ProductCardProps) {
         <p className="typo-card-body">{product.price}</p>
         <button
           type="button"
+          disabled={product.soldOut}
           className="next-button typo-tab flex items-center justify-center gap-2"
         >
-          <LuShoppingCart className="size-4" />
-          快速選購
+          {product.soldOut ? (
+            '缺貨中'
+          ) : (
+            <>
+              <LuShoppingCart className="size-4" />
+              快速選購
+            </>
+          )}
         </button>
       </div>
     </article>
