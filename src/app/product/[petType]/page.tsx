@@ -47,6 +47,15 @@ const products = Array.from({ length: productCount }, (_, index) => ({
   description: index === 0 ? '最接近鮮食的天然慢烘糧!' : '簡短標語敘述',
   price: index === 0 ? 'NT$229' : 'NT$9999',
   slug: index === 0 ? 'slow-roast-mixed-food' : 'prod_x',
+  gallery:
+    index === 0
+      ? [
+          '/蔬肉糧產品圖_01-510x510.jpg',
+          '/images/product/蔬肉糧產品圖_02-510x510.jpg',
+          '/images/product/Vegetablemeat_SP3-510x510.jpg',
+          '/images/product/Vegetablemeat_SP4-1-510x510.jpg',
+        ]
+      : [],
 }));
 
 interface ProductSearchParams {
