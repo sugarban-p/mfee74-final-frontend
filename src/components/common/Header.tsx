@@ -1,12 +1,32 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { LuUser, LuHeart, LuShoppingCart } from 'react-icons/lu';
+import { useState } from 'react';
+import {
+  LuHeart,
+  LuPackage,
+  LuShoppingCart,
+  LuTrash2,
+  LuUser,
+} from 'react-icons/lu';
+
 import MegaMenuCard from '@/src/components/header/MegaMenuCard';
+import { ProductQuantitySelector } from '@/src/components/product/ProductQuantitySelector';
+
+const cartItem = {
+  name: '慢烘鮮食蔬肉糧',
+  variant: '雞肉',
+  price: 'NT$229',
+  unitPrice: 229,
+  image: '/images/product/蔬肉糧產品圖_01-510x510.jpg',
+};
 
 export default function Header() {
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [cartQuantity, setCartQuantity] = useState(1);
+  const cartTotal = `NT$${(cartItem.unitPrice * cartQuantity).toLocaleString()}`;
+
   return (
     <>
       <header className="sticky top-0 z-20 h-20 bg-card-primary/95">
@@ -113,19 +133,81 @@ export default function Header() {
               </li>
             </ul>
           </div>
-          <div className="navbar-end gap-4">
+          <div className="navbar-end relative gap-4">
             <Link
               href={'/member/favorites'}
               className="p-1 text-text-secondary align-middle border-none hover:bg-button-secondary-hover btn btn-circle btn-ghost hover:shadow-none"
             >
               <LuHeart className="size-6" />
             </Link>
-            <Link
-              href={'/'}
+            <button
+              type="button"
+              aria-label="切換購物車窗格"
+              aria-expanded={isCartOpen}
+              aria-controls="cart-panel"
               className="p-1 text-text-secondary align-middle border-none hover:bg-button-secondary-hover btn btn-circle btn-ghost hover:shadow-none"
+              onClick={() => setIsCartOpen((prev) => !prev)}
             >
               <LuShoppingCart className="size-6" />
-            </Link>
+            </button>
+            {isCartOpen && (
+              <section
+                id="cart-panel"
+                className="absolute top-12 right-0 w-[470px] max-w-[calc(100vw-40px)] rounded-2xl border border-secondary bg-white p-3 shadow-xl"
+                aria-label="購物車窗格"
+              >
+                <span className="absolute -top-[10px] right-[61px] size-5 rotate-45 border-t border-l border-secondary bg-white" />
+
+                <div className="flex max-h-[349px] flex-col overflow-y-auto rounded-xl bg-white">
+                  <div className="flex items-center gap-2 border-b border-card-secondary px-2 py-3 text-text-primary">
+                    <LuPackage className="size-5 text-primary" />
+                    <h2 className="typo-body-medium">購物車</h2>
+                  </div>
+
+                  <article className="flex justify-between gap-4 border-b border-card-secondary px-2 py-5">
+                    <div className="flex gap-1">
+                      <Image
+                        src={cartItem.image}
+                        alt={cartItem.name}
+                        width={56}
+                        height={56}
+                        className="size-14 rounded-xl bg-card-secondary object-cover"
+                      />
+                      <div className="min-w-0">
+                        <h3 className="typo-tab truncate text-text-primary">
+                          {cartItem.name}
+                        </h3>
+                        <p className="mt-1 text-sm text-text-secondary">
+                          {cartItem.variant}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center gap-1 min-w-0">
+                      <ProductQuantitySelector
+                        usage="Header"
+                        quantity={cartQuantity}
+                        onChange={setCartQuantity}
+                      />
+                      <button
+                        type="button"
+                        aria-label="移除商品"
+                        className="size-8 flex justify-center items-center shrink-0 rounded-lg text-secondary hover:bg-button-secondary-hover"
+                      >
+                        <LuTrash2 className="size-4" />
+                      </button>
+                    </div>
+                  </article>
+                </div>
+
+                <button
+                  type="button"
+                  className="next-button typo-tab mt-4 flex w-1/2 items-center justify-center py-3"
+                  onClick={() => setIsCartOpen(false)}
+                >
+                  直接結帳
+                </button>
+              </section>
+            )}
             <Link
               href={'/member/dashboard'}
               className="p-1 text-text-secondary align-middle border-none hover:bg-button-secondary-hover btn btn-circle btn-ghost hover:shadow-none"

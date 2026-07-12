@@ -3,15 +3,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import {
-  LuChevronRight,
-  LuHeart,
-  LuMinus,
-  LuPlus,
-  LuShoppingCart,
-} from 'react-icons/lu';
+import { LuChevronRight, LuHeart, LuShoppingCart } from 'react-icons/lu';
 
 import { ProductCard } from '@/src/components/product/ProductCard';
+import { ProductQuantitySelector } from '@/src/components/product/ProductQuantitySelector';
 
 const product = {
   name: '慢烘鮮食蔬肉糧',
@@ -244,41 +239,10 @@ export default function ProductPage() {
               </div>
             </fieldset>
 
-            <div className="flex items-center gap-3">
-              <span
-                id="quantity-label"
-                className="typo-body-medium text-text-primary"
-              >
-                數量
-              </span>
-              <div className="flex h-7 w-[120px] items-center justify-between px-2">
-                <button
-                  className="flex size-7 cursor-pointer items-center justify-center rounded-lg border border-secondary bg-white text-secondary disabled:cursor-not-allowed disabled:opacity-40"
-                  type="button"
-                  aria-label="減少數量"
-                  disabled={quantity === 1}
-                  onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                >
-                  <LuMinus className="size-3.5" />
-                </button>
-                <div
-                  id="quantity"
-                  aria-live="polite"
-                  aria-labelledby="quantity-label"
-                  className="typo-tab flex flex-1 items-center justify-center text-text-primary"
-                >
-                  {quantity}
-                </div>
-                <button
-                  className="flex size-7 cursor-pointer items-center justify-center rounded-lg border border-secondary bg-white text-secondary"
-                  type="button"
-                  aria-label="增加數量"
-                  onClick={() => setQuantity((prev) => prev + 1)}
-                >
-                  <LuPlus className="size-3.5" />
-                </button>
-              </div>
-            </div>
+            <ProductQuantitySelector
+              quantity={quantity}
+              onChange={setQuantity}
+            />
 
             <div className="flex items-center justify-between border-t border-secondary pt-5">
               <p className="typo-body-medium text-text-secondary">
