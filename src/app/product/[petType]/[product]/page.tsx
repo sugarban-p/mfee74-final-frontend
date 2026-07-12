@@ -2,8 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import { useState } from 'react';
-import { LuChevronRight, LuHeart, LuShoppingCart } from 'react-icons/lu';
+import { LuChevronRight, LuShoppingCart } from 'react-icons/lu';
+import { RiHeartFill, RiHeartLine } from 'react-icons/ri';
 
 import { ProductCard } from '@/src/components/product/ProductCard';
 import { ProductQuantitySelector } from '@/src/components/product/ProductQuantitySelector';
@@ -11,6 +13,7 @@ import { ProductQuantitySelector } from '@/src/components/product/ProductQuantit
 const product = {
   name: '慢烘鮮食蔬肉糧',
   price: 'NT$229',
+  isFavorite: true,
   image: '/images/product/蔬肉糧產品圖_01-510x510.jpg',
 };
 
@@ -86,17 +89,69 @@ const recommendationProducts = Array.from({ length: 4 }, (_, index) => ({
   name: '商品名稱',
   description: '簡短標語敘述',
   price: 'NT$9999',
+  isFavorite: true,
   id: index,
   slug: 'prod_x',
 }));
 
 export default function ProductPage() {
+  const [isFavorite, setIsFavorite] = useState(product.isFavorite ?? false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showAllDescriptions, setShowAllDescriptions] = useState(false);
+  const [checkedItem, setCheckedItem] = useState(flavors[0]);
   const [quantity, setQuantity] = useState(1);
   const unitPrice = Number(product.price.replace(/\D/g, ''));
   const subtotal = `NT$${(unitPrice * quantity).toLocaleString()}`;
+  const addCartSuccess = (productName: string, itemName: string) =>
+    toast.success(`${productName} ${itemName} 已加入購物車`, {
+      style: {
+        border: '1px solid var(--button-secondary-border)',
+        padding: '16px',
+        color: 'var(--text-primary)',
+        backgroundColor: 'var(--success)',
+      },
+      iconTheme: {
+        primary: 'var(--success)',
+        secondary: 'green',
+      },
+    });
+  const addFavoriteSuccess = (productName: string) =>
+    toast.success(`${productName} 已加入收藏清單`, {
+      style: {
+        border: '1px solid var(--button-secondary-border)',
+        padding: '16px',
+        color: 'var(--text-primary)',
+        backgroundColor: 'var(--success)',
+      },
+      iconTheme: {
+        primary: 'var(--success)',
+        secondary: 'green',
+      },
+    });
+  const RemoveFavoriteSuccess = (productName: string) =>
+    toast.success(`${productName} 已從收藏清單移除`, {
+      style: {
+        border: '1px solid var(--button-secondary-border)',
+        padding: '16px',
+        color: 'var(--text-primary)',
+        backgroundColor: 'var(--success)',
+      },
+      iconTheme: {
+        primary: 'var(--success)',
+        secondary: 'green',
+      },
+    });
+  const handleFavoriteClick = () => {
+    const nextIsFavorite = !isFavorite;
 
+    setIsFavorite(nextIsFavorite);
+    if (nextIsFavorite) {
+      addFavoriteSuccess(product.name);
+      return;
+    }
+
+    RemoveFavoriteSuccess(product.name);
+  };
   return (
     <div className="flex flex-col gap-12">
       <nav
@@ -182,10 +237,28 @@ export default function ProductPage() {
 
             <button
               type="button"
-              className="cursor-pointer hover:scale-[1.02] hover:bg-button-secondary-hover typo-tab flex h-10 items-center gap-2 rounded-lg border border-secondary bg-white px-3 text-text-primary"
+              aria-pressed={isFavorite}
+              aria-label={isFavorite ? '取消收藏' : '加入收藏'}
+              className={[
+                'w-30 group cursor-pointer hover:scale-[1.02] hover:bg-button-secondary-hover typo-tab flex h-10 justify-center items-center gap-2 rounded-lg border border-secondary px-3 text-text-primary',
+                isFavorite
+                  ? 'text-primary bg-card-secondary'
+                  : 'text-text-primary hover:bg-button-secondary-hover ',
+              ].join(' ')}
+              onClick={handleFavoriteClick}
             >
-              <LuHeart className="size-5" />
-              加入收藏
+              {isFavorite ? (
+                <>
+                  <RiHeartFill className="size-5 text-primary " />
+                  已收藏
+                </>
+              ) : (
+                <>
+                  <RiHeartLine className="size-5 group-hover:hidden" />
+                  <RiHeartFill className="hidden size-5 text-primary group-hover:block" />
+                  加入收藏
+                </>
+              )}
             </button>
           </div>
 
@@ -221,7 +294,7 @@ export default function ProductPage() {
                 選擇品項
               </legend>
               <div className="flex gap-4">
-                {flavors.map((flavor, index) => (
+                {flavors.map((flavor) => (
                   <label
                     key={flavor}
                     className="typo-tab cursor-pointer rounded-lg border border-secondary bg-white px-4 py-2 text-text-primary has-checked:bg-card-secondary"
@@ -230,7 +303,8 @@ export default function ProductPage() {
                       type="radio"
                       name="flavor"
                       value={flavor}
-                      defaultChecked={index === 0}
+                      checked={checkedItem === flavor}
+                      onChange={() => setCheckedItem(flavor)}
                       className="sr-only"
                     />
                     {flavor}
@@ -251,6 +325,7 @@ export default function ProductPage() {
               <button
                 type="button"
                 className="next-button typo-tab flex w-[200px] items-center justify-center gap-2 py-2"
+                onClick={() => addCartSuccess(product.name, checkedItem)}
               >
                 <LuShoppingCart className="size-4" />
                 加入購物車
@@ -300,7 +375,7 @@ export default function ProductPage() {
         <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
           類似商品
         </h2>
-        <div className="grid justify-center gap-8 md:grid-cols-2 xl:grid-cols-4">
+        <div className="flex gap-8">
           {recommendationProducts.map((recommendedProduct) => (
             <ProductCard
               key={recommendedProduct.id}
