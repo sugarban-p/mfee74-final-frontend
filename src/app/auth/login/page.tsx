@@ -1,9 +1,9 @@
-"use client";
-export const dynamic = "force-dynamic";
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Mail } from "lucide-react";
+'use client';
+export const dynamic = 'force-dynamic';
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Mail } from 'lucide-react';
 import {
   AuthShell,
   FieldInput,
@@ -12,7 +12,7 @@ import {
   GoogleIcon,
   Divider,
   ErrorBox,
-} from "@/src/components/ui";
+} from '@/src/components/ui';
 
 const AUTH_TEXT: React.CSSProperties = {
   fontFamily: "'Noto Sans TC', 'Noto Sans JP', 'DM Sans', sans-serif",
@@ -22,44 +22,44 @@ const AUTH_TEXT: React.CSSProperties = {
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState(
-    searchParams.get("error") === "oauth_failed"
-      ? "Google 登入失敗，請再試一次。"
-      : "",
+    searchParams.get('error') === 'oauth_failed'
+      ? 'Google 登入失敗，請再試一次。'
+      : ''
   );
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
     if (!email || !password) {
-      setError("請填寫所有欄位。");
+      setError('請填寫所有欄位。');
       return;
     }
     setLoading(true);
-    setError("");
+    setError('');
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (!res.ok) {
-        if (res.status === 423) router.push("/auth/lock-status");
-        else setError(data.message ?? "登入失敗，請再試一次。");
+        if (res.status === 423) router.push('/auth/lock-status');
+        else setError(data.message ?? '登入失敗，請再試一次。');
         return;
       }
-      router.push("/member/dashboard");
+      router.push('/member/dashboard');
     } catch {
-      setError("網路錯誤，請稍後再試。");
+      setError('網路錯誤，請稍後再試。');
     } finally {
       setLoading(false);
     }
   };
 
   const googleLogin = () => {
-    window.location.href = "/api/oauth/google";
+    window.location.href = '/api/oauth/google';
   };
 
   return (
@@ -104,7 +104,7 @@ export default function LoginPage() {
           >
             <input
               type="checkbox"
-              className="checkbox checkbox-xs checkbox-primary rounded-[4px]"
+              className="checkbox checkbox-sm h-4.5 w-4.5 rounded-[4px] border-2 border-[#B8ACA2] bg-[#FFFEFC] checked:border-[#E77721] checked:bg-[#E77721] checked:text-white [--chkbg:#E77721] [--chkfg:white] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6C6A0]/60"
             />
             保持登入狀態
           </label>
@@ -129,7 +129,7 @@ export default function LoginPage() {
         >
           <span
             className="flex h-full w-full items-center justify-center gap-2 bg-[#FFFEFC] text-[#3C3631] transition-colors hover:bg-[#F8EFE6]"
-            style={{ ...AUTH_TEXT, fontSize: "16px" }}
+            style={{ ...AUTH_TEXT, fontSize: '16px' }}
           >
             <GoogleIcon /> 使用 Google 登入
           </span>
@@ -146,7 +146,7 @@ export default function LoginPage() {
           className="text-center text-[16px] leading-[1.35] text-[#7C726B]"
           style={AUTH_TEXT}
         >
-          還沒有帳號？{" "}
+          還沒有帳號？{' '}
           <Link
             href="/auth/register"
             className="link link-hover text-[#E77721] font-semibold"
