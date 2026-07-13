@@ -27,13 +27,10 @@ export default function PetsPage() {
         <div className="w-16 h-16 bg-primary/15 rounded-2xl flex items-center justify-center mb-5 text-3xl">
           🐾
         </div>
-        <h2
-          className="text-base font-semibold text-base-content mb-2"
-          style={JP}
-        >
+        <h2 className="typo-card-title text-base-content mb-2" style={JP}>
           尚未建立寵物資料
         </h2>
-        <p className="text-sm text-base-content/60 max-w-xs mb-6">
+        <p className="typo-card-body text-base-content/60 max-w-xs mb-6">
           建立您的寵物資料，PetFull 將為您推薦最適合的商品與服務。
         </p>
         <Btn>

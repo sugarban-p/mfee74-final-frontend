@@ -21,13 +21,10 @@ export default function FavoritesPage() {
         <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mb-5">
           <LuHeart size={28} className="text-rose-500" />
         </div>
-        <h2
-          className="text-base font-semibold text-base-content mb-2"
-          style={JP}
-        >
+        <h2 className="typo-card-title text-base-content mb-2" style={JP}>
           收藏清單為空
         </h2>
-        <p className="text-sm text-base-content/60 max-w-xs">
+        <p className="typo-card-body text-base-content/60 max-w-xs">
           瀏覽商城並點擊愛心圖示，即可將商品加入收藏清單。
         </p>
       </div>

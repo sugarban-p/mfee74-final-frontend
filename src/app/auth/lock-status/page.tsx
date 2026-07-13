@@ -1,8 +1,8 @@
-"use client";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Shield, ArrowLeft, Clock } from "lucide-react";
-import { AuthShell, Btn, JP } from "@/src/components/ui";
+'use client';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Shield, ArrowLeft, Clock } from 'lucide-react';
+import { AuthShell, Btn, JP } from '@/src/components/ui';
 
 export default function LockStatusPage() {
   const [minutes, setMinutes] = useState(30);
@@ -10,7 +10,7 @@ export default function LockStatusPage() {
   useEffect(() => {
     const timer = setInterval(
       () => setMinutes((m) => Math.max(0, m - 1)),
-      60_000,
+      60_000
     );
     return () => clearInterval(timer);
   }, []);
@@ -23,28 +23,28 @@ export default function LockStatusPage() {
         </div>
 
         <div>
-          <p className="font-semibold text-base-content" style={JP}>
+          <p className="typo-card-title text-base-content" style={JP}>
             帳號已暫時鎖定
           </p>
-          <p className="text-sm text-base-content/60 mt-2">
+          <p className="typo-card-body text-base-content/60 mt-2">
             因連續登入失敗次數過多，帳號已暫時鎖定。
           </p>
         </div>
 
-        <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex items-center justify-center gap-3">
+        <div className="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-center justify-center gap-3">
           <Clock size={20} className="text-red-500 shrink-0" />
           <div className="text-left">
-            <p className="text-sm font-semibold text-red-600">
+            <p className="typo-card-title text-red-600">
               請於 {minutes} 分鐘後再試
             </p>
-            <p className="text-xs text-red-400 mt-0.5">
+            <p className="typo-tab text-red-400 mt-0.5">
               鎖定解除後即可重新登入
             </p>
           </div>
         </div>
 
-        <div className="text-xs text-base-content/60 bg-base-200 border border-base-300 rounded-xl p-3 text-left space-y-1">
-          <p className="font-medium text-base-content">常見原因：</p>
+        <div className="typo-tab text-base-content/60 bg-base-200 border border-base-300 rounded-2xl p-4 text-left space-y-1.5">
+          <p className="typo-card-title text-base-content">常見原因：</p>
           <ul className="space-y-1 list-disc list-inside">
             <li>連續 5 次輸入錯誤密碼</li>
             <li>帳號遭異常操作偵測</li>
@@ -62,7 +62,7 @@ export default function LockStatusPage() {
           </Link>
           <Link
             href="/auth/login"
-            className="flex items-center gap-1 text-xs text-base-content/60 hover:text-base-content justify-center transition-colors"
+            className="flex items-center gap-1 typo-tab text-base-content/60 hover:text-base-content justify-center transition-colors"
           >
             <ArrowLeft size={12} />
             返回登入

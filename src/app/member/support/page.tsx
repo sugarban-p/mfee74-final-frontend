@@ -6,6 +6,7 @@ import {
   LuClipboardList,
   LuPhone,
   LuMail,
+  LuClipboardPen,
   LuChevronRight,
 } from 'react-icons/lu';
 import SupportSwitcher from '@/src/components/support-switcher';
@@ -35,7 +36,7 @@ export default function MemberSupportPage() {
     },
     {
       href: '/member/support/history',
-      icon: LuClipboardList,
+      icon: LuClipboardPen,
       watermarkTone: 'text-blue-100',
       chipBg: 'bg-blue-100',
       chipText: 'text-blue-500',
@@ -90,7 +91,7 @@ export default function MemberSupportPage() {
 
               <div className="relative px-5 pt-4 pb-4">
                 <div
-                  className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} text-xs font-medium px-2.5 py-1 rounded-full mb-3`}
+                  className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} typo-tab px-2.5 py-1 rounded-full mb-3`}
                 >
                   <Icon size={13} strokeWidth={2} />
                   <span>{chipLabel}</span>
@@ -102,24 +103,19 @@ export default function MemberSupportPage() {
                   </span>
                 </div>
 
-                <div
-                  className="text-xs text-gray-400 mb-2"
-                  style={SANS_TC_MEDIUM}
-                >
-                  {desc}
-                </div>
+                <div className="typo-card-body text-gray-400 mb-2">{desc}</div>
 
                 <div className="border-t border-gray-100 my-3" />
 
                 {badge ? (
                   <div className="rounded-xl px-2 py-1.5 bg-gray-100 text-center">
-                    <div className="text-[10px] text-gray-400 leading-tight">
+                    <div className="typo-card-body text-gray-400 leading-tight">
                       {badge}
                     </div>
                   </div>
                 ) : (
                   <div className="rounded-xl px-2 py-1.5 bg-gray-100 text-center">
-                    <div className="text-[10px] text-gray-400 leading-tight">
+                    <div className="typo-card-body text-gray-400 leading-tight">
                       進入查看詳細內容
                     </div>
                   </div>
@@ -136,7 +132,7 @@ export default function MemberSupportPage() {
         </div>
 
         <div className="relative px-5 pt-4 pb-4">
-          <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-500 text-xs font-medium px-2.5 py-1 rounded-full mb-3">
+          <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-500 typo-tab px-2.5 py-1 rounded-full mb-3">
             <LuMessageCircleMore size={13} strokeWidth={2} />
             <span>常見問題</span>
           </div>
@@ -214,7 +210,7 @@ export default function MemberSupportPage() {
 
               <div className="relative px-5 pt-4 pb-4">
                 <div
-                  className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} text-xs font-medium px-2.5 py-1 rounded-full mb-3`}
+                  className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} typo-tab px-2.5 py-1 rounded-full mb-3`}
                 >
                   <Icon size={13} strokeWidth={2} />
                   <span>{chipLabel}</span>
@@ -227,22 +223,15 @@ export default function MemberSupportPage() {
                 </div>
 
                 <div className="mb-1">
-                  <span className="text-sm font-semibold text-gray-700">
-                    {value}
-                  </span>
+                  <span className="typo-card-title text-gray-700">{value}</span>
                 </div>
 
-                <div
-                  className="text-xs text-gray-400 mb-2"
-                  style={SANS_TC_MEDIUM}
-                >
-                  {sub}
-                </div>
+                <div className="typo-card-body text-gray-400 mb-2">{sub}</div>
 
                 <div className="border-t border-gray-100 my-3" />
 
                 <div className="rounded-xl px-2 py-1.5 bg-gray-100 text-center">
-                  <div className="text-[10px] text-gray-400 leading-tight">
+                  <div className="typo-card-body text-gray-400 leading-tight">
                     立即聯繫客服
                   </div>
                 </div>

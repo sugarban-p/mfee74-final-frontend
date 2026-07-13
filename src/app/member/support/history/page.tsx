@@ -5,7 +5,7 @@ import { LuClipboardList, LuCircleCheck, LuChevronRight } from 'react-icons/lu';
 import type { ChatCaseSummary } from '@/src/types';
 import SupportSwitcher from '@/src/components/support-switcher';
 
-const ENABLE_MEMBER_API = process.env.NEXT_PUBLIC_ENABLE_MEMBER_API === 'true';
+const ENABLE_MEMBER_API = process.env.NEXT_PUBLIC_ENABLE_MEMBER_API !== 'false';
 
 const SANS_TC_BOLD: CSSProperties = {
   fontFamily: "'Noto Sans TC', 'Noto Sans JP', 'DM Sans', sans-serif",
@@ -158,7 +158,7 @@ export default function MemberSupportHistoryPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3
-                        className="text-[16px] text-base-content"
+                        className="typo-h4 text-base-content"
                         style={SERIF_TC_CARD_TITLE}
                       >
                         諮詢 {item.caseId.slice(0, 14)}
@@ -175,7 +175,7 @@ export default function MemberSupportHistoryPage() {
                       )}
                     </div>
                     <p
-                      className="text-[14px] text-base-content/60 mt-1 truncate"
+                      className="typo-card-body text-base-content/60 mt-1 truncate"
                       style={SANS_TC_MEDIUM}
                     >
                       {item.preview || '（無文字內容）'}
@@ -187,7 +187,7 @@ export default function MemberSupportHistoryPage() {
                   />
                 </div>
                 <div
-                  className="mt-2 text-[13px] text-base-content/55 flex items-center gap-3"
+                  className="mt-2 typo-tab text-base-content/55 flex items-center gap-3"
                   style={SANS_TC_MEDIUM}
                 >
                   <span>訊息 {item.messageCount} 則</span>

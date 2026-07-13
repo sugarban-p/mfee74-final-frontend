@@ -52,7 +52,7 @@ const MOCK_STATS: DashboardStats = {
   coupons: { available: 3, used: 5, expired: 1 },
 };
 
-const ENABLE_MEMBER_API = process.env.NEXT_PUBLIC_ENABLE_MEMBER_API === 'true';
+const ENABLE_MEMBER_API = process.env.NEXT_PUBLIC_ENABLE_MEMBER_API !== 'false';
 
 const MOCK_SECURITY: SecurityInfo = {
   emailVerified: true,
@@ -155,7 +155,7 @@ export default function DashboardPage() {
           🐾
         </div>
         <div className="relative z-10">
-          <p className="text-orange-100 text-sm mb-1 2xl:mb-1.5" style={JP}>
+          <p className="text-orange-100 typo-tab mb-1 2xl:mb-1.5" style={JP}>
             歡迎回來
           </p>
           <h1
@@ -165,11 +165,11 @@ export default function DashboardPage() {
             {user.nickname ?? user.name ?? user.email} 你好！
           </h1>
           <div className="flex items-center gap-3 2xl:gap-2.5 mt-3 2xl:mt-4 flex-wrap">
-            <span className="text-[11px] bg-white/20 2xl:bg-white/24 text-white px-2.5 py-0.5 2xl:py-1 rounded-full">
+            <span className="typo-tab bg-white/20 2xl:bg-white/24 text-white px-2.5 py-0.5 2xl:py-1 rounded-full">
               會員編號：{user.userNo ?? `U-${user.id}`}
             </span>
             {user.emailVerified && (
-              <span className="text-[11px] bg-white/20 2xl:bg-white/24 text-white px-2.5 py-0.5 2xl:py-1 rounded-full flex items-center gap-1">
+              <span className="typo-tab bg-white/20 2xl:bg-white/24 text-white px-2.5 py-0.5 2xl:py-1 rounded-full flex items-center gap-1">
                 <LuCircleCheck size={12} className="hidden 2xl:block" />
                 郵件已驗證
               </span>
@@ -336,7 +336,7 @@ function OverviewTab({
 
               <div className="relative px-5 pt-4 pb-4">
                 <div
-                  className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} text-xs font-medium px-2.5 py-1 rounded-full mb-3`}
+                  className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} typo-tab px-2.5 py-1 rounded-full mb-3`}
                 >
                   <Icon size={13} strokeWidth={2} />
                   <span>{chipLabel}</span>
@@ -346,15 +346,15 @@ function OverviewTab({
                   <span className="text-4xl font-bold text-gray-900 tracking-tight">
                     {num}
                   </span>
-                  <span className="ml-1.5 text-sm text-gray-400 font-normal">
+                  <span className="ml-1.5 typo-card-body text-gray-400">
                     {unit}
                   </span>
-                  <span className="ml-1 text-base font-semibold text-gray-700">
+                  <span className="ml-1 typo-card-title text-gray-700">
                     {title}
                   </span>
                 </div>
 
-                <div className="text-xs text-gray-400 mb-2" style={JP}>
+                <div className="typo-card-body text-gray-400 mb-2" style={JP}>
                   {hint}
                 </div>
 
@@ -367,12 +367,10 @@ function OverviewTab({
                         key={t.l}
                         className={`flex-1 ${t.bg} rounded-xl px-2 py-1.5 text-center`}
                       >
-                        <div
-                          className={`text-base font-bold leading-tight ${t.c}`}
-                        >
+                        <div className={`typo-card-title leading-tight ${t.c}`}>
                           {t.v}
                         </div>
-                        <div className="text-[10px] text-gray-400 mt-0.5 leading-tight">
+                        <div className="typo-card-body text-gray-400 mt-0.5 leading-tight">
                           {t.l}
                         </div>
                       </div>
@@ -382,7 +380,7 @@ function OverviewTab({
 
                 {tags.length === 0 && (
                   <div className="rounded-xl px-2 py-1.5 bg-gray-100 text-center">
-                    <div className="text-[10px] text-gray-400 leading-tight">
+                    <div className="typo-card-body text-gray-400 leading-tight">
                       前往查看完整{title}內容
                     </div>
                   </div>
@@ -395,10 +393,7 @@ function OverviewTab({
 
       <div className="card bg-[#FDFBF6]-100">
         <div className="card-body px-6 py-5">
-          <h2
-            className="text-[16px] font-semibold text-base-content mb-3"
-            style={JP}
-          >
+          <h2 className="typo-h4 text-base-content mb-3" style={JP}>
             快速操作
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -459,19 +454,19 @@ function OverviewTab({
 
                     <div className="relative px-4 py-4">
                       <div
-                        className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} text-xs font-medium px-2.5 py-1 rounded-full mb-3`}
+                        className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} typo-tab px-2.5 py-1 rounded-full mb-3`}
                       >
                         <Icon size={13} strokeWidth={2} />
                         <span>{chipLabel}</span>
                       </div>
 
                       <div className="mb-1">
-                        <span className="text-lg font-bold text-gray-900 tracking-tight">
+                        <span className="typo-card-title text-gray-900 tracking-tight">
                           {label}
                         </span>
                       </div>
 
-                      <div className="text-xs text-gray-400" style={JP}>
+                      <div className="typo-card-body text-gray-400" style={JP}>
                         {hint}
                       </div>
                     </div>
@@ -490,19 +485,19 @@ function OverviewTab({
 
                     <div className="relative px-4 py-4">
                       <div
-                        className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} text-xs font-medium px-2.5 py-1 rounded-full mb-3`}
+                        className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} typo-tab px-2.5 py-1 rounded-full mb-3`}
                       >
                         <Icon size={13} strokeWidth={2} />
                         <span>{chipLabel}</span>
                       </div>
 
                       <div className="mb-1">
-                        <span className="text-lg font-bold text-gray-900 tracking-tight">
+                        <span className="typo-card-title text-gray-900 tracking-tight">
                           {label}
                         </span>
                       </div>
 
-                      <div className="text-xs text-gray-400" style={JP}>
+                      <div className="typo-card-body text-gray-400" style={JP}>
                         {hint}
                       </div>
                     </div>
@@ -630,17 +625,9 @@ function ProfileTab({
               ) : (
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h2
-                        className="text-xl font-bold text-base-content"
-                        style={JP}
-                      >
-                        {user.name ?? '未設定'}
-                      </h2>
-                      <p className="text-sm text-base-content/60">
-                        {user.nickname ?? '未設定'}
-                      </p>
-                    </div>
+                    <h2 className="typo-h4 text-base-content" style={JP}>
+                      {user.name ?? '未設定'}
+                    </h2>
                     <Btn onClick={() => setEditing(true)} variant="outline" sm>
                       <Edit2 size={13} />
                       編輯
@@ -648,13 +635,13 @@ function ProfileTab({
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {user.emailVerified && (
-                      <span className="badge badge-success badge-outline gap-1 text-[10px] px-2 py-2">
+                      <span className="badge badge-success badge-outline gap-1 typo-tab px-2 py-2">
                         <LuCircleCheck size={9} />
                         郵件已驗證
                       </span>
                     )}
                     {user.googleLinked && (
-                      <span className="badge badge-info badge-outline gap-1 text-[10px] px-2 py-2 font-medium">
+                      <span className="badge badge-info badge-outline gap-1 typo-tab px-2 py-2">
                         Google 已連結
                       </span>
                     )}
@@ -668,7 +655,7 @@ function ProfileTab({
 
       <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl overflow-hidden">
         <div className="px-5 py-3 border-b border-base-300 bg-base-200/50">
-          <h3 className="text-sm font-semibold text-base-content" style={JP}>
+          <h3 className="typo-card-title text-base-content" style={JP}>
             帳號資訊
           </h3>
         </div>
@@ -693,10 +680,10 @@ function ProfileTab({
             key={label}
             className="flex items-center px-5 py-3.5 border-b border-base-300 last:border-0 hover:bg-base-200/40 transition-colors"
           >
-            <div className="w-28 text-sm text-base-content/60 shrink-0">
+            <div className="w-28 typo-card-body text-base-content/60 shrink-0">
               {label}
             </div>
-            <div className="flex-1 text-sm font-medium text-base-content truncate">
+            <div className="flex-1 typo-card-body font-medium text-base-content truncate">
               {value}
             </div>
             {locked && (
@@ -761,10 +748,8 @@ function ChangePasswordSection() {
         {success && <SuccessBox message="密碼已成功更新。" />}
         <div className="flex items-start justify-between">
           <div>
-            <div className="text-sm font-semibold text-base-content">
-              變更密碼
-            </div>
-            <div className="text-xs text-base-content/60 mt-0.5">
+            <div className="typo-card-title text-base-content">變更密碼</div>
+            <div className="typo-card-body text-base-content/60 mt-0.5">
               建議定期更新密碼以保障帳號安全。
             </div>
           </div>
@@ -832,7 +817,7 @@ function SecurityTab({
 }) {
   if (!security)
     return (
-      <div className="text-center py-12 text-base-content/60 text-sm">
+      <div className="text-center py-12 text-base-content/60 typo-card-body">
         載入中…
       </div>
     );
@@ -853,10 +838,10 @@ function SecurityTab({
               )}
             </div>
             <div className="flex-1">
-              <div className="text-sm font-semibold text-base-content">
+              <div className="typo-card-title text-base-content">
                 電子郵件驗證
               </div>
-              <div className="text-xs text-base-content/60 mt-0.5">
+              <div className="typo-card-body text-base-content/60 mt-0.5">
                 {security.emailVerified
                   ? `${user.email} · 已驗證`
                   : '尚未驗證 — 請發送確認信進行驗證'}
@@ -874,10 +859,10 @@ function SecurityTab({
       {/* Login history */}
       <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl overflow-hidden">
         <div className="px-5 py-3 border-b border-base-300 bg-base-200/50 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-base-content" style={JP}>
+          <h3 className="typo-h4 text-base-content" style={JP}>
             登入紀錄
           </h3>
-          <span className="badge badge-outline text-[13px] text-base-content/60">
+          <span className="badge badge-outline typo-tab text-base-content/60">
             最近 10 筆
           </span>
         </div>
@@ -903,16 +888,16 @@ function SecurityTab({
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-base-content">
+                <div className="typo-card-body font-medium text-base-content">
                   {log.browser} / {log.os}
                 </div>
-                <div className="text-xs text-base-content/60">
+                <div className="typo-tab text-base-content/60">
                   {log.time}
                   {log.ip ? ` · ${log.ip}` : ''}
                 </div>
               </div>
               <span
-                className={`badge text-[13px] font-semibold px-2.5 py-1 ${log.success ? 'badge-success badge-outline' : 'badge-error badge-outline'}`}
+                className={`badge typo-tab px-2.5 py-1 ${log.success ? 'badge-success badge-outline' : 'badge-error badge-outline'}`}
               >
                 {log.success ? '成功' : '失敗'}
               </span>
@@ -924,10 +909,7 @@ function SecurityTab({
       {/* Security policy */}
       <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl">
         <div className="card-body p-5">
-          <h3
-            className="text-sm font-semibold text-base-content mb-4"
-            style={JP}
-          >
+          <h3 className="typo-h4 text-base-content mb-4" style={JP}>
             安全政策
           </h3>
           <div className="space-y-3">
@@ -945,10 +927,10 @@ function SecurityTab({
                 className="flex items-center gap-3 py-2.5 border-b border-base-300 last:border-0"
               >
                 <Icon size={14} className="text-primary shrink-0" />
-                <div className="flex-1 text-[14px] text-base-content">
+                <div className="flex-1 typo-card-body text-base-content">
                   {label}
                 </div>
-                <div className="badge badge-ghost text-[13px] text-base-content/70 font-medium">
+                <div className="badge badge-ghost typo-tab text-base-content/70">
                   {value}
                 </div>
               </div>

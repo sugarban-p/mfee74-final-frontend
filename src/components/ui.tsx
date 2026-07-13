@@ -92,7 +92,7 @@ export function FieldInput({
   return (
     <div className="w-full space-y-2.5">
       <Label.Root
-        className="block text-[14px] leading-[1.2] text-[#3C3631]"
+        className="block text-[16px] leading-[1.25] text-[#3C3631]"
         style={AUTH_SERIF_TC_TITLE}
       >
         {label}
@@ -122,8 +122,8 @@ export function FieldInput({
         )}
       </div>
       {error && (
-        <p className="text-[11px] leading-[1.3] text-[#D95F5F] flex items-center gap-1">
-          <AlertCircle size={11} />
+        <p className="text-[14px] leading-[1.35] text-[#D95F5F] flex items-center gap-1.5">
+          <AlertCircle size={14} />
           {error}
         </p>
       )}
@@ -285,26 +285,26 @@ export function Divider({ label = '或' }: { label?: string }) {
 
 export function Stepper({ step, labels }: { step: number; labels: string[] }) {
   return (
-    <div className="flex items-center justify-center gap-1.5 mb-6">
+    <div className="flex items-center justify-center gap-3 mb-7">
       {labels.map((label, i) => {
         const s = i + 1;
         return (
-          <div key={s} className="flex items-center gap-1.5">
-            <div className="flex flex-col items-center gap-1">
+          <div key={s} className="flex items-center gap-3">
+            <div className="flex flex-col items-center gap-1.5">
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step > s ? 'bg-green-500 text-white' : step === s ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content/50'}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-[15px] font-bold transition-all ${step > s ? 'bg-green-500 text-white' : step === s ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content/50'}`}
               >
-                {step > s ? <Check size={11} /> : s}
+                {step > s ? <Check size={14} /> : s}
               </div>
               <span
-                className={`text-[9px] whitespace-nowrap ${step === s ? 'text-primary font-medium' : 'text-base-content/50'}`}
+                className={`text-[14px] leading-none whitespace-nowrap ${step === s ? 'text-primary font-medium' : 'text-base-content/50'}`}
               >
                 {label}
               </span>
             </div>
             {i < labels.length - 1 && (
               <div
-                className={`w-8 h-0.5 mb-3.5 transition-all ${step > s ? 'bg-green-500' : 'bg-base-200'}`}
+                className={`w-14 h-0.5 mb-5 transition-all ${step > s ? 'bg-green-500' : 'bg-base-200'}`}
               />
             )}
           </div>
@@ -326,14 +326,14 @@ export function AuthShell({
   subtitle?: string;
 }) {
   return (
-    <div className="w-full max-w-[420px] page-enter">
-      <div className="card w-full bg-[#FFFEFC] border border-[#F0B28D] rounded-2xl overflow-hidden shadow-[0_8px_24px_-16px_rgba(66,52,41,0.25)]">
+    <div className="w-full max-w-[456px] page-enter">
+      <div className="card w-full bg-[#FFFEFC] border border-[#F0B28D] rounded-3xl overflow-hidden shadow-[0_12px_28px_-16px_rgba(66,52,41,0.28)]">
         <div
-          className="text-center px-6 py-4 text-white"
+          className="text-center px-7 py-5 text-white"
           style={{ backgroundColor: '#E97C37' }}
         >
           <h1
-            className="text-[18px] leading-none"
+            className="text-[20px] leading-none"
             style={{ ...AUTH_SERIF_TC_TITLE, color: '#FFFFFF' }}
           >
             {title}
@@ -375,6 +375,7 @@ export function PasswordInput({
   const [show, setShow] = React.useState(false);
   return (
     <FieldInput
+      key={show ? 'password-visible' : 'password-hidden'}
       label={label}
       type={show ? 'text' : 'password'}
       value={value}
@@ -400,6 +401,7 @@ export function PasswordInput({
         <button
           type="button"
           onClick={() => setShow((s) => !s)}
+          aria-label={show ? '隱藏密碼' : '顯示密碼'}
           className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[#8D847D] hover:bg-[#EDE6DE] hover:text-[#3D3732] transition-colors"
         >
           {show ? <EyeOff size={14} /> : <Eye size={14} />}

@@ -32,13 +32,10 @@ export default function CouponsPage() {
         <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mb-5">
           <LuTicketPercent size={28} className="text-purple-500" />
         </div>
-        <h2
-          className="text-base font-semibold text-base-content mb-2"
-          style={JP}
-        >
+        <h2 className="typo-card-title text-base-content mb-2" style={JP}>
           目前無可用優惠券
         </h2>
-        <p className="text-sm text-base-content/60 max-w-xs">
+        <p className="typo-card-body text-base-content/60 max-w-xs">
           參加活動或達成消費門檻，即可獲得專屬優惠券。
         </p>
       </div>

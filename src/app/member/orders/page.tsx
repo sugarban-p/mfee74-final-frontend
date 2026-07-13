@@ -35,13 +35,10 @@ export default function OrdersPage() {
         <div className="w-16 h-16 bg-primary/15 rounded-2xl flex items-center justify-center mb-5">
           <LuPackage size={28} className="text-primary" />
         </div>
-        <h2
-          className="text-base font-semibold text-base-content mb-2"
-          style={JP}
-        >
+        <h2 className="typo-card-title text-base-content mb-2" style={JP}>
           尚無訂單紀錄
         </h2>
-        <p className="text-sm text-base-content/60 max-w-xs">
+        <p className="typo-card-body text-base-content/60 max-w-xs">
           您的訂單將顯示在此。前往商城選購，享受會員專屬優惠！
         </p>
       </div>
