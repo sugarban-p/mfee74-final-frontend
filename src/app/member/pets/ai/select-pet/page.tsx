@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { LuPlus } from 'react-icons/lu';
+import { LuCirclePlus } from 'react-icons/lu';
 import { PetProfileCard } from '@/src/components/pets/PetProfileCard';
 import { mockPets } from '@/src/mockdata/mock-pets';
 
@@ -7,10 +7,7 @@ export default function SelectPetForAiPage() {
   return (
     <section className="w-full">
       {/* 返回：回到 AI 導購介紹頁 */}
-      <Link
-        href="/member/pets/ai"
-        className="back-button typo-tab inline-flex"
-      >
+      <Link href="/member/pets/ai" className="back-button typo-tab inline-flex">
         ← 返回
       </Link>
 
@@ -37,15 +34,18 @@ export default function SelectPetForAiPage() {
         {/* 新增毛孩入口：直接導向既有的新增寵物頁面 */}
         <Link
           href="/member/pets/profiles/new"
-          className="flex w-[260px] flex-col items-center justify-center rounded-2xl border border-border bg-white p-6 text-center transition hover:border-primary"
+          className="flex w-[260px] flex-col rounded-2xl bg-white p-4 text-center shadow-sm transition hover:-translate-y-1"
         >
-          <div className="flex h-[140px] w-full items-center justify-center rounded-xl bg-card-secondary text-text-primary">
-            <LuPlus className="h-8 w-8" aria-hidden="true" />
+          <div className="flex h-[140px] w-full items-center justify-center rounded-xl bg-card-secondary text-primary">
+            <LuCirclePlus className="h-8 w-8" aria-hidden="true" />
           </div>
 
-          <span className="next-button typo-tab mt-8 inline-flex items-center gap-2">
-            <LuPlus className="h-4 w-4" aria-hidden="true" />
-            新增毛孩
+          <div className="mt-4 flex flex-1 flex-col items-center justify-center">
+            <h3 className="typo-card-title text-text-primary">新增毛孩</h3>
+          </div>
+
+          <span className="next-button typo-tab mt-5 inline-block w-full">
+            開始建立
           </span>
         </Link>
       </section>

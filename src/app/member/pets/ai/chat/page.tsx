@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { LuArrowLeft, LuCircleCheck, LuSend, LuSparkles } from 'react-icons/lu';
 import { ProductCard } from '@/src/components/product/ProductCard';
 import { mockPets } from '@/src/mockdata/mock-pets';
@@ -79,6 +79,9 @@ export default async function PetAiChatPage({
    * 所以要先 await 才能拿到 petId。
    */
   const { petId } = await searchParams;
+  if (!petId) {
+    redirect('/member/pets/ai/select-pet');
+  }
 
   /**
    * petId 從網址來時會是 string，
@@ -216,7 +219,7 @@ export default async function PetAiChatPage({
            * 現在 recommendedProducts 還是假資料；
            * 之後 AI / 後端回傳推薦商品時，只要讓資料格式符合 ProductCard 需要的 product 物件即可。
            */}
-          <div className="flex flex-wrap gap-5 pl-[52px]">
+          <div className="flex gap-5 overflow-x-auto pb-2 lg:flex-wrap lg:overflow-visible lg:pl-[52px]">
             {recommendedProducts.map((product) => (
               <ProductCard key={product.name} product={product} />
             ))}

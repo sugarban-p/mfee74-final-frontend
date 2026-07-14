@@ -32,14 +32,6 @@ export default function PetProfilesPage() {
             管理所有毛孩的健康資料與飲食偏好
           </p>
         </div>
-
-        <Link
-          href="/member/pets/profiles/new"
-          className="next-button typo-tab inline-flex items-center gap-2"
-        >
-          <LuCirclePlus className="h-4 w-4" aria-hidden="true" />
-          新增毛孩
-        </Link>
       </div>
 
       {/* Card List：顯示目前所有毛孩檔案 */}
@@ -55,15 +47,18 @@ export default function PetProfilesPage() {
          */}
         <Link
           href="/member/pets/profiles/new"
-          className="flex w-[260px] flex-col items-center justify-center rounded-2xl border border-border bg-card-primary p-4 text-center transition hover:border-primary"
+          className="flex w-[260px] flex-col rounded-2xl bg-white p-4 text-center shadow-sm transition hover:-translate-y-1"
         >
           <div className="flex h-[140px] w-full items-center justify-center rounded-xl bg-card-secondary text-primary">
             <LuCirclePlus className="h-8 w-8" aria-hidden="true" />
           </div>
 
-          <span className="next-button typo-tab mt-8 inline-flex items-center gap-2">
-            <LuCirclePlus className="h-4 w-4" aria-hidden="true" />
-            新增毛孩
+          <div className="mt-4 flex flex-1 flex-col items-center justify-center">
+            <h3 className="typo-card-title text-text-primary">新增毛孩</h3>
+          </div>
+
+          <span className="next-button typo-tab mt-5 inline-block w-full">
+            開始建立
           </span>
         </Link>
       </div>
