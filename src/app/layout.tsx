@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="light" style={{ colorScheme: 'light' }}>
       <body suppressHydrationWarning className="flex min-h-full flex-col">
         <AppShell>{children}</AppShell>
       </body>
