@@ -85,14 +85,14 @@ export default function Header() {
             <div className="megamenu gap-1" id="my-megamenu-4" popover="auto">
               <span className="megamenu-active"></span>
               <button
-                className="typo-body rounded-lg text-text-primary hover:bg-button-secondary-hover [&:has(+_[popover]:popover-open)]:bg-button-secondary-hover [&:has(+_[popover]:popover-open)]:rounded-b-none"
+                className="typo-body rounded-lg text-text-primary hover:bg-button-secondary-hover [&:has(+_[popover]:popover-open)]:rounded-b-none [&:has(+_[popover]:popover-open)]:bg-button-secondary-hover"
                 popoverTarget="products"
               >
                 所有產品
               </button>
               <div
                 id="products"
-                className="w-auto rounded-xl rounded-tl-none bg-card-primary border-border border-2 mt-0 "
+                className="mt-0 w-auto rounded-xl rounded-tl-none border-2 border-border bg-card-primary"
                 popover="auto"
               >
                 <div className="items-start">
@@ -131,14 +131,14 @@ export default function Header() {
                 </div>
               </div>
               <button
-                className="typo-body rounded-lg text-text-primary hover:bg-button-secondary-hover [&:has(+_[popover]:popover-open)]:bg-button-secondary-hover [&:has(+_[popover]:popover-open)]:rounded-b-none"
+                className="typo-body rounded-lg text-text-primary hover:bg-button-secondary-hover [&:has(+_[popover]:popover-open)]:rounded-b-none [&:has(+_[popover]:popover-open)]:bg-button-secondary-hover"
                 popoverTarget="events"
               >
                 最新活動
               </button>
               <div
                 id="events"
-                className="w-auto rounded-xl rounded-tl-none bg-card-primary border-border border-2 mt-0 "
+                className="mt-0 w-auto rounded-xl rounded-tl-none border-2 border-border bg-card-primary"
                 popover="auto"
               >
                 <MegaMenuCard
@@ -155,11 +155,11 @@ export default function Header() {
                 />
               </div>
             </div>
-            <ul className="menu menu-horizontal p-0 gap-1">
+            <ul className="menu menu-horizontal gap-1 p-0">
               <li className="rounded-lg hover:bg-button-secondary-hover">
                 <Link
                   href={'/'}
-                  className="py-0 px-4 text-text-primary hover:bg-transparent"
+                  className="px-4 py-0 text-text-primary hover:bg-transparent"
                 >
                   <div className="typo-body h-10 py-[5.5px]">AI 導購</div>
                 </Link>
@@ -167,17 +167,17 @@ export default function Header() {
               <li className="rounded-lg hover:bg-button-secondary-hover">
                 <Link
                   href={'/'}
-                  className="py-0 px-4 text-text-primary hover:bg-transparent"
+                  className="px-4 py-0 text-text-primary hover:bg-transparent"
                 >
                   <div className="typo-body h-10 py-[5.5px]">聯繫我們</div>
                 </Link>
               </li>
             </ul>
           </div>
-          <div className="navbar-end relative gap-4">
+          <div className="relative navbar-end gap-4">
             <Link
               href={'/member/favorites'}
-              className="p-1 text-text-secondary align-middle border-none hover:bg-button-secondary-hover btn btn-circle btn-ghost hover:shadow-none"
+              className="btn btn-circle border-none btn-ghost p-1 align-middle text-text-secondary hover:bg-button-secondary-hover hover:shadow-none"
             >
               <LuHeart className="size-6" />
             </Link>
@@ -187,7 +187,7 @@ export default function Header() {
               aria-label="切換購物車窗格"
               aria-expanded={isCartOpen}
               aria-controls="cart-panel"
-              className="p-1 text-text-secondary align-middle border-none hover:bg-button-secondary-hover btn btn-circle btn-ghost hover:shadow-none"
+              className="btn btn-circle border-none btn-ghost p-1 align-middle text-text-secondary hover:bg-button-secondary-hover hover:shadow-none"
               onClick={() => {
                 setIsCartOpen((prev) => !prev);
                 setIsRemovingCartItem(false);
@@ -279,18 +279,19 @@ export default function Header() {
                   )}
                 </div>
 
-                <button
+                <Link
+                  href="/cart"
                   type="button"
                   className="next-button typo-tab mt-4 flex w-1/2 items-center justify-center py-3"
                   onClick={() => setIsCartOpen(false)}
                 >
-                  直接結帳
-                </button>
+                  查看完整購物車
+                </Link>
               </section>
             )}
             <Link
               href={'/member/dashboard'}
-              className="p-1 text-text-secondary align-middle border-none hover:bg-button-secondary-hover btn btn-circle btn-ghost hover:shadow-none"
+              className="btn btn-circle border-none btn-ghost p-1 align-middle text-text-secondary hover:bg-button-secondary-hover hover:shadow-none"
             >
               <LuUser className="size-6" />
             </Link>
