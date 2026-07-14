@@ -26,19 +26,6 @@
   "emmet.syntaxProfiles": {
     "typescriptreact": "jsx"
   },
-  "workbench.colorCustomizations": {
-    "activityBar.background": "#610606",
-    "titleBar.activeBackground": "#880909",
-    "titleBar.activeForeground": "#FFFBFB",
-    "titleBar.inactiveBackground": "#610606",
-    "titleBar.inactiveForeground": "#FFFBFB",
-    "statusBar.background": "#610606",
-    "statusBar.foreground": "#FFFBFB",
-    "statusBar.debuggingBackground": "#610606",
-    "statusBar.debuggingForeground": "#FFFBFB",
-    "statusBar.noFolderBackground": "#610606",
-    "statusBar.noFolderForeground": "#FFFBFB"
-  },
   "tailwindCSS.includeLanguages": {
     "typescript": "html",
     "typescriptreact": "html"
@@ -75,6 +62,7 @@
   "emmet.triggerExpansionOnTab": true,
   "files.associations": {
     "*.tsx": "typescriptreact",
-    "*.jsx": "javascriptreact"
+    "*.jsx": "javascriptreact",
+    "*.css": "tailwindcss"
   }
 }

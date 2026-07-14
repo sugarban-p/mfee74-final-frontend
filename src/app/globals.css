@@ -1,27 +1,266 @@
 @import "tailwindcss";
+@import "@radix-ui/themes/styles.css";
 @plugin "daisyui";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-size: 16px;
+  --background: #fffdf9;
+  --foreground: #2d2826;
+
+  /* Brand */
+  --primary: #e98943;
+  --secondary: #6b635c;
+
+  /* Button */
+  --button-primary-hover: #d9612c;
+  --button-secondary-border: #ffe5d5;
+  --button-secondary-hover: #f9e6d1;
+  --button-disabled: #e5e6e6;
+
+  /* Text */
+  --text-primary: #2d1f0e;
+  --text-secondary: #8b6b4a;
+  --text-button: #ffffff;
+  --text-button-disabled: #51483d;
+
+  /* Card */
+  --card-primary: #fff9f4;
+  --card-secondary: #f5e6d3;
+
+  /* Background */
+  --background: #fdfbf6;
+  --foreground: var(--text-primary);
+
+  /* State */
+  --success: #e8f4e8;
+  --info: #e3f0f7;
+  --warning: #fff8e1;
+  --danger: #fdf0f0;
+
+  /* Link */
+  --ai-link: #9c27b0;
+
+  /* Common */
+  --white: #ffffff;
+  --border: #f5e6d3;
 }
 
 @theme inline {
+  /* Brand */
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+
+  /* Button */
+  --color-button-primary-hover: var(--button-primary-hover);
+  --color-button-secondary-border: var(--button-secondary-border);
+  --color-button-secondary-hover: var(--button-secondary-hover);
+  --color-button-disabled: var(--button-disabled);
+
+  /* Text */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-button: var(--text-button);
+  --color-text-button-disabled: var(--text-button-disabled);
+
+  /* Card */
+  --color-card-primary: var(--card-primary);
+  --color-card-secondary: var(--card-secondary);
+
+  /* Background */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* State */
+  --color-success: var(--success);
+  --color-info: var(--info);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  /* Link */
+  --color-ai-link: var(--ai-link);
+
+  /* Common */
+  --color-white: var(--white);
+  --color-border: var(--border);
 }
 
 body {
+  min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  /* Display / Noto Serif TC / Bold / 67px / line-height 73.7px / spacing 1px */
+  .typo-display {
+    font-family: var(--font-noto-serif-tc), serif;
+    font-size: 67px;
+    font-weight: 700;
+    line-height: 73.7px;
+    letter-spacing: 1px;
+  }
+
+  /* H1 / Noto Serif TC / Bold / 96px */
+  .typo-h1 {
+    font-family: var(--font-noto-serif-tc), serif;
+    font-size: 96px;
+    font-weight: 700;
+    line-height: 112px;
+    letter-spacing: 0;
+  }
+
+  /* H2 / Noto Serif TC / Bold / 48px */
+  .typo-h2 {
+    font-family: var(--font-noto-serif-tc), serif;
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 52.8px;
+    letter-spacing: 0;
+  }
+
+  /* H3 / Noto Serif TC / Bold / 30px */
+  .typo-h3 {
+    font-family: var(--font-noto-serif-tc), serif;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 41.3px;
+    letter-spacing: 0;
+  }
+
+  /* H4 / Noto Serif TC / Bold / 16px */
+  .typo-h4 {
+    font-family: var(--font-noto-serif-tc), serif;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 20px;
+    letter-spacing: 0;
+  }
+
+  /* 大型內文 / Noto Sans TC / Bold / 30px */
+  .typo-body-lg-bold {
+    font-family: var(--font-noto-sans-tc), sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 36px;
+    letter-spacing: 0;
+  }
+
+  /* 內文 / Noto Sans TC / Regular / 18px */
+  .typo-body {
+    font-family: var(--font-noto-sans-tc), sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 29.3px;
+    letter-spacing: 0.5px;
+  }
+
+  /* 內文粗體 / Noto Sans TC / Medium / 18px */
+  .typo-body-medium {
+    font-family: var(--font-noto-sans-tc), sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 29.3px;
+    letter-spacing: 0.5px;
+  }
+
+  /* 卡片標題 / Noto Serif TC / Bold / 18px */
+  .typo-card-title {
+    font-family: var(--font-noto-serif-tc), serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 22px;
+    letter-spacing: 0;
+  }
+
+  /* 卡片內文 / Noto Sans TC / Regular / 16px */
+  .typo-card-body {
+    font-family: var(--font-noto-sans-tc), sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 22.8px;
+    letter-spacing: 0;
+  }
+
+  /* Tab 分類文字 / Noto Sans TC / Medium / 15px */
+  .typo-tab {
+    font-family: var(--font-noto-sans-tc), sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 20px;
+    letter-spacing: 0;
+  }
+
+  /* 互動導向按鈕(主要) */
+  .next-button {
+    text-align: center;
+    max-width: 100%;
+    border-radius: 9999px;
+    padding: 0.5em 0.75em;
+    cursor: pointer;
+    background-color: var(--primary);
+    color: var(--color-text-button);
+    transition-property:
+      color, background-color, border-color, text-decoration-color, fill,
+      stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .next-button:hover {
+    background-color: var(--color-button-primary-hover);
+  }
+  .next-button:disabled {
+    cursor: not-allowed;
+    background-color: var(--color-button-disabled);
+    color: var(--color-text-button-disabled);
+  }
+
+  /* 互動導向按鈕(次要) */
+  .back-button {
+    text-align: center;
+    cursor: pointer;
+    max-width: 100%;
+    border: 1px solid var(--color-button-secondary-border);
+    border-radius: 9999px;
+    padding: 0.5em 0.75em;
+    background-color: #ffffff;
+    color: var(--color-text-secondary);
+    transition-property:
+      color, background-color, border-color, text-decoration-color, fill,
+      stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .back-button:hover {
+    background-color: var(--color-button-secondary-hover);
+  }
+  .back-button:disabled {
+    cursor: not-allowed;
+    border-color: var(--color-button-disabled);
+    background-color: var(--color-button-disabled);
+    color: var(--color-text-button-disabled);
+  }
+
+  /* 頁面導向按鈕 */
+  .link-button {
+    text-align: center;
+    max-width: 100%;
+    border-radius: 8px;
+    padding: 0.5em 0.75em;
+    cursor: pointer;
+    background-color: var(--primary);
+    color: var(--color-text-button);
+    transition-property:
+      color, background-color, border-color, text-decoration-color, fill,
+      stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .link-button:hover {
+    background-color: var(--color-button-primary-hover);
+  }
+  .link-button:disabled {
+    cursor: not-allowed;
+    background-color: var(--color-button-disabled);
+    color: var(--color-text-button-disabled);
+  }
 }
