@@ -69,7 +69,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <>
-      <article className="w-[250px] overflow-hidden rounded-lg bg-card-primary border border-secondary/50 transition hover:border-primary hover:-translate-y-0.5 hover:scale-[1.02]">
+      <article className="w-[250px] overflow-hidden rounded-lg border border-secondary/50 bg-card-primary transition hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary">
         <div
           className={[
             'h-[150px] w-full bg-button-disabled',
@@ -100,7 +100,7 @@ export function ProductCard({ product }: ProductCardProps) {
               aria-pressed={isFavorite}
               aria-label={isFavorite ? '取消收藏' : '加入收藏'}
               className={[
-                'group flex size-6 items-center justify-center cursor-pointer',
+                'group flex size-6 cursor-pointer items-center justify-center',
                 isFavorite
                   ? 'text-primary'
                   : 'text-secondary hover:text-primary',
