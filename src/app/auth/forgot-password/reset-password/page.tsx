@@ -58,7 +58,7 @@ export default function ResetPasswordPage() {
     return (
       <AuthShell title="密碼重設完成" subtitle="請使用新密碼重新登入">
         <div className="rounded-t-3xl bg-base-200 px-7 py-6">
-          <p className="typo-card-body text-base-content/60">
+          <p className="typo-card-body text-text-primary/60">
             您的密碼已成功更新
           </p>
         </div>
@@ -67,7 +67,7 @@ export default function ResetPasswordPage() {
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
             <CheckCircle size={30} className="text-green-500" />
           </div>
-          <p className="typo-card-body text-base-content/60">
+          <p className="typo-card-body text-text-primary/60">
             密碼已成功更新，請使用新密碼登入。
           </p>
           <Btn onClick={() => router.push('/auth/login')} full>
@@ -81,7 +81,7 @@ export default function ResetPasswordPage() {
   return (
     <AuthShell title="忘記密碼" subtitle="設定新密碼">
       <div className="bg-base-200 px-7 py-6">
-        <p className="typo-card-body text-base-content/60">
+        <p className="typo-card-body text-text-primary/60">
           輸入新密碼以完成重設
         </p>
       </div>

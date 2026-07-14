@@ -25,7 +25,7 @@ export default function SupportSwitcher() {
             className={`tab tab-sm rounded-xl 2xl:rounded-[12px] px-6 2xl:px-8 h-8 2xl:h-10 min-h-8 2xl:min-h-10 text-[14px] font-medium transition-all whitespace-nowrap inline-flex items-center justify-center text-center ${
               active
                 ? 'tab-active bg-base-100 2xl:bg-[#F4EEE8] shadow-sm text-[#2D2826]'
-                : 'text-base-content/60 2xl:text-[#4A453F]'
+                : 'text-text-primary/60 2xl:text-[#4A453F]'
             }`}
           >
             {item.label}

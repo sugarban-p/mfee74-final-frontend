@@ -50,13 +50,13 @@ export default function MemberSupportPage() {
     <div className="space-y-6 2xl:space-y-4">
       <div>
         <h1
-          className="text-[22px] leading-tight text-base-content"
+          className="text-[22px] leading-tight text-text-primary"
           style={SANS_TC_BOLD}
         >
           客服中心
         </h1>
         <p
-          className="text-[16px] leading-tight text-base-content/60 mt-1"
+          className="text-[16px] leading-tight text-text-primary/60 mt-1"
           style={SANS_TC_MEDIUM}
         >
           我們很樂意為您提供協助。
@@ -149,14 +149,14 @@ export default function MemberSupportPage() {
                     <LuMessageCircleMore size={14} strokeWidth={2} />
                   </div>
                   <span
-                    className="flex-1 text-[16px] leading-tight text-base-content"
+                    className="flex-1 text-[16px] leading-tight text-text-primary"
                     style={SANS_TC_MEDIUM}
                   >
                     {q}
                   </span>
                   <LuChevronRight
                     size={16}
-                    className="text-base-content/35 group-hover:text-primary transition-colors"
+                    className="text-text-primary/35 group-hover:text-primary transition-colors"
                   />
                 </Link>
               )
