@@ -1,0 +1,30 @@
+:root {
+  --muted: #f5f1ec;
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-muted: var(--muted);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Keep browser autofill styling consistent with custom input wrappers. */
+.field-input:-webkit-autofill,
+.field-input:-webkit-autofill:hover,
+.field-input:-webkit-autofill:focus,
+.field-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #2f2a26;
+  caret-color: #2f2a26;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset;
+  box-shadow: 0 0 0 1000px transparent inset;
+}
+
+.field-input-wrapper:has(.field-input:-webkit-autofill),
+.field-input-wrapper:has(.field-input:-webkit-autofill:hover),
+.field-input-wrapper:has(.field-input:-webkit-autofill:focus),
+.field-input-wrapper:has(.field-input:-webkit-autofill:active) {
+  background-color: #e8f0fe !important;
+}

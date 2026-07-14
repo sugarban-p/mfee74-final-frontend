@@ -67,7 +67,7 @@ const socialLinks: SocialLink[] = [
 
 export function Footer() {
   return (
-    <footer className="w-full bg-[#2D1F01] text-[#C9A07A]">
+    <footer className="w-full bg-text-primary text-card-secondary">
       <div className="mx-auto w-full max-w-screen-2xl px-4 py-20 md:px-6">
         {/* 上半部：品牌區、連結欄位、電子報 */}
         {/*
@@ -93,11 +93,11 @@ export function Footer() {
                 alt="MOFU"
                 width={116}
                 height={48}
-                className="h-auto w-35"
+                className="h-auto w-[140px]"
               />
             </Link>
 
-            <p className="max-w-[320px] text-sm leading-7">
+            <p className="typo-card-body max-w-[320px] text-card-secondary">
               科學配方、用心守護，為貓咪與狗狗每個生命階段提供最好的日常照護。
             </p>
 
@@ -110,7 +110,7 @@ export function Footer() {
                     key={social.label}
                     href={social.href}
                     aria-label={social.label}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#4A351B] text-[#C9A07A] transition hover:bg-[#E98943] hover:text-white"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-card-secondary transition hover:bg-primary hover:text-text-button"
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" />
                   </Link>
@@ -129,7 +129,7 @@ export function Footer() {
           <div className="grid grid-cols-3 gap-10">
             {footerColumns.map((column) => (
               <section key={column.title}>
-                <h2 className="mb-7 text-base font-semibold text-[#E98943]">
+                <h2 className="typo-h4 mb-7 text-primary">
                   {column.title}
                 </h2>
 
@@ -138,7 +138,7 @@ export function Footer() {
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="text-sm transition hover:text-[#E98943]"
+                        className="typo-card-body text-card-secondary transition hover:text-primary"
                       >
                         {link.label}
                       </Link>
@@ -151,25 +151,29 @@ export function Footer() {
 
           {/* 訂閱電子報區 */}
           <section>
-            <h2 className="mb-7 text-base font-semibold text-[#E98943]">
+            <h2 className="typo-h4 mb-7 text-primary">
               訂閱電子報
             </h2>
 
-            <p className="mb-6 max-w-90 text-sm leading-7">
+            <p className="typo-card-body mb-6 max-w-[360px] text-card-secondary">
               新品上架、毛孩照護秘訣與專屬優惠資訊。
             </p>
 
-            <form className="flex max-w-90 gap-2">
+            <form className="flex max-w-[360px] gap-2">
+              {/**
+               * 電子報目前只是裝飾，不會真的送出。
+               * 顏色改用 globals.css 裡的全域 token，避免 Footer 自己另外維護一套色碼。
+               */}
               <input
                 type="email"
                 name="email"
                 placeholder="輸入電子郵件"
-                className="h-11 min-w-0 flex-1 rounded-full border border-[#5B4630] bg-[#44331F] px-5 text-sm text-[#C9A07A] outline-none placeholder:text-[#8D7054] focus:border-[#E98943]"
+                className="typo-tab h-11 min-w-0 flex-1 rounded-full border border-text-secondary/30 bg-white/10 px-5 text-card-secondary outline-none placeholder:text-text-secondary focus:border-primary"
               />
 
               <button
                 type="button"
-                className="h-11 shrink-0 rounded-full bg-[#E98943] px-6 text-sm font-semibold text-white transition hover:bg-[#d87832]"
+                className="next-button typo-tab h-11 shrink-0 px-6"
               >
                 訂閱
               </button>
@@ -178,16 +182,16 @@ export function Footer() {
         </div>
 
         {/* 下方分隔線與 copyright */}
-        <div className="mt-16 border-t border-[#4A351B] pt-8">
-          <div className="flex flex-col gap-4 text-xs text-[#8D7054] md:flex-row md:items-center md:justify-between">
+        <div className="mt-16 border-t border-text-secondary/30 pt-8">
+          <div className="typo-tab flex flex-col gap-4 text-text-secondary md:flex-row md:items-center md:justify-between">
             <p>© 2026 MOFU毛撫台灣・版權所有</p>
 
             <div className="flex gap-6">
-              <Link href="/privacy" className="transition hover:text-[#E98943]">
+              <Link href="/privacy" className="transition hover:text-primary">
                 隱私權政策
               </Link>
 
-              <Link href="/terms" className="transition hover:text-[#E98943]">
+              <Link href="/terms" className="transition hover:text-primary">
                 服務條款
               </Link>
             </div>

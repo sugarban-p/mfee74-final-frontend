@@ -13,7 +13,7 @@
 - TypeScript / React 任務：讀取 `rules/typescript-react.md`
 - 非同步流程或共用邏輯：讀取 `rules/async-and-pure-functions.md`
 - Prisma 查詢或 schema 相關任務：讀取 `rules/prisma.md`
-- Next.js 開發相關注意事項：讀取 `nextjs.md`
+- Next.js 開發相關注意事項：讀取 `rules/nextjs.md`
 
 ## 優先順序
 
