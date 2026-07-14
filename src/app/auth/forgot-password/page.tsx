@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
   return (
     <AuthShell title="忘記密碼" subtitle="請依步驟重新設定您的密碼">
       <div className="rounded-t-3xl bg-base-200 px-7 py-6">
-        <p className="typo-card-body text-base-content/60">
+        <p className="typo-card-body text-text-primary/60">
           輸入電子郵件以開始重設流程
         </p>
       </div>
@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
       <div className="px-7 py-7 space-y-4">
         <Stepper step={1} labels={['輸入信箱', '驗證身份', '設定新密碼']} />
 
-        <p className="typo-card-body text-base-content/60">
+        <p className="typo-card-body text-text-primary/60">
           請輸入您的電子郵件，我們將發送驗證碼。
         </p>
 
@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
 
         <Link
           href="/auth/login"
-          className="flex items-center gap-1 typo-tab text-base-content/60 hover:text-base-content mx-auto w-fit transition-colors"
+          className="flex items-center gap-1 typo-tab text-text-primary/60 hover:text-text-primary mx-auto w-fit transition-colors"
         >
           <ArrowLeft size={12} />
           返回登入

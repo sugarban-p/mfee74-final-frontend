@@ -23,10 +23,10 @@ export default function LockStatusPage() {
         </div>
 
         <div>
-          <p className="typo-card-title text-base-content" style={JP}>
+          <p className="typo-card-title text-text-primary" style={JP}>
             帳號已暫時鎖定
           </p>
-          <p className="typo-card-body text-base-content/60 mt-2">
+          <p className="typo-card-body text-text-primary/60 mt-2">
             因連續登入失敗次數過多，帳號已暫時鎖定。
           </p>
         </div>
@@ -43,8 +43,8 @@ export default function LockStatusPage() {
           </div>
         </div>
 
-        <div className="typo-tab text-base-content/60 bg-base-200 border border-base-300 rounded-2xl p-4 text-left space-y-1.5">
-          <p className="typo-card-title text-base-content">常見原因：</p>
+        <div className="typo-tab text-text-primary/60 bg-base-200 border border-base-300 rounded-2xl p-4 text-left space-y-1.5">
+          <p className="typo-card-title text-text-primary">常見原因：</p>
           <ul className="space-y-1 list-disc list-inside">
             <li>連續 5 次輸入錯誤密碼</li>
             <li>帳號遭異常操作偵測</li>
@@ -62,7 +62,7 @@ export default function LockStatusPage() {
           </Link>
           <Link
             href="/auth/login"
-            className="flex items-center gap-1 typo-tab text-base-content/60 hover:text-base-content justify-center transition-colors"
+            className="flex items-center gap-1 typo-tab text-text-primary/60 hover:text-text-primary justify-center transition-colors"
           >
             <ArrowLeft size={12} />
             返回登入

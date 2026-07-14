@@ -96,7 +96,7 @@ export default function MemberSupportHistoryPage() {
     <div className="space-y-4">
       <div className="space-y-3">
         <h1
-          className="text-[22px] leading-tight text-base-content"
+          className="text-[22px] leading-tight text-text-primary"
           style={SANS_TC_BOLD}
         >
           客服中心
@@ -115,7 +115,7 @@ export default function MemberSupportHistoryPage() {
                 if (ENABLE_MEMBER_API) setLoading(true);
                 setFilter(f);
               }}
-              className={`tab tab-sm rounded-xl 2xl:rounded-[12px] px-4 2xl:px-6 h-6 2xl:h-8 min-h-8 2xl:min-h-10 text-[14px] font-medium transition-all whitespace-nowrap inline-flex items-center justify-center text-center ${filter === f ? 'tab-active bg-base-100 shadow-sm' : 'text-base-content/60'}`}
+              className={`tab tab-sm rounded-xl 2xl:rounded-[12px] px-4 2xl:px-6 h-6 2xl:h-8 min-h-8 2xl:min-h-10 text-[14px] font-medium transition-all whitespace-nowrap inline-flex items-center justify-center text-center ${filter === f ? 'tab-active bg-base-100 shadow-sm' : 'text-text-primary/60'}`}
               style={SANS_TC_MEDIUM}
             >
               {f === 'today' ? '今天' : f === 'week' ? '最近 7 天' : '全部紀錄'}
@@ -134,11 +134,11 @@ export default function MemberSupportHistoryPage() {
             <div className="w-14 h-14 bg-primary/15 rounded-2xl flex items-center justify-center mb-4">
               <LuClipboardList size={24} className="text-primary" />
             </div>
-            <p className="text-[16px] text-base-content" style={SANS_TC_MEDIUM}>
+            <p className="text-[16px] text-text-primary" style={SANS_TC_MEDIUM}>
               此期間無諮詢紀錄
             </p>
             <p
-              className="text-[16px] text-base-content/60 mt-1"
+              className="text-[16px] text-text-primary/60 mt-1"
               style={SANS_TC_MEDIUM}
             >
               選擇其他時間範圍或前往客服總覽建立新諮詢。
@@ -158,7 +158,7 @@ export default function MemberSupportHistoryPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3
-                        className="typo-h4 text-base-content"
+                        className="typo-h4 text-text-primary"
                         style={SERIF_TC_CARD_TITLE}
                       >
                         諮詢 {item.caseId.slice(0, 14)}
@@ -175,7 +175,7 @@ export default function MemberSupportHistoryPage() {
                       )}
                     </div>
                     <p
-                      className="typo-card-body text-base-content/60 mt-1 truncate"
+                      className="typo-card-body text-text-primary/60 mt-1 truncate"
                       style={SANS_TC_MEDIUM}
                     >
                       {item.preview || '（無文字內容）'}
@@ -183,11 +183,11 @@ export default function MemberSupportHistoryPage() {
                   </div>
                   <LuChevronRight
                     size={16}
-                    className="text-base-content/40 shrink-0"
+                    className="text-text-primary/40 shrink-0"
                   />
                 </div>
                 <div
-                  className="mt-2 typo-tab text-base-content/55 flex items-center gap-3"
+                  className="mt-2 typo-tab text-text-primary/55 flex items-center gap-3"
                   style={SANS_TC_MEDIUM}
                 >
                   <span>訊息 {item.messageCount} 則</span>

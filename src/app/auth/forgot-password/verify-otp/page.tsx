@@ -49,7 +49,7 @@ export default function VerifyOTPPage() {
   return (
     <AuthShell title="忘記密碼" subtitle="請確認您的身分以繼續">
       <div className="rounded-t-3xl bg-base-200 px-7 py-6">
-        <p className="typo-card-body text-base-content/60">
+        <p className="typo-card-body text-text-primary/60">
           輸入驗證碼以繼續重設密碼
         </p>
       </div>
@@ -57,11 +57,11 @@ export default function VerifyOTPPage() {
       <div className="px-7 py-7 space-y-6">
         <Stepper step={2} labels={['輸入信箱', '驗證身份', '設定新密碼']} />
 
-        <div className="bg-base-200 border border-base-300 p-6 text-base-content rounded-3xl">
-          <p className="typo-card-title text-base-content mb-2">驗證碼已發送</p>
+        <div className="bg-base-200 border border-base-300 p-6 text-text-primary rounded-3xl">
+          <p className="typo-card-title text-text-primary mb-2">驗證碼已發送</p>
           <p className="typo-card-body leading-6">
             我們已將 6 位數驗證碼傳送到您的信箱：
-            <span className="typo-card-title text-base-content break-words">
+            <span className="typo-card-title text-text-primary break-words">
               {email}
             </span>
           </p>
@@ -87,13 +87,13 @@ export default function VerifyOTPPage() {
             確認驗證碼
           </Btn>
 
-          <div className="text-center typo-tab text-base-content/60">
+          <div className="text-center typo-tab text-text-primary/60">
             如果未收到驗證碼，請稍候片刻或返回上一頁重新發送。
           </div>
 
           <Link
             href="/auth/forgot-password"
-            className="flex items-center justify-center gap-1 typo-tab text-base-content/60 hover:text-base-content transition-colors"
+            className="flex items-center justify-center gap-1 typo-tab text-text-primary/60 hover:text-text-primary transition-colors"
           >
             <ArrowLeft size={12} /> 返回上一步
           </Link>

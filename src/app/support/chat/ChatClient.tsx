@@ -126,10 +126,10 @@ export default function ChatClient() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[22px] leading-tight text-base-content font-bold">
+        <h1 className="text-[22px] leading-tight text-text-primary font-bold">
           客服中心
         </h1>
-        <p className="text-[16px] leading-tight text-base-content/60 mt-1">
+        <p className="text-[16px] leading-tight text-text-primary/60 mt-1">
           諮詢編號：{initialCaseId}（前端示範）
         </p>
       </div>

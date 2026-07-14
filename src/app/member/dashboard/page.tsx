@@ -184,7 +184,7 @@ export default function DashboardPage() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`tab tab-sm rounded-xl 2xl:rounded-[12px] px-6 2xl:px-8 h-8 2xl:h-10 min-h-8 2xl:min-h-10 text-[14px] ${tab === t ? 'tab-active bg-base-100 2xl:bg-[#F4EEE8] shadow-sm text-[#2D2826]' : 'text-base-content/60 2xl:text-[#4A453F]'}`}
+            className={`tab tab-sm rounded-xl 2xl:rounded-[12px] px-6 2xl:px-8 h-8 2xl:h-10 min-h-8 2xl:min-h-10 text-[14px] ${tab === t ? 'tab-active bg-base-100 2xl:bg-[#F4EEE8] shadow-sm text-[#2D2826]' : 'text-text-primary/60 2xl:text-[#4A453F]'}`}
           >
             {t === 'overview'
               ? '總覽'
@@ -393,7 +393,7 @@ function OverviewTab({
 
       <div className="card bg-[#FDFBF6]-100">
         <div className="card-body px-6 py-5">
-          <h2 className="typo-h4 text-base-content mb-3" style={JP}>
+          <h2 className="typo-h4 text-text-primary mb-3" style={JP}>
             快速操作
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -625,7 +625,7 @@ function ProfileTab({
               ) : (
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <h2 className="typo-h4 text-base-content" style={JP}>
+                    <h2 className="typo-h4 text-text-primary" style={JP}>
                       {user.name ?? '未設定'}
                     </h2>
                     <Btn onClick={() => setEditing(true)} variant="outline" sm>
@@ -655,7 +655,7 @@ function ProfileTab({
 
       <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl overflow-hidden">
         <div className="px-5 py-3 border-b border-base-300 bg-base-200/50">
-          <h3 className="typo-card-title text-base-content" style={JP}>
+          <h3 className="typo-card-title text-text-primary" style={JP}>
             帳號資訊
           </h3>
         </div>
@@ -680,14 +680,14 @@ function ProfileTab({
             key={label}
             className="flex items-center px-5 py-3.5 border-b border-base-300 last:border-0 hover:bg-base-200/40 transition-colors"
           >
-            <div className="w-28 typo-card-body text-base-content/60 shrink-0">
+            <div className="w-28 typo-card-body text-text-primary/60 shrink-0">
               {label}
             </div>
-            <div className="flex-1 typo-card-body font-medium text-base-content truncate">
+            <div className="flex-1 typo-card-body font-medium text-text-primary truncate">
               {value}
             </div>
             {locked && (
-              <Lock size={12} className="text-base-content/50 shrink-0" />
+              <Lock size={12} className="text-text-primary/50 shrink-0" />
             )}
           </div>
         ))}
@@ -748,8 +748,8 @@ function ChangePasswordSection() {
         {success && <SuccessBox message="密碼已成功更新。" />}
         <div className="flex items-start justify-between">
           <div>
-            <div className="typo-card-title text-base-content">變更密碼</div>
-            <div className="typo-card-body text-base-content/60 mt-0.5">
+            <div className="typo-card-title text-text-primary">變更密碼</div>
+            <div className="typo-card-body text-text-primary/60 mt-0.5">
               建議定期更新密碼以保障帳號安全。
             </div>
           </div>
@@ -817,7 +817,7 @@ function SecurityTab({
 }) {
   if (!security)
     return (
-      <div className="text-center py-12 text-base-content/60 typo-card-body">
+      <div className="text-center py-12 text-text-primary/60 typo-card-body">
         載入中…
       </div>
     );
@@ -838,10 +838,10 @@ function SecurityTab({
               )}
             </div>
             <div className="flex-1">
-              <div className="typo-card-title text-base-content">
+              <div className="typo-card-title text-text-primary">
                 電子郵件驗證
               </div>
-              <div className="typo-card-body text-base-content/60 mt-0.5">
+              <div className="typo-card-body text-text-primary/60 mt-0.5">
                 {security.emailVerified
                   ? `${user.email} · 已驗證`
                   : '尚未驗證 — 請發送確認信進行驗證'}
@@ -859,10 +859,10 @@ function SecurityTab({
       {/* Login history */}
       <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl overflow-hidden">
         <div className="px-5 py-3 border-b border-base-300 bg-base-200/50 flex items-center justify-between">
-          <h3 className="typo-h4 text-base-content" style={JP}>
+          <h3 className="typo-h4 text-text-primary" style={JP}>
             登入紀錄
           </h3>
-          <span className="badge badge-outline typo-tab text-base-content/60">
+          <span className="badge badge-outline typo-tab text-text-primary/60">
             最近 10 筆
           </span>
         </div>
@@ -888,10 +888,10 @@ function SecurityTab({
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="typo-card-body font-medium text-base-content">
+                <div className="typo-card-body font-medium text-text-primary">
                   {log.browser} / {log.os}
                 </div>
-                <div className="typo-tab text-base-content/60">
+                <div className="typo-tab text-text-primary/60">
                   {log.time}
                   {log.ip ? ` · ${log.ip}` : ''}
                 </div>
@@ -909,7 +909,7 @@ function SecurityTab({
       {/* Security policy */}
       <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl">
         <div className="card-body p-5">
-          <h3 className="typo-h4 text-base-content mb-4" style={JP}>
+          <h3 className="typo-h4 text-text-primary mb-4" style={JP}>
             安全政策
           </h3>
           <div className="space-y-3">
@@ -927,10 +927,10 @@ function SecurityTab({
                 className="flex items-center gap-3 py-2.5 border-b border-base-300 last:border-0"
               >
                 <Icon size={14} className="text-primary shrink-0" />
-                <div className="flex-1 typo-card-body text-base-content">
+                <div className="flex-1 typo-card-body text-text-primary">
                   {label}
                 </div>
-                <div className="badge badge-ghost typo-tab text-base-content/70">
+                <div className="badge badge-ghost typo-tab text-text-primary/70">
                   {value}
                 </div>
               </div>

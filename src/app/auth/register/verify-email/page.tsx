@@ -73,10 +73,10 @@ export default function VerifyEmailPage() {
             <CheckCircle size={30} className="text-green-500" />
           </div>
           <div className="space-y-2">
-            <p className="typo-card-title text-base-content">
+            <p className="typo-card-title text-text-primary">
               電子郵件驗證完成！
             </p>
-            <p className="typo-card-body text-base-content/60 mt-1">
+            <p className="typo-card-body text-text-primary/60 mt-1">
               帳號已啟用，現在可以登入。
             </p>
           </div>
@@ -93,7 +93,7 @@ export default function VerifyEmailPage() {
       <div className="px-7 py-7 space-y-7">
         <div className="alert bg-base-200 rounded-2xl p-6 typo-card-body flex items-start gap-3 border-base-300">
           <Mail size={15} className="shrink-0 mt-0.5 text-primary" />
-          <span className="text-base-content/80">
+          <span className="text-text-primary/80">
             已發送 6 位數驗證碼至 <strong>{email}</strong>，請於 10 分鐘內輸入。
           </span>
         </div>
@@ -130,7 +130,7 @@ export default function VerifyEmailPage() {
           立即驗證
         </Btn>
 
-        <p className="text-center typo-tab text-base-content/60">
+        <p className="text-center typo-tab text-text-primary/60">
           沒有收到驗證碼？{' '}
           {resent ? (
             <span className="text-green-600">已重新發送</span>
@@ -143,7 +143,7 @@ export default function VerifyEmailPage() {
 
         <Link
           href="/auth/login"
-          className="flex items-center gap-1 typo-tab text-base-content/60 hover:text-base-content mx-auto w-fit transition-colors"
+          className="flex items-center gap-1 typo-tab text-text-primary/60 hover:text-text-primary mx-auto w-fit transition-colors"
         >
           <ArrowLeft size={12} />
           返回登入

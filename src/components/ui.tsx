@@ -28,7 +28,7 @@ export function PetLogo({ size = 'md' }: { size?: 'sm' | 'md' }) {
         🐾
       </div>
       <span
-        className={`font-bold ${size === 'sm' ? 'text-base' : 'text-lg'} text-base-content tracking-tight`}
+        className={`font-bold ${size === 'sm' ? 'text-base' : 'text-lg'} text-text-primary tracking-tight`}
         style={JP}
       >
         PetFull
@@ -292,12 +292,12 @@ export function Stepper({ step, labels }: { step: number; labels: string[] }) {
           <div key={s} className="flex items-center gap-3">
             <div className="flex flex-col items-center gap-1.5">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-[15px] font-bold transition-all ${step > s ? 'bg-green-500 text-white' : step === s ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content/50'}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-[15px] font-bold transition-all ${step > s ? 'bg-green-500 text-white' : step === s ? 'bg-primary text-primary-content' : 'bg-base-200 text-text-primary/50'}`}
               >
                 {step > s ? <Check size={14} /> : s}
               </div>
               <span
-                className={`text-[14px] leading-none whitespace-nowrap ${step === s ? 'text-primary font-medium' : 'text-base-content/50'}`}
+                className={`text-[14px] leading-none whitespace-nowrap ${step === s ? 'text-primary font-medium' : 'text-text-primary/50'}`}
               >
                 {label}
               </span>
