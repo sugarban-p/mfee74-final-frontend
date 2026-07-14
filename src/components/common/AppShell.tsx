@@ -1,5 +1,6 @@
 'use client';
 
+import { Toaster } from 'react-hot-toast';
 import Header from '@/src/components/common/header';
 import { Footer } from '@/src/components/common/Footer';
 
@@ -13,6 +14,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </main>
       <Footer />
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        toastOptions={{
+          className: '',
+          duration: 5000,
+          removeDelay: 1000,
+        }}
+      />
     </div>
   );
 }

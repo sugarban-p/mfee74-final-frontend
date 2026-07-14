@@ -59,7 +59,7 @@ export default function MemberLayout({
 
   return (
     <div className="w-full bg-background page-enter">
-      <div className="mx-auto w-full max-w-screen-2xl px-4 py-0 md:px-6 lg:py-0">
+      <div className="mx-auto w-full max-w-[1520px] px-4 py-0 md:px-6 lg:py-0">
         <div className="grid grid-cols-1 gap-6 items-start lg:grid-cols-[170px_minmax(0,1fr)] lg:gap-8 2xl:gap-7">
           <aside className="hidden lg:block">
             <div className="bg-transparent p-0.5 2xl:pt-3">
