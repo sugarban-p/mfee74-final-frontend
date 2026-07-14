@@ -4,6 +4,9 @@
 - Use `interface` for component props.
 - Add `"use client"` only to interactive components.
 - Prefer named exports for non-page components.
+- Icon-only buttons and links must have an accessible name, such as `aria-label`.
+- Images must use meaningful `alt` text unless they are purely decorative.
+- Form controls must have an associated label.
 
 ## TypeScript Strict Type Safety and Anti-Hallucination Guidelines
 
@@ -14,7 +17,8 @@
 2. **Do not bypass the type system**:
    - Never use `as any` or fabricated concrete type assertions such as `as MyMadeUpType`.
    - Never use the non-null assertion operator (`obj!.property`) to bypass null checks.
-   - Never suppress errors with `// @ts-ignore` or `// @ts-expect-error`.
+   - Never use `// @ts-ignore`.
+   - Use `// @ts-expect-error` only with a one-line reason, for example: `// @ts-expect-error -- upstream type definition is incorrect`.
    - **`unknown` is allowed**: external or untrusted input may start as `unknown`, but it must be narrowed with type guards, `in`, `Array.isArray`, `satisfies`, or similar techniques before use. Do not force-cast with `as SomeType` just to skip checks.
    - If the current context lacks a type definition for a specific object, keep it as `unknown` or ask the user to provide an interface. Do not guess and fill in fabricated field names.
 

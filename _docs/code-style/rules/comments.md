@@ -1,10 +1,8 @@
 ## File Header Comment Guidelines
 
-- Add a comment at the top of every code file that explains its **functionality** and **purpose**.
-- Keep the comment concise and specific so new developers can understand the file's responsibility before reading the entire file.
-- Suggested format, using the appropriate comment syntax for the language:
-  - Functionality: the primary capability or behavior provided.
-  - Purpose: why this file is needed and what problem it solves.
+- Do not add file header comments by default.
+- Add one concise top-of-file comment only when the file's role is not obvious, the file contains complex shared logic, or a Next.js Server Component intentionally does not use `"use client"`.
+- For Server Components, explain why it can stay server-side, for example: `// Server Component: no hooks, event handlers, or browser APIs are used.`
 
 ## Inline Comment Guidelines
 
