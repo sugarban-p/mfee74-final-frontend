@@ -145,12 +145,11 @@ export default function Header() {
                   image="/events.png"
                   imageAlt="最新活動"
                   title="最新活動"
-                  href="/"
                   items={[
-                    { title: '夏季新品', href: '/' },
-                    { title: '換季商品精選', href: '/' },
-                    { title: '首購85折優惠', href: '/' },
-                    { title: '會員限定禮盒', href: '/' },
+                    { title: '夏季新品', href: '/event' },
+                    { title: '換季商品精選', href: '/event' },
+                    { title: '首購85折優惠', href: '/event' },
+                    { title: '會員限定禮盒', href: '/event' },
                   ]}
                 />
               </div>

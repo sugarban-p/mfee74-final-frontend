@@ -13,7 +13,7 @@ interface MegaMenuCardProps {
   image: string;
   imageAlt: string;
   title: string;
-  href: string;
+  href?: string;
   items: MenuItem[];
 }
 
@@ -29,26 +29,43 @@ export default function MegaMenuCard({
     if (!(target instanceof Element) || !target.closest('a')) return;
 
     const popover = event.currentTarget.closest('[popover]') as
-      | (HTMLElement & { hidePopover?: () => void })
-      | null;
+      (HTMLElement & { hidePopover?: () => void }) | null;
     popover?.hidePopover?.();
   };
 
   return (
     <div className="card w-75 gap-4 p-5" onClick={handleClick}>
-      <Link href={href} className="card-image relative">
-        <Image
-          src={image}
-          alt={imageAlt}
-          width={512}
-          height={256}
-          className="rounded-xl"
-        />
-
-        <h2 className="absolute bottom-3 left-1.5 text-xl font-bold text-text-button">
-          {title}
-        </h2>
-      </Link>
+      {href ? (
+        <>
+          <Link href={href} className="card-image relative">
+            <Image
+              src={image}
+              alt={imageAlt}
+              width={512}
+              height={256}
+              className="rounded-xl"
+            />
+            <h2 className="absolute bottom-3 left-1.5 text-xl font-bold text-text-button">
+              {title}
+            </h2>
+          </Link>
+        </>
+      ) : (
+        <>
+          <div className="card-image relative">
+            <Image
+              src={image}
+              alt={imageAlt}
+              width={512}
+              height={256}
+              className="rounded-xl"
+            />{' '}
+            <h2 className="absolute bottom-3 left-1.5 text-xl font-bold text-text-button">
+              {title}
+            </h2>
+          </div>
+        </>
+      )}
 
       <div className="card-body p-0">
         <ul>
@@ -59,7 +76,7 @@ export default function MegaMenuCard({
             >
               <Link
                 href={item.href}
-                className="flex items-center text-text-primary gap-2"
+                className="flex items-center gap-2 text-text-primary"
               >
                 <LuChevronRight className="size-5" />
                 <h3 className="card-title">{item.title}</h3>

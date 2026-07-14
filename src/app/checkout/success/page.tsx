@@ -27,7 +27,7 @@ export default function CheckoutSuccessPage() {
           感謝您的購買，我們將盡快為您備貨出貨
         </p>
 
-        <dl className="mb-5 space-y-3 rounded-2xl bg-card-secondary p-4 text-left typo-card-body">
+        <dl className="typo-card-body mb-5 space-y-3 rounded-2xl bg-card-secondary p-4 text-left">
           <div className="flex justify-between gap-4">
             <dt className="text-text-secondary">訂單編號</dt>
             <dd className="text-right font-bold text-text-primary">
@@ -65,8 +65,8 @@ export default function CheckoutSuccessPage() {
             查看訂單
           </Link>
 
-          <Link href="/products" className="next-button typo-tab">
-            繼續購物
+          <Link href="/" className="next-button typo-tab">
+            回到首頁
           </Link>
         </div>
       </div>
