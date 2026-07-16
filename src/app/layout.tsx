@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import '@radix-ui/themes/styles.css';
 import './globals.css';
 import './globals-extra.css';
 import AppShell from '@/src/components/common/AppShell';
