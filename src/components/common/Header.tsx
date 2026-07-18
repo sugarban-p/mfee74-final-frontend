@@ -104,11 +104,22 @@ export default function Header() {
                         title="貓咪專區"
                         href={`/product/cat?title=${encodeURIComponent('貓咪專區')}`}
                         items={[
-                          { title: '主食', href: '/' },
-                          { title: '零食/點心', href: '/' },
-                          { title: '牽引用品', href: '/' },
-                          { title: '保健品', href: '/' },
-                          { title: '生活用品', href: '/' },
+                          {
+                            title: '主食',
+                            href: '/product/cat?category=main-food',
+                          },
+                          {
+                            title: '零食/點心',
+                            href: '/product/cat?category=treat',
+                          },
+                          {
+                            title: '保健品',
+                            href: '/product/cat?category=supplement',
+                          },
+                          {
+                            title: '生活用品',
+                            href: '/product/cat?category=supplies',
+                          },
                         ]}
                       />
                     </li>
@@ -119,11 +130,22 @@ export default function Header() {
                         title="狗勾專區"
                         href={`/product/dog?title=${encodeURIComponent('狗勾專區')}`}
                         items={[
-                          { title: '主食', href: '/' },
-                          { title: '零食/點心', href: '/' },
-                          { title: '牽引用品', href: '/' },
-                          { title: '保健品', href: '/' },
-                          { title: '生活用品', href: '/' },
+                          {
+                            title: '主食',
+                            href: '/product/dog?category=main-food',
+                          },
+                          {
+                            title: '零食/點心',
+                            href: '/product/dog?category=treat',
+                          },
+                          {
+                            title: '牽引用品',
+                            href: '/product/dog?category=leash',
+                          },
+                          {
+                            title: '生活用品',
+                            href: '/product/dog?category=supplies',
+                          },
                         ]}
                       />
                     </li>

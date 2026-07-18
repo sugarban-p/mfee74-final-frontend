@@ -138,14 +138,14 @@ export default function ProductPage() {
           ))}
           <button
             type="button"
-            className={`group absolute inset-x-0 bottom-0 flex gap-2 h-24 justify-center items-center bg-linear-to-t from-black/85 to-transparent pt-7 cursor-pointer transition-transform hover:scale-[1.05] ${showAllDescriptions ? 'pb-7' : 'pt-7'}`}
+            className={`group absolute inset-x-0 bottom-0 flex h-24 cursor-pointer items-center justify-center gap-2 bg-linear-to-t from-black/85 to-transparent pt-7 transition-transform hover:scale-[1.05] ${showAllDescriptions ? 'pb-7' : 'pt-7'}`}
             onClick={() => setShowAllDescriptions((prev) => !prev)}
           >
             <span className="typo-tab text-text-button group-hover:underline">
               {showAllDescriptions ? '收合內容' : '展開全部'}
             </span>
             <LuChevronRight
-              className={`text-text-button size-6 ${showAllDescriptions ? '-rotate-90' : 'rotate-90'}`}
+              className={`size-6 text-text-button ${showAllDescriptions ? '-rotate-90' : 'rotate-90'}`}
             />
           </button>
         </div>
