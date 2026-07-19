@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { LuImagePlus, LuInfo, LuSparkles } from 'react-icons/lu';
+import { PetDeleteDialog } from '@/src/components/pets/PetDeleteDialog';
 import type { PetItem } from '@/src/types/pet';
 
 type PetProfileFormMode = 'create' | 'view' | 'edit';
@@ -23,7 +24,6 @@ const MAX_HEALTH_CONDITIONS = 4;
 const healthConditionOptions = [
   { label: '皮膚敏感', code: 'skin_sensitive' },
   { label: '腸胃敏感', code: 'sensitive_stomach' },
-  { label: '容易掉毛', code: 'shedding' },
   { label: '毛球困擾', code: 'hairball' },
   { label: '體重控制', code: 'weight_control' },
   { label: '關節保健', code: 'joint_care' },
@@ -37,11 +37,16 @@ const healthConditionOptions = [
 
 const allergyIngredientOptions = [
   '雞肉',
+  '火雞',
   '牛肉',
   '魚肉',
   '羊肉',
-  '穀物',
-  '乳製品',
+  '鴨肉',
+  '鹿肉',
+  '鵪鶉',
+  '鵝肉',
+  '蝦類',
+  '貝類',
   '蛋',
   '無',
 ];
@@ -532,6 +537,13 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
               />
             </label>
           </div>
+
+          {/* 刪除是編輯模式專用操作，新增與檢視頁都不會顯示。 */}
+          {mode === 'edit' && pet && (
+            <div className="mt-12 border-t border-border pt-8">
+              <PetDeleteDialog petId={pet.id} petName={pet.name} />
+            </div>
+          )}
         </form>
       </div>
     </section>
