@@ -14,7 +14,7 @@ const baseClassName =
 const activeClassName =
   'bg-primary text-text-button hover:bg-primary hover:text-text-button focus:bg-primary focus:text-text-button';
 const inactiveClassName =
-  'border border-secondary bg-transparent text-text-primary hover:bg-base-200 hover:text-base-content';
+  'border border-secondary bg-transparent text-text-primary hover:bg-base-200 hover:text-text-primary';
 
 export function FilterButton({
   href,

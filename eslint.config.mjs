@@ -33,4 +33,8 @@ const eslintConfig = defineConfig([
   },
 ]);
 
+module.exports = [
+  // Any other config imports go at the top
+  eslintPluginPrettierRecommended,
+];
 export default eslintConfig;
