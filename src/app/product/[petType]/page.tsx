@@ -91,6 +91,13 @@ interface ProductListResponse {
   products: ApiProduct[];
 }
 
+interface FavoriteResponse {
+  success: boolean;
+  favorites: {
+    product_id: number;
+  }[];
+}
+
 interface CardProduct {
   id: number;
   image: string;
@@ -101,6 +108,7 @@ interface CardProduct {
   slug: string;
   gallery: string[];
   petType: string;
+  isFavorite: boolean;
   soldOut: boolean;
 }
 
@@ -150,7 +158,8 @@ const paramsFromUrlSearchParams = (
 const mapProducts = (
   products: ApiProduct[],
   tags: ApiTag[],
-  petType: string
+  petType: string,
+  favoriteProductIds: Set<number>
 ) => {
   const tagMap = new Map(tags.map((tag) => [tag.id, tag.tag_ch]));
 
@@ -176,6 +185,7 @@ const mapProducts = (
       slug: product.slug,
       gallery,
       petType,
+      isFavorite: favoriteProductIds.has(product.id),
       soldOut: Number(product.total_stock ?? 0) <= 0,
     };
   });
@@ -191,6 +201,9 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     useState<ProductListResponse>(emptyProductData);
   const [loadingError, setLoadingError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [favoriteProductIds, setFavoriteProductIds] = useState<Set<number>>(
+    new Set()
+  );
   const [keywordInput, setKeywordInput] = useState('');
   const [minPriceInput, setMinPriceInput] = useState('');
   const [maxPriceInput, setMaxPriceInput] = useState('');
@@ -270,6 +283,31 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     return () => controller.abort();
   }, [params, petType, searchParamsReady]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void fetch('/api/products/getFavorite', { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error();
+
+        return response.json();
+      })
+      .then((data: FavoriteResponse) => {
+        if (!data.success) throw new Error();
+
+        setFavoriteProductIds(
+          new Set(data.favorites.map((favorite) => favorite.product_id))
+        );
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
+
   const categoriesFromApi = productData.facets.categories.map((category) => ({
     category: category.tag_ch,
     count: Number(category.catCount),
@@ -315,7 +353,8 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   const displayedProducts: CardProduct[] = mapProducts(
     productData.products,
     productData.facets.tags,
-    petType
+    petType,
+    favoriteProductIds
   );
   const searchDisabled = keywordInput.trim() === search;
   const createHref = ({
