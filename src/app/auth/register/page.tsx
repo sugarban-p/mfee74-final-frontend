@@ -143,20 +143,6 @@ export default function RegisterPage() {
           建立帳號
         </Btn>
 
-        <Divider />
-
-        <a
-          href="/api/oauth/google"
-          className="block h-[46px] w-full overflow-hidden rounded-full border border-[#E7DDD3] bg-[#FFFEFC] p-0"
-        >
-          <span
-            className="flex h-full w-full items-center justify-center gap-2 bg-[#FFFEFC] text-[#3C3631] transition-colors hover:bg-[#F8EFE6]"
-            style={{ ...AUTH_TEXT, fontSize: "16px" }}
-          >
-            <GoogleIcon /> 使用 Google 註冊
-          </span>
-        </a>
-
         <p
           className="text-center text-[16px] leading-[1.35] text-[#7C726B]"
           style={AUTH_TEXT}

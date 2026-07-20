@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { LuChevronRight, LuShoppingCart } from 'react-icons/lu';
 import { RiHeartFill, RiHeartLine } from 'react-icons/ri';
@@ -26,6 +27,9 @@ export function QuickShoppingSection({
   product,
   gallery,
 }: QuickShoppingSectionProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isFavorite, setIsFavorite] = useState(product.isFavorite ?? false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [checkedItem, setCheckedItem] = useState(flavors[0]);
@@ -84,6 +88,27 @@ export function QuickShoppingSection({
     }
 
     removeFavoriteSuccess(product.name);
+  };
+
+  const handleAddToCart = async () => {
+    const queryString = searchParams.toString();
+    const nextPath = queryString ? `${pathname}?${queryString}` : pathname;
+
+    try {
+      const res = await fetch('/api/user/profile', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+
+      if (!res.ok) {
+        router.push(`/auth/login?next=${encodeURIComponent(nextPath)}`);
+        return;
+      }
+
+      addCartSuccess(product.name, checkedItem);
+    } catch {
+      toast.error('網路錯誤，請稍後再試。');
+    }
   };
 
   return (
@@ -159,16 +184,16 @@ export function QuickShoppingSection({
             aria-pressed={isFavorite}
             aria-label={isFavorite ? '取消收藏' : '加入收藏'}
             className={[
-              'w-30 group cursor-pointer hover:scale-[1.02] hover:bg-button-secondary-hover typo-tab flex h-10 justify-center items-center gap-2 rounded-lg border border-secondary px-3 text-text-primary',
+              'group typo-tab flex h-10 w-30 cursor-pointer items-center justify-center gap-2 rounded-lg border border-secondary px-3 text-text-primary hover:scale-[1.02] hover:bg-button-secondary-hover',
               isFavorite
-                ? 'text-primary bg-card-secondary'
-                : 'text-text-primary hover:bg-button-secondary-hover ',
+                ? 'bg-card-secondary text-primary'
+                : 'text-text-primary hover:bg-button-secondary-hover',
             ].join(' ')}
             onClick={handleFavoriteClick}
           >
             {isFavorite ? (
               <>
-                <RiHeartFill className="size-5 text-primary " />
+                <RiHeartFill className="size-5 text-primary" />
                 已收藏
               </>
             ) : (
@@ -239,7 +264,7 @@ export function QuickShoppingSection({
             <button
               type="button"
               className="next-button typo-tab flex w-[200px] items-center justify-center gap-2 py-2"
-              onClick={() => addCartSuccess(product.name, checkedItem)}
+              onClick={handleAddToCart}
             >
               <LuShoppingCart className="size-4" />
               加入購物車

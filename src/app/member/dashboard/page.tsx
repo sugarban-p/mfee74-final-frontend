@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   LuPackage,
@@ -494,6 +494,7 @@ function ProfileTab({
   user: AuthUser;
   onUpdate: (u: AuthUser) => void;
 }) {
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [editing, setEditing] = useState(false);
   const [f, setF] = useState({
     name: user.name ?? '',
@@ -501,18 +502,81 @@ function ProfileTab({
     phone: user.phone ?? '',
     address: user.address ?? '',
   });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!avatarFile) {
+      setAvatarPreview(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(avatarFile);
+    setAvatarPreview(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [avatarFile]);
+
+  const resetEditState = () => {
+    setEditing(false);
+    setError('');
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setF({
+      name: user.name ?? '',
+      nickname: user.nickname ?? '',
+      phone: user.phone ?? '',
+      address: user.address ?? '',
+    });
+  };
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setError('頭像格式僅支援 JPG、PNG、WEBP。');
+      event.target.value = '';
+      return;
+    }
+
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError('頭像大小不可超過 2MB。');
+      event.target.value = '';
+      return;
+    }
+
+    setError('');
+    setAvatarFile(file);
+  };
 
   const save = async () => {
     setLoading(true);
     setError('');
     try {
+      const formData = new FormData();
+      formData.append('name', f.name);
+      formData.append('nickname', f.nickname);
+      formData.append('phone', f.phone);
+      formData.append('address', f.address);
+
+      if (avatarFile) {
+        formData.append('avatar', avatarFile);
+      }
+
       const res = await fetch('/api/user/update', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(f),
+        body: formData,
       });
       const data = await res.json();
       if (!res.ok) {
@@ -520,6 +584,8 @@ function ProfileTab({
         return;
       }
       onUpdate({ ...user, ...data });
+      setAvatarFile(null);
+      setAvatarPreview(null);
       setEditing(false);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -540,16 +606,33 @@ function ProfileTab({
             <div className="relative shrink-0">
               <img
                 src={
+                  avatarPreview ??
                   user.avatar ??
                   `https://api.dicebear.com/7.x/thumbs/svg?seed=${user.email}`
                 }
                 alt={user.name ?? ''}
                 className="h-20 w-20 rounded-2xl border-2 border-base-300 bg-base-200 object-cover"
               />
+
               {editing && (
-                <button className="btn absolute -right-1.5 -bottom-1.5 btn-circle shadow btn-primary btn-xs">
-                  <Camera size={13} />
-                </button>
+                <>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                    aria-label="上傳會員頭像"
+                  />
+                  <button
+                    type="button"
+                    aria-label="選擇頭像"
+                    className="btn absolute -right-1.5 -bottom-1.5 btn-circle shadow btn-light btn-xs"
+                    onClick={() => avatarInputRef.current?.click()}
+                  >
+                    <Camera size={13} />
+                  </button>
+                </>
               )}
             </div>
             <div className="min-w-0 flex-1">
@@ -579,19 +662,15 @@ function ProfileTab({
                     onChange={(v) => setF((p) => ({ ...p, address: v }))}
                     placeholder="台北市中山區..."
                   />
+                  <p className="text-xs text-text-primary/60">
+                    頭像格式僅支援 JPG、PNG、WEBP，大小上限 2MB。
+                  </p>
                   {error && <ErrorBox message={error} />}
                   <div className="flex gap-2">
                     <Btn onClick={save} loading={loading} sm>
                       儲存變更
                     </Btn>
-                    <Btn
-                      onClick={() => {
-                        setEditing(false);
-                        setError('');
-                      }}
-                      variant="outline"
-                      sm
-                    >
+                    <Btn onClick={resetEditState} variant="outline" sm>
                       取消
                     </Btn>
                   </div>

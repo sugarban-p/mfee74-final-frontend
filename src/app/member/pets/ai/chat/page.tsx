@@ -17,6 +17,7 @@ interface RecommendedProduct {
   name: string;
   description: string;
   price: string;
+  slug: string;
 }
 
 /**
@@ -61,6 +62,7 @@ const recommendedProducts: RecommendedProduct[] = [
     name: '低敏腸胃照護飼料',
     description: '適合腸胃敏感與需要溫和配方的毛孩。',
     price: 'NT$999',
+    slug: 'hypoallergenic-digestive-care',
   },
   {
     image: '',
@@ -68,6 +70,7 @@ const recommendedProducts: RecommendedProduct[] = [
     name: '皮膚毛髮保健配方',
     description: '幫助維持皮膚健康與毛髮光澤。',
     price: 'NT$1,280',
+    slug: 'skin-coat-care-formula',
   },
 ];
 
@@ -221,7 +224,7 @@ export default async function PetAiChatPage({
            */}
           <div className="flex gap-5 overflow-x-auto pb-2 lg:flex-wrap lg:overflow-visible lg:pl-[52px]">
             {recommendedProducts.map((product) => (
-              <ProductCard key={product.name} product={product} />
+              <ProductCard key={product.slug} product={product} />
             ))}
           </div>
         </div>
