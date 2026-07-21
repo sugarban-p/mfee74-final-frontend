@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   LuPackage,
@@ -131,7 +131,7 @@ export default function DashboardPage() {
   if (!user || !stats) {
     return (
       <div className="flex items-center justify-center py-24">
-        <span className="loading loading-spinner loading-md text-primary" />
+        <span className="loading loading-md loading-spinner text-primary" />
       </div>
     );
   }
@@ -140,36 +140,36 @@ export default function DashboardPage() {
     <div className="space-y-6 2xl:space-y-4">
       {/* Welcome hero */}
       <div
-        className="rounded-3xl 2xl:rounded-[20px] p-6 md:p-7 2xl:px-7 2xl:py-6 text-white relative overflow-hidden"
+        className="relative overflow-hidden rounded-3xl p-6 text-white md:p-7 2xl:rounded-[20px] 2xl:px-7 2xl:py-6"
         style={{
           background: '#F0822F',
         }}
       >
-        <div className="absolute right-8 top-7 2xl:right-20 2xl:top-3 text-5xl opacity-20 2xl:opacity-30 select-none pointer-events-none rotate-6">
+        <div className="pointer-events-none absolute top-7 right-8 rotate-6 text-5xl opacity-20 select-none 2xl:top-3 2xl:right-20 2xl:opacity-30">
           🐾
         </div>
-        <div className="absolute right-16 top-16 2xl:right-28 2xl:top-14 text-4xl opacity-15 2xl:opacity-20 select-none pointer-events-none -rotate-6">
+        <div className="pointer-events-none absolute top-16 right-16 -rotate-6 text-4xl opacity-15 select-none 2xl:top-14 2xl:right-28 2xl:opacity-20">
           🐾
         </div>
-        <div className="hidden 2xl:block absolute right-40 top-8 text-3xl opacity-20 select-none pointer-events-none rotate-6">
+        <div className="pointer-events-none absolute top-8 right-40 hidden rotate-6 text-3xl opacity-20 select-none 2xl:block">
           🐾
         </div>
         <div className="relative z-10">
-          <p className="text-orange-100 typo-tab mb-1 2xl:mb-1.5" style={JP}>
+          <p className="typo-tab mb-1 text-orange-100 2xl:mb-1.5" style={JP}>
             歡迎回來
           </p>
           <h1
-            className="text-3xl 2xl:text-[46px] 2xl:leading-[1.08] font-bold"
+            className="text-3xl font-bold 2xl:text-[46px] 2xl:leading-[1.08]"
             style={{ fontFamily: "'Noto Serif TC', serif" }}
           >
             {user.nickname ?? user.name ?? user.email} 你好！
           </h1>
-          <div className="flex items-center gap-3 2xl:gap-2.5 mt-3 2xl:mt-4 flex-wrap">
-            <span className="typo-tab bg-white/20 2xl:bg-white/24 text-white px-2.5 py-0.5 2xl:py-1 rounded-full">
+          <div className="mt-3 flex flex-wrap items-center gap-3 2xl:mt-4 2xl:gap-2.5">
+            <span className="typo-tab rounded-full bg-white/20 px-2.5 py-0.5 text-white 2xl:bg-white/24 2xl:py-1">
               會員編號：{user.userNo ?? `U-${user.id}`}
             </span>
             {user.emailVerified && (
-              <span className="typo-tab bg-white/20 2xl:bg-white/24 text-white px-2.5 py-0.5 2xl:py-1 rounded-full flex items-center gap-1">
+              <span className="typo-tab flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-white 2xl:bg-white/24 2xl:py-1">
                 <LuCircleCheck size={12} className="hidden 2xl:block" />
                 郵件已驗證
               </span>
@@ -179,12 +179,12 @@ export default function DashboardPage() {
       </div>
 
       {/* Tab switcher */}
-      <div className="tabs tabs-box rounded-2xl 2xl:rounded-[16px] bg-base-200 2xl:bg-transparent w-fit p-1 border border-base-300 2xl:border-[#E9DED3] 2xl:shadow-none">
+      <div className="tabs-box tabs w-fit rounded-2xl border border-base-300 bg-base-200 p-1 2xl:rounded-[16px] 2xl:border-[#E9DED3] 2xl:bg-transparent 2xl:shadow-none">
         {(['overview', 'profile', 'security'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`tab tab-sm rounded-xl 2xl:rounded-[12px] px-6 2xl:px-8 h-8 2xl:h-10 min-h-8 2xl:min-h-10 text-[14px] ${tab === t ? 'tab-active bg-base-100 2xl:bg-[#F4EEE8] shadow-sm text-[#2D2826]' : 'text-text-primary/60 2xl:text-[#4A453F]'}`}
+            className={`tab-sm tab h-8 min-h-8 rounded-xl px-6 text-[14px] 2xl:h-10 2xl:min-h-10 2xl:rounded-[12px] 2xl:px-8 ${tab === t ? 'tab-active bg-base-100 text-[#2D2826] shadow-sm 2xl:bg-[#F4EEE8]' : 'text-text-primary/60 2xl:text-[#4A453F]'}`}
           >
             {t === 'overview'
               ? '總覽'
@@ -235,20 +235,20 @@ function OverviewTab({
         {
           l: '待付款',
           v: stats.orders.pending,
-          c: 'text-orange-500',
-          bg: 'bg-orange-50',
+          c: 'text-cyan-600',
+          bg: 'bg-sky-100',
         },
         {
           l: '已完成',
           v: stats.orders.completed,
-          c: 'text-green-600',
-          bg: 'bg-green-50',
+          c: 'text-lime-600',
+          bg: 'bg-green-100',
         },
         {
-          l: '取消',
+          l: '已取消',
           v: stats.orders.cancelled,
-          c: 'text-red-500',
-          bg: 'bg-red-50',
+          c: 'text-gray-500',
+          bg: 'bg-slate-100',
         },
       ],
     },
@@ -278,37 +278,11 @@ function OverviewTab({
       hint: '查看毛孩資料與狀態',
       tags: [],
     },
-    {
-      href: '/member/coupons',
-      icon: LuTicketPercent,
-      watermarkTone: 'text-purple-100',
-      chipBg: 'bg-purple-100',
-      chipText: 'text-purple-500',
-      chipLabel: '優惠券總覽',
-      title: '優惠券',
-      num: stats.coupons.available,
-      unit: '張可用',
-      hint: '可用與使用狀態',
-      tags: [
-        {
-          l: '已使用',
-          v: stats.coupons.used,
-          c: 'text-violet-600',
-          bg: 'bg-violet-50',
-        },
-        {
-          l: '已過期',
-          v: stats.coupons.expired,
-          c: 'text-red-500',
-          bg: 'bg-red-50',
-        },
-      ],
-    },
   ];
 
   return (
     <div className="space-y-5 2xl:space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 2xl:gap-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:gap-5">
         {cards.map(
           ({
             href,
@@ -326,7 +300,7 @@ function OverviewTab({
             <Link
               key={href}
               href={href}
-              className="relative bg-[#FDFBF6] border border-[#ECE3DA] rounded-2xl shadow-sm overflow-hidden hover:border-primary/40 hover:shadow-md transition-all"
+              className="relative overflow-hidden rounded-2xl border border-[#ECE3DA] bg-[#FDFBF6] shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
             >
               <div
                 className={`absolute top-1 right-2 ${watermarkTone} pointer-events-none select-none`}
@@ -336,29 +310,29 @@ function OverviewTab({
 
               <div className="relative px-5 pt-4 pb-4">
                 <div
-                  className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} typo-tab px-2.5 py-1 rounded-full mb-3`}
+                  className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} typo-tab mb-3 rounded-full px-2.5 py-1`}
                 >
                   <Icon size={13} strokeWidth={2} />
                   <span>{chipLabel}</span>
                 </div>
 
                 <div className="mb-1">
-                  <span className="text-4xl font-bold text-gray-900 tracking-tight">
+                  <span className="text-4xl font-bold tracking-tight text-gray-900">
                     {num}
                   </span>
-                  <span className="ml-1.5 typo-card-body text-gray-400">
+                  <span className="typo-card-body ml-1.5 text-gray-400">
                     {unit}
                   </span>
-                  <span className="ml-1 typo-card-title text-gray-700">
+                  <span className="typo-card-title ml-1 text-gray-700">
                     {title}
                   </span>
                 </div>
 
-                <div className="typo-card-body text-gray-400 mb-2" style={JP}>
+                <div className="typo-card-body mb-2 text-gray-400" style={JP}>
                   {hint}
                 </div>
 
-                <div className="border-t border-gray-100 my-3" />
+                <div className="my-3 border-t border-gray-100" />
 
                 {tags.length > 0 && (
                   <div className="flex items-center gap-2">
@@ -370,7 +344,7 @@ function OverviewTab({
                         <div className={`typo-card-title leading-tight ${t.c}`}>
                           {t.v}
                         </div>
-                        <div className="typo-card-body text-gray-400 mt-0.5 leading-tight">
+                        <div className="typo-card-body mt-0.5 leading-tight text-gray-400">
                           {t.l}
                         </div>
                       </div>
@@ -379,8 +353,8 @@ function OverviewTab({
                 )}
 
                 {tags.length === 0 && (
-                  <div className="rounded-xl px-2 py-1.5 bg-gray-100 text-center">
-                    <div className="typo-card-body text-gray-400 leading-tight">
+                  <div className="rounded-xl bg-gray-100 px-2 py-1.5 text-center">
+                    <div className="typo-card-body leading-tight text-gray-400">
                       前往查看完整{title}內容
                     </div>
                   </div>
@@ -391,12 +365,12 @@ function OverviewTab({
         )}
       </div>
 
-      <div className="card bg-[#FDFBF6]-100">
+      <div className="bg-[#FDFBF6]-100 card">
         <div className="card-body px-6 py-5">
-          <h2 className="typo-h4 text-text-primary mb-3" style={JP}>
+          <h2 className="typo-h4 mb-3 text-text-primary" style={JP}>
             快速操作
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {[
               {
                 label: '編輯個人資料',
@@ -444,7 +418,7 @@ function OverviewTab({
                   <Link
                     key={label}
                     href={href}
-                    className="relative bg-[#FDFBF6] border border-[#ECE3DA] rounded-2xl shadow-sm overflow-hidden hover:border-primary/40 hover:shadow-md transition-all"
+                    className="relative overflow-hidden rounded-2xl border border-[#ECE3DA] bg-[#FDFBF6] shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
                   >
                     <div
                       className={`absolute top-1 right-2 ${watermarkTone} pointer-events-none select-none`}
@@ -454,14 +428,14 @@ function OverviewTab({
 
                     <div className="relative px-4 py-4">
                       <div
-                        className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} typo-tab px-2.5 py-1 rounded-full mb-3`}
+                        className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} typo-tab mb-3 rounded-full px-2.5 py-1`}
                       >
                         <Icon size={13} strokeWidth={2} />
                         <span>{chipLabel}</span>
                       </div>
 
                       <div className="mb-1">
-                        <span className="typo-card-title text-gray-900 tracking-tight">
+                        <span className="typo-card-title tracking-tight text-gray-900">
                           {label}
                         </span>
                       </div>
@@ -475,7 +449,7 @@ function OverviewTab({
                   <button
                     key={label}
                     onClick={onClick}
-                    className="relative bg-[#FDFBF6] border border-[#ECE3DA] rounded-2xl shadow-sm overflow-hidden hover:border-primary/40 hover:shadow-md transition-all text-left"
+                    className="relative overflow-hidden rounded-2xl border border-[#ECE3DA] bg-[#FDFBF6] text-left shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
                   >
                     <div
                       className={`absolute top-1 right-2 ${watermarkTone} pointer-events-none select-none`}
@@ -485,14 +459,14 @@ function OverviewTab({
 
                     <div className="relative px-4 py-4">
                       <div
-                        className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} typo-tab px-2.5 py-1 rounded-full mb-3`}
+                        className={`inline-flex items-center gap-1.5 ${chipBg} ${chipText} typo-tab mb-3 rounded-full px-2.5 py-1`}
                       >
                         <Icon size={13} strokeWidth={2} />
                         <span>{chipLabel}</span>
                       </div>
 
                       <div className="mb-1">
-                        <span className="typo-card-title text-gray-900 tracking-tight">
+                        <span className="typo-card-title tracking-tight text-gray-900">
                           {label}
                         </span>
                       </div>
@@ -520,6 +494,7 @@ function ProfileTab({
   user: AuthUser;
   onUpdate: (u: AuthUser) => void;
 }) {
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [editing, setEditing] = useState(false);
   const [f, setF] = useState({
     name: user.name ?? '',
@@ -527,18 +502,81 @@ function ProfileTab({
     phone: user.phone ?? '',
     address: user.address ?? '',
   });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!avatarFile) {
+      setAvatarPreview(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(avatarFile);
+    setAvatarPreview(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [avatarFile]);
+
+  const resetEditState = () => {
+    setEditing(false);
+    setError('');
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setF({
+      name: user.name ?? '',
+      nickname: user.nickname ?? '',
+      phone: user.phone ?? '',
+      address: user.address ?? '',
+    });
+  };
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setError('頭像格式僅支援 JPG、PNG、WEBP。');
+      event.target.value = '';
+      return;
+    }
+
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError('頭像大小不可超過 2MB。');
+      event.target.value = '';
+      return;
+    }
+
+    setError('');
+    setAvatarFile(file);
+  };
 
   const save = async () => {
     setLoading(true);
     setError('');
     try {
+      const formData = new FormData();
+      formData.append('name', f.name);
+      formData.append('nickname', f.nickname);
+      formData.append('phone', f.phone);
+      formData.append('address', f.address);
+
+      if (avatarFile) {
+        formData.append('avatar', avatarFile);
+      }
+
       const res = await fetch('/api/user/update', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(f),
+        body: formData,
       });
       const data = await res.json();
       if (!res.ok) {
@@ -546,6 +584,8 @@ function ProfileTab({
         return;
       }
       onUpdate({ ...user, ...data });
+      setAvatarFile(null);
+      setAvatarPreview(null);
       setEditing(false);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -560,25 +600,42 @@ function ProfileTab({
     <div className="space-y-5">
       {success && <SuccessBox message="個人資料已成功更新。" />}
 
-      <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl">
+      <div className="bg-[#FDFBF6]-100 card rounded-2xl border border-base-300">
         <div className="card-body p-5">
           <div className="flex items-start gap-4">
             <div className="relative shrink-0">
               <img
                 src={
+                  avatarPreview ??
                   user.avatar ??
                   `https://api.dicebear.com/7.x/thumbs/svg?seed=${user.email}`
                 }
                 alt={user.name ?? ''}
-                className="w-20 h-20 rounded-2xl object-cover border-2 border-base-300 bg-base-200"
+                className="h-20 w-20 rounded-2xl border-2 border-base-300 bg-base-200 object-cover"
               />
+
               {editing && (
-                <button className="btn btn-primary btn-xs btn-circle absolute -bottom-1.5 -right-1.5 shadow">
-                  <Camera size={13} />
-                </button>
+                <>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                    aria-label="上傳會員頭像"
+                  />
+                  <button
+                    type="button"
+                    aria-label="選擇頭像"
+                    className="btn-light btn absolute -right-1.5 -bottom-1.5 btn-circle shadow btn-xs"
+                    onClick={() => avatarInputRef.current?.click()}
+                  >
+                    <Camera size={13} />
+                  </button>
+                </>
               )}
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               {editing ? (
                 <div className="space-y-3">
                   <FieldInput
@@ -605,19 +662,15 @@ function ProfileTab({
                     onChange={(v) => setF((p) => ({ ...p, address: v }))}
                     placeholder="台北市中山區..."
                   />
+                  <p className="text-xs text-text-primary/60">
+                    頭像格式僅支援 JPG、PNG、WEBP，大小上限 2MB。
+                  </p>
                   {error && <ErrorBox message={error} />}
                   <div className="flex gap-2">
                     <Btn onClick={save} loading={loading} sm>
                       儲存變更
                     </Btn>
-                    <Btn
-                      onClick={() => {
-                        setEditing(false);
-                        setError('');
-                      }}
-                      variant="outline"
-                      sm
-                    >
+                    <Btn onClick={resetEditState} variant="outline" sm>
                       取消
                     </Btn>
                   </div>
@@ -635,13 +688,13 @@ function ProfileTab({
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {user.emailVerified && (
-                      <span className="badge badge-success badge-outline gap-1 typo-tab px-2 py-2">
+                      <span className="typo-tab badge gap-1 badge-outline px-2 py-2 badge-success">
                         <LuCircleCheck size={9} />
                         郵件已驗證
                       </span>
                     )}
                     {user.googleLinked && (
-                      <span className="badge badge-info badge-outline gap-1 typo-tab px-2 py-2">
+                      <span className="typo-tab badge gap-1 badge-outline px-2 py-2 badge-info">
                         Google 已連結
                       </span>
                     )}
@@ -653,8 +706,8 @@ function ProfileTab({
         </div>
       </div>
 
-      <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-base-300 bg-base-200/50">
+      <div className="bg-[#FDFBF6]-100 card overflow-hidden rounded-2xl border border-base-300">
+        <div className="border-b border-base-300 bg-base-200/50 px-5 py-3">
           <h3 className="typo-card-title text-text-primary" style={JP}>
             帳號資訊
           </h3>
@@ -678,16 +731,16 @@ function ProfileTab({
         ].map(({ label, value, locked }) => (
           <div
             key={label}
-            className="flex items-center px-5 py-3.5 border-b border-base-300 last:border-0 hover:bg-base-200/40 transition-colors"
+            className="flex items-center border-b border-base-300 px-5 py-3.5 transition-colors last:border-0 hover:bg-base-200/40"
           >
-            <div className="w-28 typo-card-body text-text-primary/60 shrink-0">
+            <div className="typo-card-body w-28 shrink-0 text-text-primary/60">
               {label}
             </div>
-            <div className="flex-1 typo-card-body font-medium text-text-primary truncate">
+            <div className="typo-card-body flex-1 truncate font-medium text-text-primary">
               {value}
             </div>
             {locked && (
-              <Lock size={12} className="text-text-primary/50 shrink-0" />
+              <Lock size={12} className="shrink-0 text-text-primary/50" />
             )}
           </div>
         ))}
@@ -743,13 +796,13 @@ function ChangePasswordSection() {
   };
 
   return (
-    <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl">
+    <div className="bg-[#FDFBF6]-100 card rounded-2xl border border-base-300">
       <div className="card-body p-5">
         {success && <SuccessBox message="密碼已成功更新。" />}
         <div className="flex items-start justify-between">
           <div>
             <div className="typo-card-title text-text-primary">變更密碼</div>
-            <div className="typo-card-body text-text-primary/60 mt-0.5">
+            <div className="typo-card-body mt-0.5 text-text-primary/60">
               建議定期更新密碼以保障帳號安全。
             </div>
           </div>
@@ -760,7 +813,7 @@ function ChangePasswordSection() {
           )}
         </div>
         {open && (
-          <div className="mt-4 pt-4 border-t border-base-300 space-y-4">
+          <div className="mt-4 space-y-4 border-t border-base-300 pt-4">
             <PasswordInput
               label="目前密碼"
               value={pw.old}
@@ -817,7 +870,7 @@ function SecurityTab({
 }) {
   if (!security)
     return (
-      <div className="text-center py-12 text-text-primary/60 typo-card-body">
+      <div className="typo-card-body py-12 text-center text-text-primary/60">
         載入中…
       </div>
     );
@@ -825,11 +878,11 @@ function SecurityTab({
   return (
     <div className="space-y-5">
       {/* Email verification */}
-      <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl">
+      <div className="bg-[#FDFBF6]-100 card rounded-2xl border border-base-300">
         <div className="card-body p-5">
           <div className="flex items-center gap-3">
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center ${security.emailVerified ? 'bg-green-100' : 'bg-amber-100'}`}
+              className={`flex h-10 w-10 items-center justify-center rounded-xl ${security.emailVerified ? 'bg-green-100' : 'bg-amber-100'}`}
             >
               {security.emailVerified ? (
                 <LuCircleCheck size={18} className="text-green-600" />
@@ -841,7 +894,7 @@ function SecurityTab({
               <div className="typo-card-title text-text-primary">
                 電子郵件驗證
               </div>
-              <div className="typo-card-body text-text-primary/60 mt-0.5">
+              <div className="typo-card-body mt-0.5 text-text-primary/60">
                 {security.emailVerified
                   ? `${user.email} · 已驗證`
                   : '尚未驗證 — 請發送確認信進行驗證'}
@@ -857,12 +910,12 @@ function SecurityTab({
       </div>
 
       {/* Login history */}
-      <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-base-300 bg-base-200/50 flex items-center justify-between">
+      <div className="bg-[#FDFBF6]-100 card overflow-hidden rounded-2xl border border-base-300">
+        <div className="flex items-center justify-between border-b border-base-300 bg-base-200/50 px-5 py-3">
           <h3 className="typo-h4 text-text-primary" style={JP}>
             登入紀錄
           </h3>
-          <span className="badge badge-outline typo-tab text-text-primary/60">
+          <span className="typo-tab badge badge-outline text-text-primary/60">
             最近 10 筆
           </span>
         </div>
@@ -870,10 +923,10 @@ function SecurityTab({
           {security.loginLogs.map((log) => (
             <div
               key={log.id}
-              className="flex items-center gap-3 px-5 py-3.5 hover:bg-base-200/40 transition-colors"
+              className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-base-200/40"
             >
               <div
-                className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${log.success ? 'bg-green-100' : 'bg-red-100'}`}
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${log.success ? 'bg-green-100' : 'bg-red-100'}`}
               >
                 {log.device === 'mobile' ? (
                   <Smartphone
@@ -887,7 +940,7 @@ function SecurityTab({
                   />
                 )}
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="typo-card-body font-medium text-text-primary">
                   {log.browser} / {log.os}
                 </div>
@@ -897,7 +950,7 @@ function SecurityTab({
                 </div>
               </div>
               <span
-                className={`badge typo-tab px-2.5 py-1 ${log.success ? 'badge-success badge-outline' : 'badge-error badge-outline'}`}
+                className={`typo-tab badge px-2.5 py-1 ${log.success ? 'badge-outline badge-success' : 'badge-outline badge-error'}`}
               >
                 {log.success ? '成功' : '失敗'}
               </span>
@@ -907,9 +960,9 @@ function SecurityTab({
       </div>
 
       {/* Security policy */}
-      <div className="card bg-[#FDFBF6]-100 border border-base-300 rounded-2xl">
+      <div className="bg-[#FDFBF6]-100 card rounded-2xl border border-base-300">
         <div className="card-body p-5">
-          <h3 className="typo-h4 text-text-primary mb-4" style={JP}>
+          <h3 className="typo-h4 mb-4 text-text-primary" style={JP}>
             安全政策
           </h3>
           <div className="space-y-3">
@@ -924,13 +977,13 @@ function SecurityTab({
             ].map(({ label, value, Icon }) => (
               <div
                 key={label}
-                className="flex items-center gap-3 py-2.5 border-b border-base-300 last:border-0"
+                className="flex items-center gap-3 border-b border-base-300 py-2.5 last:border-0"
               >
-                <Icon size={14} className="text-primary shrink-0" />
-                <div className="flex-1 typo-card-body text-text-primary">
+                <Icon size={14} className="shrink-0 text-primary" />
+                <div className="typo-card-body flex-1 text-text-primary">
                   {label}
                 </div>
-                <div className="badge badge-ghost typo-tab text-text-primary/70">
+                <div className="typo-tab badge badge-ghost text-text-primary/70">
                   {value}
                 </div>
               </div>

@@ -265,7 +265,7 @@ export default function PetAiChatPage() {
            */}
           <div className="flex gap-5 overflow-x-auto pb-2 lg:flex-wrap lg:overflow-visible lg:pl-[52px]">
             {recommendedProducts.map((product) => (
-              <ProductCard key={product.name} product={product} />
+              <ProductCard key={product.slug} product={product} />
             ))}
           </div>
         </div>
