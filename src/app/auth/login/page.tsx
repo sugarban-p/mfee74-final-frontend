@@ -50,7 +50,9 @@ export default function LoginPage() {
         else setError(data.message ?? '登入失敗，請再試一次。');
         return;
       }
-      router.push('/member/dashboard');
+      window.dispatchEvent(new Event('auth-state-changed'));
+      const nextPath = searchParams.get('next');
+      router.push(nextPath || '/member/dashboard');
     } catch {
       setError('網路錯誤，請稍後再試。');
     } finally {
@@ -59,7 +61,16 @@ export default function LoginPage() {
   };
 
   const googleLogin = () => {
-    window.location.href = '/api/oauth/google';
+    const nextPath = searchParams.get('next');
+    const googleLoginUrl = new URL(
+      'http://localhost:3001/api/oauth/google/login'
+    );
+
+    if (nextPath) {
+      googleLoginUrl.searchParams.set('next', nextPath);
+    }
+
+    window.location.href = googleLoginUrl.toString();
   };
 
   return (
@@ -73,7 +84,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <div className="px-6 pb-6 space-y-4">
+      <div className="space-y-4 px-6 pb-6">
         <FieldInput
           label="電子郵件"
           type="email"
@@ -104,13 +115,13 @@ export default function LoginPage() {
           >
             <input
               type="checkbox"
-              className="checkbox checkbox-sm h-4.5 w-4.5 rounded-[4px] border-2 border-[#B8ACA2] bg-[#FFFEFC] checked:border-[#E77721] checked:bg-[#E77721] checked:text-white [--chkbg:#E77721] [--chkfg:white] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6C6A0]/60"
+              className="checkbox h-4.5 w-4.5 rounded-[4px] border-2 border-[#B8ACA2] bg-[#FFFEFC] checkbox-sm [--chkbg:#E77721] [--chkfg:white] checked:border-[#E77721] checked:bg-[#E77721] checked:text-white focus-visible:ring-2 focus-visible:ring-[#F6C6A0]/60 focus-visible:outline-none"
             />
             保持登入狀態
           </label>
           <Link
             href="/auth/forgot-password"
-            className="link link-hover text-[#E77721]"
+            className="link text-[#E77721] link-hover"
             style={AUTH_TEXT}
           >
             忘記密碼？
@@ -149,7 +160,7 @@ export default function LoginPage() {
           還沒有帳號？{' '}
           <Link
             href="/auth/register"
-            className="link link-hover text-[#E77721] font-semibold"
+            className="link font-semibold text-[#E77721] link-hover"
             style={AUTH_TEXT}
           >
             立即註冊

@@ -1,5 +1,9 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import {
   LuChevronLeft,
   LuMail,
@@ -10,39 +14,91 @@ import {
   LuTruck,
 } from 'react-icons/lu';
 
-const items = [
-  {
-    brand: 'Royal Canin',
-    name: '皇家室內成貓專用飼料',
-    spec: '2kg',
-    price: 890,
-    qty: 2,
-    image: '/cat-category.png',
-  },
-  {
-    brand: 'FORZA10',
-    name: 'FORZA10 無穀鮭魚貓罐頭',
-    spec: '85g x 6罐',
-    price: 480,
-    qty: 1,
-    image: '/events.png',
-  },
-];
-
-const timeline = [
-  { label: '訂單成立', note: '2026-07-02 14:35', done: true },
-  { label: '付款確認', note: '付款已驗證完成', done: true },
-  { label: '備貨中', note: '商品準備中', done: true },
-  { label: '已出貨', note: '貨物已交付物流', done: true },
-  { label: '訂單完成', note: '-', done: false },
-];
-
-const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-const total = subtotal;
+interface OrderDetail {
+  id: string;
+  statusText: string;
+  paymentText: string;
+  createdAt: string;
+  payment: string;
+  subtotal: number;
+  shippingFee: number;
+  discount: number;
+  total: number;
+  receiver: {
+    name: string;
+    phone: string;
+    email: string;
+    address: string;
+    trackingNo: string | null;
+  };
+  items: Array<{
+    brand: string;
+    name: string;
+    spec: string;
+    price: number;
+    qty: number;
+    image: string;
+  }>;
+  timeline: Array<{
+    label: string;
+    note: string;
+    done: boolean;
+  }>;
+}
 
 const formatPrice = (price: number) => `NT$${price.toLocaleString('zh-TW')}`;
 
 export default function MemberOrderDetailPage() {
+  const params = useParams<{ orderId: string }>();
+  const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!params.orderId) return;
+
+    fetch(`/api/orders/list/${params.orderId}`, { credentials: 'include' })
+      .then((response) => response.json())
+      .then((data) => setOrder(data.order ?? null))
+      .finally(() => setIsLoading(false));
+  }, [params.orderId]);
+
+  const items = order?.items ?? [];
+  const subtotal = useMemo(
+    () => items.reduce((sum, item) => sum + item.price * item.qty, 0),
+    [items]
+  );
+
+  if (isLoading) {
+    return (
+      <section className="w-full">
+        <div className="rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white px-6 py-16 text-center">
+          <p className="typo-body-medium text-text-secondary">
+            訂單明細載入中...
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!order) {
+    return (
+      <section className="w-full">
+        <div className="rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white px-6 py-16 text-center">
+          <p className="typo-body-medium mb-6 text-text-primary">
+            找不到這筆訂單
+          </p>
+          <Link
+            href="/member/orders"
+            className="back-button typo-tab inline-flex items-center justify-center gap-2"
+          >
+            <LuChevronLeft className="size-4" />
+            返回訂單列表
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="w-full">
       <div className="mb-6 flex items-center justify-between gap-4">
@@ -66,7 +122,7 @@ export default function MemberOrderDetailPage() {
               商品明細
             </h2>
 
-            <div className="mb-3 hidden grid-cols-[1fr_90px_70px_100px] gap-4 typo-tab text-text-secondary md:grid">
+            <div className="typo-tab mb-3 hidden grid-cols-[1fr_90px_70px_100px] gap-4 text-text-secondary md:grid">
               <span>商品</span>
               <span className="text-right">單價</span>
               <span className="text-center">數量</span>
@@ -115,19 +171,29 @@ export default function MemberOrderDetailPage() {
               ))}
             </div>
 
-            <div className="mt-4 space-y-3 border-t border-[rgba(26,22,18,0.08)] pt-5 typo-card-body">
+            <div className="typo-card-body mt-4 space-y-3 border-t border-[rgba(26,22,18,0.08)] pt-5">
               <div className="flex justify-between text-text-secondary">
                 <span>商品小計</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
               <div className="flex justify-between text-text-secondary">
                 <span>運費</span>
-                <span>免運費</span>
+                <span>
+                  {order.shippingFee
+                    ? formatPrice(order.shippingFee)
+                    : '免運費'}
+                </span>
               </div>
+              {order.discount > 0 && (
+                <div className="flex justify-between text-primary">
+                  <span>優惠折扣</span>
+                  <span>-{formatPrice(order.discount)}</span>
+                </div>
+              )}
               <div className="flex justify-between border-t border-[rgba(26,22,18,0.08)] pt-4">
                 <span className="typo-h4 text-text-primary">訂單總金額</span>
                 <span className="typo-body-medium text-primary">
-                  {formatPrice(total)}
+                  {formatPrice(order.total)}
                 </span>
               </div>
             </div>
@@ -140,10 +206,10 @@ export default function MemberOrderDetailPage() {
             </h2>
 
             <div className="space-y-5 border-l-2 border-card-secondary pl-5">
-              {timeline.map((step) => (
+              {order.timeline.map((step) => (
                 <div key={step.label} className="relative">
                   <span
-                    className={`absolute -left-[29px] top-1 size-3 rounded-full ${
+                    className={`absolute top-1 -left-[29px] size-3 rounded-full ${
                       step.done ? 'bg-primary' : 'bg-button-disabled'
                     }`}
                   />
@@ -163,7 +229,9 @@ export default function MemberOrderDetailPage() {
 
             <p className="typo-card-body mt-6 border-t border-[rgba(26,22,18,0.08)] pt-4 text-text-primary">
               物流追蹤號：
-              <span className="font-bold">9261290100830026001</span>
+              <span className="font-bold">
+                {order.receiver.trackingNo ?? '尚未建立'}
+              </span>
             </p>
           </section>
         </div>
@@ -175,30 +243,30 @@ export default function MemberOrderDetailPage() {
               訂單資訊
             </h2>
 
-            <dl className="space-y-3 typo-card-body">
+            <dl className="typo-card-body space-y-3">
               <div className="flex justify-between gap-4">
                 <dt className="text-text-secondary">訂單編號</dt>
-                <dd className="text-right text-text-primary">
-                  ORD202607020001
-                </dd>
+                <dd className="text-right text-text-primary">{order.id}</dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-text-secondary">成立時間</dt>
                 <dd className="text-right text-text-primary">
-                  2026-07-02 14:35
+                  {order.createdAt}
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-text-secondary">訂單狀態</dt>
-                <dd className="text-right text-primary">已出貨</dd>
+                <dd className="text-right text-primary">{order.statusText}</dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-text-secondary">付款狀態</dt>
-                <dd className="text-right text-primary">已付款</dd>
+                <dd className="text-right text-primary">{order.paymentText}</dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-text-secondary">付款方式</dt>
-                <dd className="text-right text-text-primary">信用卡付款</dd>
+                <dd className="text-right text-text-primary">
+                  {order.payment}
+                </dd>
               </div>
             </dl>
           </section>
@@ -209,19 +277,21 @@ export default function MemberOrderDetailPage() {
               收件資訊
             </h2>
 
-            <div className="space-y-3 typo-card-body text-text-secondary">
-              <p className="font-bold text-text-primary">林小美</p>
+            <div className="typo-card-body space-y-3 text-text-secondary">
+              <p className="font-bold text-text-primary">
+                {order.receiver.name}
+              </p>
               <p className="flex items-center gap-2">
                 <LuPhone className="size-4" />
-                0912-345-678
+                {order.receiver.phone}
               </p>
               <p className="flex items-center gap-2">
                 <LuMail className="size-4" />
-                mei@petfull.tw
+                {order.receiver.email}
               </p>
               <p className="flex items-start gap-2">
                 <LuMapPin className="mt-1 size-4 shrink-0" />
-                台北市信義區信義路五段 7 號 10 樓
+                {order.receiver.address}
               </p>
             </div>
           </section>

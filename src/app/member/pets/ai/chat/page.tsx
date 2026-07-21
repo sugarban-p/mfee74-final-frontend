@@ -1,8 +1,14 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { LuArrowLeft, LuCircleCheck, LuSend, LuSparkles } from 'react-icons/lu';
 import { ProductCard } from '@/src/components/product/ProductCard';
-import { mockPets } from '@/src/mockdata/mock-pets';
+import { getPetById } from '@/src/services/pets-api';
+import type { PetDetail } from '@/src/types/pet';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * RecommendedProduct：
@@ -17,20 +23,7 @@ interface RecommendedProduct {
   name: string;
   description: string;
   price: string;
-}
-
-/**
- * PetAiChatPageProps：
- * 這頁的網址長這樣：
- * /member/pets/ai/chat?petId=1
- *
- * petId 不是動態路由資料夾，
- * 而是 query string，所以要從 searchParams 取得。
- */
-interface PetAiChatPageProps {
-  searchParams: Promise<{
-    petId?: string;
-  }>;
+  slug: string;
 }
 
 /**
@@ -61,6 +54,7 @@ const recommendedProducts: RecommendedProduct[] = [
     name: '低敏腸胃照護飼料',
     description: '適合腸胃敏感與需要溫和配方的毛孩。',
     price: 'NT$999',
+    slug: 'demo-sensitive-stomach-food',
   },
   {
     image: '',
@@ -68,35 +62,83 @@ const recommendedProducts: RecommendedProduct[] = [
     name: '皮膚毛髮保健配方',
     description: '幫助維持皮膚健康與毛髮光澤。',
     price: 'NT$1,280',
+    slug: 'demo-skin-coat-care',
   },
 ];
 
-export default async function PetAiChatPage({
-  searchParams,
-}: PetAiChatPageProps) {
-  /**
-   * Next 16 裡 searchParams 是 Promise，
-   * 所以要先 await 才能拿到 petId。
-   */
-  const { petId } = await searchParams;
-  if (!petId) {
-    redirect('/member/pets/ai/select-pet');
+/**
+ * 後端回傳生日，不直接儲存年齡；
+ * 畫面載入時依今天日期計算歲數與月份。
+ */
+function formatPetAge(birthday: string | null): string {
+  if (!birthday) {
+    return '生日未填';
   }
 
-  /**
-   * petId 從網址來時會是 string，
-   * mockPets 裡的 id 是 number，
-   * 所以這裡用 Number(petId) 轉成數字再比對。
-   */
-  const pet = mockPets.find((item) => item.id === Number(petId));
+  const birthDate = new Date(`${birthday}T00:00:00`);
+  const today = new Date();
+  let years = today.getFullYear() - birthDate.getFullYear();
+  let months = today.getMonth() - birthDate.getMonth();
+
+  if (today.getDate() < birthDate.getDate()) {
+    months -= 1;
+  }
+
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  return years > 0 ? `${years} 歲 ${months} 個月` : `${months} 個月`;
+}
+
+/** 將 MySQL DECIMAL 字串整理成畫面使用的 kg 文字。 */
+function formatPetWeight(weight: string | null): string {
+  if (!weight) {
+    return '體重未填';
+  }
+
+  return `${Number(weight)} kg`;
+}
+
+export default function PetAiChatPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const petId = searchParams.get('petId');
+  const numericPetId = Number(petId);
+  const [pet, setPet] = useState<PetDetail | null>(null);
 
   /**
-   * 如果網址沒有 petId，或 petId 找不到對應毛孩，
-   * 就顯示 Next.js 的 not found 頁。
+   * 非正整數、查無寵物、已軟刪除或不屬於目前會員時，
+   * 都導回選擇毛孩頁，避免 AI 使用不正確的寵物資料。
    */
+  useEffect(() => {
+    if (!petId || !Number.isInteger(numericPetId) || numericPetId <= 0) {
+      router.replace('/member/pets/ai/select-pet');
+      return;
+    }
+
+    getPetById(numericPetId)
+      .then(setPet)
+      .catch(() => router.replace('/member/pets/ai/select-pet'));
+  }, [numericPetId, petId, router]);
+
   if (!pet) {
-    notFound();
+    return <p className="typo-card-body text-text-secondary">讀取中...</p>;
   }
+
+  const age = formatPetAge(pet.birthday);
+  const weight = formatPetWeight(pet.weight);
+  /**
+   * none 代表沒有特殊狀況，不應顯示成「目前有無特殊狀況」
+   * 或「避開無」，因此產生 AI 畫面文字前先排除。
+   */
+  const healthConditionLabels = pet.healthConditions
+    .filter((condition) => condition.code !== 'none')
+    .map((condition) => condition.label);
+  const allergyIngredientLabels = pet.allergyIngredients
+    .filter((ingredient) => ingredient.code !== 'none')
+    .map((ingredient) => ingredient.label);
 
   return (
     <section className="grid w-full justify-items-center gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:justify-items-stretch">
@@ -115,9 +157,11 @@ export default async function PetAiChatPage({
         {/* 毛孩摘要卡 */}
         <div className="mt-4 rounded-2xl border border-border bg-card-primary p-4">
           <img
-            src={pet.avatarUrl}
+            src={pet.avatarUrl || '/mofu.svg'}
             alt={pet.name}
-            className="aspect-[4/3] w-full rounded-xl object-cover"
+            className={`aspect-[4/3] w-full rounded-xl ${
+              pet.avatarUrl ? 'object-cover' : 'object-contain p-6'
+            }`}
           />
 
           <div className="mt-4 text-center">
@@ -129,13 +173,13 @@ export default async function PetAiChatPage({
 
             <div className="typo-tab mt-3 space-y-1 text-text-secondary">
               <p>
-                {pet.age} ・ {pet.weight}
+                {age} ・ {weight}
               </p>
 
               <p>
                 飲食：
-                {pet.allergyIngredients.length > 0
-                  ? `避開 ${pet.allergyIngredients.join('、')}`
+                {allergyIngredientLabels.length > 0
+                  ? `避開 ${allergyIngredientLabels.join('、')}`
                   : '無特殊過敏註記'}
               </p>
             </div>
@@ -181,8 +225,8 @@ export default async function PetAiChatPage({
 
                 <p className="typo-card-body text-text-primary">
                   我已經了解{pet.name}的狀況了：
-                  {pet.healthConditions.length > 0
-                    ? `目前有 ${pet.healthConditions.join('、')} 的需求。`
+                  {healthConditionLabels.length > 0
+                    ? `目前有 ${healthConditionLabels.join('、')} 的需求。`
                     : '目前沒有特殊健康註記。'}
                 </p>
 
@@ -221,7 +265,7 @@ export default async function PetAiChatPage({
            */}
           <div className="flex gap-5 overflow-x-auto pb-2 lg:flex-wrap lg:overflow-visible lg:pl-[52px]">
             {recommendedProducts.map((product) => (
-              <ProductCard key={product.name} product={product} />
+              <ProductCard key={product.slug} product={product} />
             ))}
           </div>
         </div>
