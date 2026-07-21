@@ -20,6 +20,18 @@ const notoSerifTc = Noto_Serif_TC({
   display: 'swap',
 });
 
+const notoSansTC = Noto_Sans_TC({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-noto-sans-tc',
+});
+
+const notoSerifTC = Noto_Serif_TC({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-noto-serif-tc',
+});
+
 export const metadata: Metadata = {
   title: 'Team3 專題',
   description: '',
