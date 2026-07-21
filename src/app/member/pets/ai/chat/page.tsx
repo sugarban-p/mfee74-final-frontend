@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
  * 這裡只要把 recommendedProducts 換成 API 回傳資料即可。
  */
 interface RecommendedProduct {
-  image: string;
+  avatar: string;
   tags: string[];
   name: string;
   description: string;
@@ -49,7 +49,7 @@ const quickQuestions = [
  */
 const recommendedProducts: RecommendedProduct[] = [
   {
-    image: '',
+    avatar: '',
     tags: ['低敏', '腸胃照護'],
     name: '低敏腸胃照護飼料',
     description: '適合腸胃敏感與需要溫和配方的毛孩。',
@@ -57,7 +57,7 @@ const recommendedProducts: RecommendedProduct[] = [
     slug: 'demo-sensitive-stomach-food',
   },
   {
-    image: '',
+    avatar: '',
     tags: ['皮膚', '毛髮保健'],
     name: '皮膚毛髮保健配方',
     description: '幫助維持皮膚健康與毛髮光澤。',

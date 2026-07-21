@@ -32,7 +32,7 @@ const emptyProductPageDetail: ProductPageDetail = {
 };
 
 const recommendationProducts = Array.from({ length: 4 }, () => ({
-  image: '',
+  avatar: '',
   tags: [labels.recommendedTag],
   name: labels.recommendedProduct,
   description: labels.recommendedDescription,

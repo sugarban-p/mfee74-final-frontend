@@ -15,7 +15,7 @@ import {
 interface ProductCardProps {
   product: {
     id?: number;
-    image: string;
+    avatar: string;
     tags: string[];
     name: string;
     description: string;
@@ -66,7 +66,7 @@ export function ProductCard({ product }: ProductCardProps) {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.image,
+      avatar: product.avatar,
       tags: product.tags,
       isFavorite,
       items: [],
@@ -74,7 +74,7 @@ export function ProductCard({ product }: ProductCardProps) {
   }, [
     isFavorite,
     product.id,
-    product.image,
+    product.avatar,
     product.name,
     product.price,
     product.tags,
@@ -126,11 +126,11 @@ export function ProductCard({ product }: ProductCardProps) {
         <div
           className={[
             'h-[150px] w-full bg-button-disabled',
-            product.image ? 'bg-cover bg-center' : '',
+            product.avatar ? 'bg-cover bg-center' : '',
           ].join(' ')}
           style={
-            product.image
-              ? { backgroundImage: `url(${product.image})` }
+            product.avatar
+              ? { backgroundImage: `url(${product.avatar})` }
               : undefined
           }
         />

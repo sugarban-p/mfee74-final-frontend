@@ -44,7 +44,7 @@ interface ProductListResponse {
 
 interface FavoriteProduct {
   id: number;
-  image: string;
+  avatar: string;
   tags: string[];
   name: string;
   description: string;
@@ -83,7 +83,7 @@ const mapFavoriteProducts = (
 
     return {
       id: product.id,
-      image:
+      avatar:
         toPublicImagePath(product.avatars?.[0]?.thumbnail) ||
         toPublicImagePath(product.avatars?.[0]?.src),
       tags: (product.tags_id ?? [])
