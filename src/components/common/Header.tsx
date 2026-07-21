@@ -17,32 +17,83 @@ import {
 import MegaMenuCard from '@/src/components/header/MegaMenuCard';
 import { ProductQuantitySelector } from '@/src/components/product/ProductQuantitySelector';
 
-const cartItem = {
-  name: '慢烘鮮食蔬肉糧',
-  variant: '雞肉',
-  price: 'NT$229',
-  image: '/images/product/蔬肉糧產品圖_01-510x510.jpg',
+interface CartItem {
+  cart_id: number;
+  item_id: number;
+  quantity: number;
+  item_name: string;
+  prod_name: string;
+  price: number;
+  avatar: string;
+}
+
+interface CartResponse {
+  success: boolean;
+  cartItems: CartItem[];
+}
+
+const toPublicImagePath = (path?: string) => {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path)) return path;
+
+  return `/${path.replace(/^\/+/, '')}`;
 };
 
 export default function Header() {
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cartQuantity, setCartQuantity] = useState(1);
-  const [isRemovingCartItem, setIsRemovingCartItem] = useState(false);
-  const [hasCartItem, setHasCartItem] = useState(true);
+  const [isCartLoginRequired, setIsCartLoginRequired] = useState(false);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [removingCartItemId, setRemovingCartItemId] = useState<number | null>(
+    null
+  );
   const cartPanelRef = useRef<HTMLElement>(null);
   const cartButtonRef = useRef<HTMLButtonElement>(null);
+  const updateCartTimeoutsRef = useRef<
+    Map<number, ReturnType<typeof setTimeout>>
+  >(new Map());
 
   useEffect(() => {
-    if (!isCartOpen) {
-      return;
-    }
+    if (!isCartOpen) return;
+
+    const controller = new AbortController();
+
+    void fetch('/api/products/getCart', { signal: controller.signal })
+      .then((response) => {
+        if (response.status === 401) {
+          setCartItems([]);
+          setIsCartLoginRequired(true);
+          return null;
+        }
+
+        if (!response.ok) throw new Error();
+
+        setIsCartLoginRequired(false);
+        return response.json();
+      })
+      .then((data: CartResponse | null) => {
+        if (!data) return;
+        if (!data.success) throw new Error();
+
+        setCartItems(data.cartItems);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        toast.error('購物車資料載入失敗');
+      });
+
+    return () => controller.abort();
+  }, [isCartOpen]);
+
+  useEffect(() => {
+    if (!isCartOpen) return;
 
     const handlePointerDown = (event: PointerEvent) => {
       const target = event.target;
 
-      if (!(target instanceof Node)) {
-        return;
-      }
+      if (!(target instanceof Node)) return;
 
       if (
         cartPanelRef.current?.contains(target) ||
@@ -52,7 +103,7 @@ export default function Header() {
       }
 
       setIsCartOpen(false);
-      setIsRemovingCartItem(false);
+      setRemovingCartItemId(null);
     };
 
     document.addEventListener('pointerdown', handlePointerDown);
@@ -62,10 +113,71 @@ export default function Header() {
     };
   }, [isCartOpen]);
 
-  const handleConfirmRemoveCartItem = () => {
-    setHasCartItem(false);
-    setIsRemovingCartItem(false);
-    toast.success(`${cartItem.name} ${cartItem.variant} 已從購物車移除`);
+  useEffect(() => {
+    return () => {
+      updateCartTimeoutsRef.current.forEach((timeoutId) =>
+        clearTimeout(timeoutId)
+      );
+    };
+  }, []);
+
+  const handleCartQuantityChange = (itemId: number, quantity: number) => {
+    setCartItems((items) =>
+      items.map((item) =>
+        item.item_id === itemId ? { ...item, quantity } : item
+      )
+    );
+
+    const prevTimeout = updateCartTimeoutsRef.current.get(itemId);
+    if (prevTimeout) clearTimeout(prevTimeout);
+
+    const timeoutId = setTimeout(() => {
+      void fetch(`/api/products/updateCart/${itemId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ qty: quantity }),
+      })
+        .then((response) => {
+          if (!response.ok) toast.error('購物車數量更新失敗');
+        })
+        .catch(() => {
+          toast.error('購物車數量更新失敗');
+        })
+        .finally(() => {
+          updateCartTimeoutsRef.current.delete(itemId);
+        });
+    }, 500);
+
+    updateCartTimeoutsRef.current.set(itemId, timeoutId);
+  };
+
+  const handleConfirmRemoveCartItem = async (cartItem: CartItem) => {
+    const prevTimeout = updateCartTimeoutsRef.current.get(cartItem.item_id);
+    if (prevTimeout) clearTimeout(prevTimeout);
+    updateCartTimeoutsRef.current.delete(cartItem.item_id);
+
+    try {
+      const response = await fetch(
+        `/api/products/updatecart/${cartItem.item_id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!response.ok) throw new Error();
+
+      setCartItems((items) =>
+        items.filter((item) => item.item_id !== cartItem.item_id)
+      );
+      setRemovingCartItemId(null);
+      toast.success(
+        `${cartItem.prod_name} ${cartItem.item_name} 已從購物車移除`
+      );
+    } catch {
+      toast.error('移除購物車商品失敗，請稍後再試');
+    }
   };
 
   return (
@@ -74,7 +186,7 @@ export default function Header() {
         <div className="navbar mx-auto flex h-full max-w-[1620px] items-center justify-between px-5 md:px-16">
           <Link href="/" className="navbar-start">
             <Image
-              src={'/images/logo/mofu-logo-final.svg'}
+              src="/images/logo/mofu-logo-final.svg"
               alt=""
               width={135}
               height={64}
@@ -88,7 +200,7 @@ export default function Header() {
                 className="typo-body rounded-lg text-text-primary hover:bg-button-secondary-hover [&:has(+_[popover]:popover-open)]:rounded-b-none [&:has(+_[popover]:popover-open)]:bg-button-secondary-hover"
                 popoverTarget="products"
               >
-                所有產品
+                所有商品
               </button>
               <div
                 id="products"
@@ -104,26 +216,48 @@ export default function Header() {
                         title="貓咪專區"
                         href={`/product/cat?title=${encodeURIComponent('貓咪專區')}`}
                         items={[
-                          { title: '主食', href: '/' },
-                          { title: '零食/點心', href: '/' },
-                          { title: '牽引用品', href: '/' },
-                          { title: '保健品', href: '/' },
-                          { title: '生活用品', href: '/' },
+                          {
+                            title: '主食',
+                            href: '/product/cat?category=main-food',
+                          },
+                          {
+                            title: '零食/點心',
+                            href: '/product/cat?category=treat',
+                          },
+                          {
+                            title: '保健品',
+                            href: '/product/cat?category=supplement',
+                          },
+                          {
+                            title: '生活用品',
+                            href: '/product/cat?category=supplies',
+                          },
                         ]}
                       />
                     </li>
                     <li>
                       <MegaMenuCard
                         image="/dog-category.png"
-                        imageAlt="狗勾專區"
-                        title="狗勾專區"
-                        href={`/product/dog?title=${encodeURIComponent('狗勾專區')}`}
+                        imageAlt="狗狗專區"
+                        title="狗狗專區"
+                        href={`/product/dog?title=${encodeURIComponent('狗狗專區')}`}
                         items={[
-                          { title: '主食', href: '/' },
-                          { title: '零食/點心', href: '/' },
-                          { title: '牽引用品', href: '/' },
-                          { title: '保健品', href: '/' },
-                          { title: '生活用品', href: '/' },
+                          {
+                            title: '主食',
+                            href: '/product/dog?category=main-food',
+                          },
+                          {
+                            title: '零食/點心',
+                            href: '/product/dog?category=treat',
+                          },
+                          {
+                            title: '牽繩用品',
+                            href: '/product/dog?category=leash',
+                          },
+                          {
+                            title: '生活用品',
+                            href: '/product/dog?category=supplies',
+                          },
                         ]}
                       />
                     </li>
@@ -134,7 +268,7 @@ export default function Header() {
                 className="typo-body rounded-lg text-text-primary hover:bg-button-secondary-hover [&:has(+_[popover]:popover-open)]:rounded-b-none [&:has(+_[popover]:popover-open)]:bg-button-secondary-hover"
                 popoverTarget="events"
               >
-                最新活動
+                所有活動
               </button>
               <div
                 id="events"
@@ -143,13 +277,13 @@ export default function Header() {
               >
                 <MegaMenuCard
                   image="/events.png"
-                  imageAlt="最新活動"
-                  title="最新活動"
+                  imageAlt="所有活動"
+                  title="所有活動"
                   items={[
-                    { title: '夏季新品', href: '/event' },
-                    { title: '換季商品精選', href: '/event' },
-                    { title: '首購85折優惠', href: '/event' },
-                    { title: '會員限定禮盒', href: '/event' },
+                    { title: '會員優惠', href: '/event' },
+                    { title: '新品活動', href: '/event' },
+                    { title: '購物滿額折扣', href: '/event' },
+                    { title: '寵物講座', href: '/event' },
                   ]}
                 />
               </div>
@@ -157,25 +291,25 @@ export default function Header() {
             <ul className="menu menu-horizontal gap-1 p-0">
               <li className="rounded-lg hover:bg-button-secondary-hover">
                 <Link
-                  href={'/'}
+                  href="/"
                   className="px-4 py-0 text-text-primary hover:bg-transparent"
                 >
-                  <div className="typo-body h-10 py-[5.5px]">AI 導購</div>
+                  <div className="typo-body h-10 py-[5.5px]">AI 顧問</div>
                 </Link>
               </li>
               <li className="rounded-lg hover:bg-button-secondary-hover">
                 <Link
-                  href={'/'}
+                  href="/"
                   className="px-4 py-0 text-text-primary hover:bg-transparent"
                 >
-                  <div className="typo-body h-10 py-[5.5px]">聯繫我們</div>
+                  <div className="typo-body h-10 py-[5.5px]">寵物百科</div>
                 </Link>
               </li>
             </ul>
           </div>
           <div className="relative navbar-end gap-4">
             <Link
-              href={'/member/favorites'}
+              href="/member/favorites"
               className="btn btn-circle border-none btn-ghost p-1 align-middle text-text-secondary hover:bg-button-secondary-hover hover:shadow-none"
             >
               <LuHeart className="size-6" />
@@ -183,13 +317,13 @@ export default function Header() {
             <button
               ref={cartButtonRef}
               type="button"
-              aria-label="切換購物車窗格"
+              aria-label="開啟購物車"
               aria-expanded={isCartOpen}
               aria-controls="cart-panel"
               className="btn btn-circle border-none btn-ghost p-1 align-middle text-text-secondary hover:bg-button-secondary-hover hover:shadow-none"
               onClick={() => {
                 setIsCartOpen((prev) => !prev);
-                setIsRemovingCartItem(false);
+                setRemovingCartItemId(null);
               }}
             >
               <LuShoppingCart className="size-6" />
@@ -199,7 +333,7 @@ export default function Header() {
                 ref={cartPanelRef}
                 id="cart-panel"
                 className="absolute top-12 right-0 w-[470px] max-w-[calc(100vw-40px)] rounded-2xl border border-secondary bg-white p-3 shadow-xl"
-                aria-label="購物車窗格"
+                aria-label="購物車"
               >
                 <span className="absolute -top-[10px] right-[61px] size-5 rotate-45 border-t border-l border-secondary bg-white" />
 
@@ -209,83 +343,114 @@ export default function Header() {
                     <h2 className="typo-body-medium">購物車</h2>
                   </div>
 
-                  {hasCartItem && (
-                    <article
-                      className={[
-                        'flex justify-between gap-4 border-b border-card-secondary px-2 py-5',
-                        isRemovingCartItem ? 'bg-warning' : '',
-                      ].join(' ')}
-                    >
-                      <div className="flex gap-1">
-                        <Image
-                          src={cartItem.image}
-                          alt={cartItem.name}
-                          width={56}
-                          height={56}
-                          className="size-14 rounded-xl bg-card-secondary object-cover"
-                        />
-                        <div className="min-w-0">
-                          <h3 className="typo-tab truncate text-text-primary">
-                            {cartItem.name}
-                          </h3>
-                          <p className="mt-1 text-sm text-text-secondary">
-                            {cartItem.variant}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex min-w-0 items-center justify-between gap-1">
-                        {isRemovingCartItem ? (
-                          <div className="flex items-center gap-3">
-                            <p className="typo-tab whitespace-nowrap text-text-primary">
-                              確定要移除商品嗎?
-                            </p>
-                            <button
-                              type="button"
-                              aria-label="確認移除商品"
-                              className="grid size-8 place-items-center rounded-lg text-green-600 hover:bg-white/70"
-                              onClick={handleConfirmRemoveCartItem}
-                            >
-                              <LuCheck className="size-5" />
-                            </button>
-                            <button
-                              type="button"
-                              aria-label="取消移除商品"
-                              className="grid size-8 place-items-center rounded-lg text-red-600 hover:bg-white/70"
-                              onClick={() => setIsRemovingCartItem(false)}
-                            >
-                              <LuX className="size-5" />
-                            </button>
+                  {isCartLoginRequired ? (
+                    <p className="typo-tab px-2 py-5 text-text-secondary">
+                      請先登入
+                    </p>
+                  ) : cartItems.length === 0 ? (
+                    <p className="typo-tab px-2 py-5 text-text-secondary">
+                      購物車目前沒有商品
+                    </p>
+                  ) : (
+                    cartItems.map((cartItem) => {
+                      const isRemoving =
+                        removingCartItemId === cartItem.item_id;
+
+                      return (
+                        <article
+                          key={cartItem.cart_id}
+                          className={[
+                            'flex justify-between gap-4 border-b border-card-secondary px-2 py-5',
+                            isRemoving ? 'bg-warning' : '',
+                          ].join(' ')}
+                        >
+                          <div className="flex min-w-0 gap-1">
+                            {cartItem.avatar ? (
+                              <Image
+                                src={toPublicImagePath(cartItem.avatar)}
+                                alt={cartItem.prod_name}
+                                width={56}
+                                height={56}
+                                className="size-14 rounded-xl bg-card-secondary object-cover"
+                              />
+                            ) : (
+                              <div className="size-14 rounded-xl bg-card-secondary" />
+                            )}
+                            <div className="min-w-0">
+                              <h3 className="typo-tab truncate text-text-primary">
+                                {cartItem.prod_name}
+                              </h3>
+                              <p className="mt-1 text-sm text-text-secondary">
+                                {cartItem.item_name}
+                              </p>
+                            </div>
                           </div>
-                        ) : (
-                          <>
-                            <ProductQuantitySelector
-                              usage="Header"
-                              quantity={cartQuantity}
-                              onChange={setCartQuantity}
-                            />
-                            <button
-                              type="button"
-                              aria-label="移除商品"
-                              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-secondary hover:bg-button-secondary-hover"
-                              onClick={() => setIsRemovingCartItem(true)}
-                            >
-                              <LuTrash2 className="size-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </article>
+                          <div className="flex min-w-0 items-center justify-between gap-1">
+                            {isRemoving ? (
+                              <div className="flex items-center gap-3">
+                                <p className="typo-tab whitespace-nowrap text-text-primary">
+                                  確定要移除商品嗎?
+                                </p>
+                                <button
+                                  type="button"
+                                  aria-label="確認移除商品"
+                                  className="grid size-8 place-items-center rounded-lg text-green-600 hover:bg-white/70"
+                                  onClick={() =>
+                                    void handleConfirmRemoveCartItem(cartItem)
+                                  }
+                                >
+                                  <LuCheck className="size-5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  aria-label="取消移除商品"
+                                  className="grid size-8 place-items-center rounded-lg text-red-600 hover:bg-white/70"
+                                  onClick={() => setRemovingCartItemId(null)}
+                                >
+                                  <LuX className="size-5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <ProductQuantitySelector
+                                  usage="Header"
+                                  quantity={cartItem.quantity}
+                                  onChange={(quantity) =>
+                                    handleCartQuantityChange(
+                                      cartItem.item_id,
+                                      quantity
+                                    )
+                                  }
+                                />
+                                <button
+                                  type="button"
+                                  aria-label="移除商品"
+                                  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-secondary hover:bg-button-secondary-hover"
+                                  onClick={() =>
+                                    setRemovingCartItemId(cartItem.item_id)
+                                  }
+                                >
+                                  <LuTrash2 className="size-4" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </article>
+                      );
+                    })
                   )}
                 </div>
 
-                <Link
-                  href="/cart"
-                  type="button"
-                  className="next-button typo-tab mt-4 flex w-1/2 items-center justify-center py-3"
-                  onClick={() => setIsCartOpen(false)}
-                >
-                  查看完整購物車
-                </Link>
+                {!isCartLoginRequired && (
+                  <Link
+                    href="/cart"
+                    type="button"
+                    className="next-button typo-tab mt-4 flex w-1/2 items-center justify-center py-3"
+                    onClick={() => setIsCartOpen(false)}
+                  >
+                    查看完整購物車
+                  </Link>
+                )}
               </section>
             )}
             <Link

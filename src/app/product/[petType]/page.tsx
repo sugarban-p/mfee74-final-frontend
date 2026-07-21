@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   type KeyboardEvent,
   type SyntheticEvent,
@@ -18,50 +18,17 @@ import {
 import { FilterButton } from '@/src/components/product/FilterButton';
 import { ProductCard } from '@/src/components/product/ProductCard';
 
-const PRODUCTS_PER_PAGE = 16;
-
-const categories = [
-  { category: '所有商品', count: 55, slug: 'all-products' },
-  { category: '主食', count: 22, slug: 'main-food' },
-  { category: '零食/點心', count: 10, slug: 'treat' },
-  { category: '牽引用品', count: 8, slug: 'leash' },
-  { category: '保健品', count: 14, slug: 'supplements' },
-  { category: '生活用品', count: 1, slug: 'supplies' },
-];
-
-const tags = [
-  { tag: '幼齡(0~1歲)', slug: 'kitten' },
-  { tag: '孕貓', slug: 'pregnant-cat' },
-  { tag: '室內', slug: 'indoor' },
-  { tag: '室外', slug: 'outdoor' },
-  { tag: '低敏', slug: 'hypo-allergenic' },
-  { tag: '無穀', slug: 'grain-free' },
-];
-
-const productCount = Math.max(...categories.map(({ count }) => count));
-const products = Array.from({ length: productCount }, (_, index) => ({
-  id: index + 1,
-  image: index === 0 ? '/蔬肉糧產品圖_01-510x510.jpg' : '',
-  tags: index === 0 ? ['幼齡(0~1歲)', '低敏'] : [],
-  name: index === 0 ? '慢烘鮮食蔬肉糧' : '商品名稱',
-  description: index === 0 ? '最接近鮮食的天然慢烘糧!' : '簡短標語敘述',
-  price: index === 0 ? 'NT$229' : 'NT$9999',
-  slug: index === 0 ? 'slow-roast-mixed-food' : 'prod_x',
-  gallery:
-    index === 0
-      ? [
-          '/蔬肉糧產品圖_01-510x510.jpg',
-          '/images/product/蔬肉糧產品圖_02-510x510.jpg',
-          '/images/product/Vegetablemeat_SP3-510x510.jpg',
-          '/images/product/Vegetablemeat_SP4-1-510x510.jpg',
-        ]
-      : [],
-}));
+const ALL_PRODUCTS_CATEGORY = {
+  category: '所有商品',
+  count: 0,
+  slug: 'all-products',
+};
 
 interface ProductSearchParams {
   category?: string;
   tags?: string;
   keywords?: string;
+  search?: string;
   'min-value'?: string;
   'max-value'?: string;
   page?: string;
@@ -69,15 +36,174 @@ interface ProductSearchParams {
   title?: string;
 }
 
-type PriceParam = 'min-value' | 'max-value';
-
 interface PetTypePageProps {
   searchParams?: Promise<ProductSearchParams>;
 }
 
+interface ApiCategory {
+  id: number;
+  tag_ch: string;
+  tag_slug: string;
+  catCount: number | string;
+}
+
+interface ApiTag {
+  id: number;
+  tag_ch: string;
+}
+
+interface ApiAvatar {
+  src: string;
+  thumbnail: string;
+}
+
+interface ApiImage {
+  src: string;
+}
+
+interface ApiProduct {
+  id: number;
+  prod_name: string;
+  price: number;
+  slug: string;
+  total_stock?: number;
+  tags_id?: number[];
+  intros?: {
+    slogan?: string;
+    content?: string;
+  };
+  avatars?: ApiAvatar[];
+  images?: ApiImage[];
+}
+
+interface ProductListResponse {
+  success: boolean;
+  facets: {
+    categories: ApiCategory[];
+    tags: ApiTag[];
+  };
+  pagination: {
+    currentPage: number;
+    perPage: number;
+    totalRows: number;
+    totalPages: number;
+  };
+  products: ApiProduct[];
+}
+
+interface FavoriteResponse {
+  success: boolean;
+  favorites: {
+    product_id: number;
+  }[];
+}
+
+interface CardProduct {
+  id: number;
+  image: string;
+  tags: string[];
+  name: string;
+  description: string;
+  price: string;
+  slug: string;
+  gallery: string[];
+  petType: string;
+  isFavorite: boolean;
+  soldOut: boolean;
+}
+
+type PriceParam = 'min-value' | 'max-value';
+
+const emptyProductData: ProductListResponse = {
+  success: true,
+  facets: {
+    categories: [],
+    tags: [],
+  },
+  pagination: {
+    currentPage: 1,
+    perPage: 16,
+    totalRows: 0,
+    totalPages: 1,
+  },
+  products: [],
+};
+
+const toPublicImagePath = (path?: string) => {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path)) return path;
+
+  return `/${path.replace(/^\/+/, '')}`;
+};
+
+const getBreadcrumbTitle = (petType: string) => {
+  return petType === 'cat' ? '貓咪專區' : '狗勾專區';
+};
+
+const paramsFromUrlSearchParams = (
+  searchParams: URLSearchParams
+): ProductSearchParams => {
+  return {
+    category: searchParams.get('category') ?? undefined,
+    tags: searchParams.get('tags') ?? undefined,
+    search: searchParams.get('search') ?? undefined,
+    'min-value': searchParams.get('min-value') ?? undefined,
+    'max-value': searchParams.get('max-value') ?? undefined,
+    page: searchParams.get('page') ?? undefined,
+    sort: searchParams.get('sort') ?? undefined,
+    title: searchParams.get('title') ?? undefined,
+  };
+};
+
+const mapProducts = (
+  products: ApiProduct[],
+  tags: ApiTag[],
+  petType: string,
+  favoriteProductIds: Set<number>
+) => {
+  const tagMap = new Map(tags.map((tag) => [tag.id, tag.tag_ch]));
+
+  return products.map((product) => {
+    const avatarGallery =
+      product.avatars?.map((avatar) => toPublicImagePath(avatar.src)) ?? [];
+    const imageGallery =
+      product.images?.map((image) => toPublicImagePath(image.src)) ?? [];
+    const gallery = [...avatarGallery, ...imageGallery].filter(Boolean);
+
+    return {
+      id: product.id,
+      image:
+        toPublicImagePath(product.avatars?.[0]?.thumbnail) ||
+        toPublicImagePath(product.avatars?.[0]?.src),
+      tags: (product.tags_id ?? [])
+        .map((tagId) => tagMap.get(tagId))
+        .filter((tag): tag is string => Boolean(tag)),
+      name: product.prod_name,
+      description:
+        product.intros?.slogan ?? product.intros?.content?.split('\n')[0] ?? '',
+      price: `NT$${Number(product.price).toLocaleString('zh-TW')}`,
+      slug: product.slug,
+      gallery,
+      petType,
+      isFavorite: favoriteProductIds.has(product.id),
+      soldOut: Number(product.total_stock ?? 0) <= 0,
+    };
+  });
+};
+
 export default function PetTypePage({ searchParams }: PetTypePageProps) {
   const router = useRouter();
+  const routeParams = useParams<{ petType?: string }>();
+  const petType = routeParams.petType ?? 'dog';
   const [params, setParams] = useState<ProductSearchParams>({});
+  const [searchParamsReady, setSearchParamsReady] = useState(false);
+  const [productData, setProductData] =
+    useState<ProductListResponse>(emptyProductData);
+  const [loadingError, setLoadingError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [favoriteProductIds, setFavoriteProductIds] = useState<Set<number>>(
+    new Set()
+  );
   const [keywordInput, setKeywordInput] = useState('');
   const [minPriceInput, setMinPriceInput] = useState('');
   const [maxPriceInput, setMaxPriceInput] = useState('');
@@ -85,15 +211,20 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   useEffect(() => {
     let ignore = false;
 
-    if (!searchParams) return;
+    if (!searchParams) {
+      setSearchParamsReady(true);
+      return;
+    }
 
     void searchParams.then((nextParams) => {
-      if (!ignore) {
-        setParams(nextParams);
-        setKeywordInput(nextParams.keywords ?? '');
-        setMinPriceInput(nextParams['min-value'] ?? '');
-        setMaxPriceInput(nextParams['max-value'] ?? '');
-      }
+      if (ignore) return;
+
+      const nextSearch = nextParams.search ?? nextParams.keywords ?? '';
+      setParams({ ...nextParams, search: nextSearch });
+      setKeywordInput(nextSearch);
+      setMinPriceInput(nextParams['min-value'] ?? '');
+      setMaxPriceInput(nextParams['max-value'] ?? '');
+      setSearchParamsReady(true);
     });
 
     return () => {
@@ -101,36 +232,135 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     };
   }, [searchParams]);
 
-  const selectedCategory = params?.category ?? categories[0].slug;
-  const selectedTags = params?.tags?.split(',').filter(Boolean) ?? [];
-  const keywords = params?.keywords ?? '';
-  const minPrice = params?.['min-value'] ?? '';
-  const maxPrice = params?.['max-value'] ?? '';
-  const searchDisabled = keywordInput.trim() === '';
-  const selectedSort = params?.sort ?? '';
-  const breadcrumbTitle = params?.title ?? '狗勾專區';
+  useEffect(() => {
+    if (!searchParamsReady) return;
+
+    const controller = new AbortController();
+    const nextParams = new URLSearchParams();
+    const category = params.category ?? ALL_PRODUCTS_CATEGORY.slug;
+
+    if (category !== ALL_PRODUCTS_CATEGORY.slug) {
+      nextParams.set('category', category);
+    }
+    if (params.tags) nextParams.set('tags', params.tags);
+    if (params.search) nextParams.set('search', params.search);
+    if (params['min-value']) nextParams.set('min-value', params['min-value']);
+    if (params['max-value']) nextParams.set('max-value', params['max-value']);
+    if (params.sort) nextParams.set('sort', params.sort);
+    if (params.page) nextParams.set('page', params.page);
+
+    const queryString = nextParams.toString();
+    const url = `/api/products/${encodeURIComponent(petType)}${queryString ? `?${queryString}` : ''}`;
+
+    setIsLoading(true);
+    setLoadingError('');
+
+    void fetch(url, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('商品資料載入失敗');
+        }
+
+        return response.json();
+      })
+      .then((nextProductData: ProductListResponse) => {
+        setProductData(nextProductData);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        setProductData(emptyProductData);
+        setLoadingError(
+          error instanceof Error ? error.message : '商品資料載入失敗'
+        );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [params, petType, searchParamsReady]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void fetch('/api/products/getFavorite', { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error();
+
+        return response.json();
+      })
+      .then((data: FavoriteResponse) => {
+        if (!data.success) throw new Error();
+
+        setFavoriteProductIds(
+          new Set(data.favorites.map((favorite) => favorite.product_id))
+        );
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  const categoriesFromApi = productData.facets.categories.map((category) => ({
+    category: category.tag_ch,
+    count: Number(category.catCount),
+    slug: category.tag_slug,
+  }));
+  const categories = [
+    {
+      ...ALL_PRODUCTS_CATEGORY,
+      count: categoriesFromApi.reduce(
+        (total, category) => total + category.count,
+        0
+      ),
+    },
+    ...categoriesFromApi,
+  ];
+  const tags = productData.facets.tags.map((tag) => ({
+    tag: tag.tag_ch,
+    slug: String(tag.id),
+  }));
+  const selectedCategory = params.category ?? categories[0].slug;
+  const selectedTags = params.tags?.split(',').filter(Boolean) ?? [];
+  const search = params.search ?? '';
+  const minPrice = params['min-value'] ?? '';
+  const maxPrice = params['max-value'] ?? '';
+  const selectedSort = params.sort ?? '';
+  const breadcrumbTitle = params.title ?? getBreadcrumbTitle(petType);
   const selectedTagSet = new Set(selectedTags);
   const currentCategory =
     categories.find(({ slug }) => slug === selectedCategory) ?? categories[0];
   const selectedCategoryName = currentCategory.category;
-  const pageCount = Math.max(
-    1,
-    Math.ceil(currentCategory.count / PRODUCTS_PER_PAGE)
+  const pageCount = Math.max(1, productData.pagination.totalPages);
+  const currentPage = Math.min(
+    Math.max(productData.pagination.currentPage, 1),
+    pageCount
   );
-  const pageFromParams = Number(params?.page);
-  const currentPage = Number.isInteger(pageFromParams)
-    ? Math.min(Math.max(pageFromParams, 1), pageCount)
-    : 1;
-  const displayStart = (currentPage - 1) * PRODUCTS_PER_PAGE + 1;
+  const totalRows = productData.pagination.totalRows;
+  const displayStart =
+    totalRows > 0 ? (currentPage - 1) * productData.pagination.perPage + 1 : 0;
   const displayEnd = Math.min(
-    currentPage * PRODUCTS_PER_PAGE,
-    currentCategory.count
+    currentPage * productData.pagination.perPage,
+    totalRows
   );
-  const displayedProducts = products.slice(displayStart - 1, displayEnd);
+  const displayedProducts: CardProduct[] = mapProducts(
+    productData.products,
+    productData.facets.tags,
+    petType,
+    favoriteProductIds
+  );
+  const searchDisabled = keywordInput.trim() === search;
   const createHref = ({
     category = selectedCategory,
     tagSlugs = selectedTags,
-    nextKeywords = keywords,
+    nextSearch = search,
     minPriceValue = minPrice,
     maxPriceValue = maxPrice,
     sort = selectedSort,
@@ -138,7 +368,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   }: {
     category?: string;
     tagSlugs?: string[];
-    nextKeywords?: string;
+    nextSearch?: string;
     minPriceValue?: string;
     maxPriceValue?: string;
     sort?: string;
@@ -147,21 +377,17 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     const nextParams = new URLSearchParams({ category });
 
     if (tagSlugs.length) nextParams.set('tags', tagSlugs.join(','));
-    if (nextKeywords) nextParams.set('keywords', nextKeywords);
+    if (nextSearch) nextParams.set('search', nextSearch);
     if (minPriceValue) nextParams.set('min-value', minPriceValue);
     if (maxPriceValue) nextParams.set('max-value', maxPriceValue);
     if (sort) nextParams.set('sort', sort);
     if (page) nextParams.set('page', String(page));
-    if (params?.title) nextParams.set('title', params.title);
+    if (params.title) nextParams.set('title', params.title);
 
     return `?${nextParams.toString()}`;
   };
   const pushHref = (href: string) => {
-    setParams(
-      Object.fromEntries(
-        new URLSearchParams(href.slice(1))
-      ) as ProductSearchParams
-    );
+    setParams(paramsFromUrlSearchParams(new URLSearchParams(href.slice(1))));
     router.push(href);
   };
   const createCategoryHref = (category: string) => {
@@ -180,10 +406,10 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
-    const nextKeywords = String(formData.get('keywords') ?? '').trim();
+    const nextSearch = String(formData.get('search') ?? '').trim();
 
-    setKeywordInput(nextKeywords);
-    pushHref(createHref({ nextKeywords }));
+    setKeywordInput(nextSearch);
+    pushHref(createHref({ nextSearch }));
   };
   const handleSortChange = (event: SyntheticEvent<HTMLSelectElement>) => {
     pushHref(createHref({ sort: event.currentTarget.value }));
@@ -250,9 +476,9 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
             <LuSearch className="size-4 shrink-0" />
             <input
               id="keyword"
-              name="keywords"
+              name="search"
               inputMode="search"
-              className="min-w-0 grow bg-transparent typo-card-body text-text-primary outline-none placeholder:text-text-secondary"
+              className="typo-card-body min-w-0 grow bg-transparent text-text-primary outline-none placeholder:text-text-secondary"
               placeholder="想尋找什麼商品呢?"
               value={keywordInput}
               onChange={(event) => setKeywordInput(event.currentTarget.value)}
@@ -320,7 +546,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
                   className="typo-tab flex flex-col gap-1 text-[#3d4451]"
                 >
                   {label}
-                  <span className="flex px-4 h-8 items-center gap-2 rounded border border-secondary bg-transparent text-[#3d4451]">
+                  <span className="flex h-8 items-center gap-2 rounded border border-secondary bg-transparent px-4 text-[#3d4451]">
                     <input
                       type="text"
                       name={param}
@@ -377,8 +603,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
               {selectedCategoryName}
             </h2>
             <p className="typo-body text-text-secondary">
-              (共{currentCategory.count}項，顯示第
-              {String(displayStart).padStart(2, '0')}~
+              (共{totalRows}項，顯示第{String(displayStart).padStart(2, '0')}~
               {String(displayEnd).padStart(2, '0')}項)
             </p>
           </div>
@@ -389,21 +614,33 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
             <select
               value={selectedSort}
               onChange={handleSortChange}
-              className="cursor-pointer h-8 rounded border border-secondary bg-transparent px-3 text-text-primary outline-none"
+              className="h-8 cursor-pointer rounded border border-secondary bg-transparent px-3 text-text-primary outline-none"
             >
               <option value="">熱銷</option>
               <option value="latest">最新</option>
-              <option value="price-asc">價格(低到高)</option>
-              <option value="price-desc">價格(高到低)</option>
+              <option value="price_asc">價格(低到高)</option>
+              <option value="price_desc">價格(高到低)</option>
             </select>
           </label>
         </div>
+
+        {loadingError && (
+          <p className="typo-body text-error" role="alert">
+            {loadingError}
+          </p>
+        )}
 
         <div className="grid grid-cols-4 gap-8">
           {displayedProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
+
+        {!isLoading && !loadingError && displayedProducts.length === 0 && (
+          <p className="typo-body text-text-secondary">
+            目前沒有符合條件的商品
+          </p>
+        )}
 
         <nav
           aria-label="Pagination"
