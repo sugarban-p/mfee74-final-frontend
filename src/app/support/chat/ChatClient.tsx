@@ -542,6 +542,8 @@ export default function ChatClient() {
     const text = rawText.trim();
     if (!text || isSending) return;
 
+    const optimisticUserMessageId = `tmp-user-${Date.now()}`;
+
     setIsSending(true);
     setErrorMessage('');
 
@@ -605,6 +607,16 @@ export default function ChatClient() {
         return;
       }
 
+      const optimisticUserMessage: UIMessage = {
+        id: optimisticUserMessageId,
+        sender: 'USER',
+        type: 'TEXT',
+        content: text,
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => appendUniqueMessage(prev, optimisticUserMessage));
+      setInput('');
+
       const response = await fetch('/api/chat/send', {
         method: 'POST',
         credentials: 'include',
@@ -618,6 +630,10 @@ export default function ChatClient() {
       });
 
       if (!response.ok) {
+        setMessages((prev) =>
+          prev.filter((item) => item.id !== optimisticUserMessageId)
+        );
+        setInput(text);
         setErrorMessage('訊息送出失敗，請稍後再試。');
         return;
       }
@@ -643,15 +659,26 @@ export default function ChatClient() {
       );
 
       if (nextMessages.length > 0) {
-        setMessages((prev) => appendUniqueMessages(prev, nextMessages));
+        setMessages((prev) => {
+          const withoutOptimistic = prev.filter(
+            (item) => item.id !== optimisticUserMessageId
+          );
+          return appendUniqueMessages(withoutOptimistic, nextMessages);
+        });
+      } else {
+        setMessages((prev) =>
+          prev.filter((item) => item.id !== optimisticUserMessageId)
+        );
       }
 
       if (newCaseStatus) {
         setMemberCaseStatus(newCaseStatus);
       }
-
-      setInput('');
     } catch {
+      setMessages((prev) =>
+        prev.filter((item) => item.id !== optimisticUserMessageId)
+      );
+      setInput(text);
       setErrorMessage('網路異常，請稍後再試。');
     } finally {
       setIsSending(false);
@@ -892,7 +919,11 @@ export default function ChatClient() {
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter') void send(input);
+                  const isComposing =
+                    event.nativeEvent.isComposing || event.keyCode === 229;
+                  if (event.key === 'Enter' && !isComposing) {
+                    void send(input);
+                  }
                 }}
                 placeholder={isSupport ? '輸入客服回覆...' : '請輸入訊息...'}
                 className="flex-1 bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-300"

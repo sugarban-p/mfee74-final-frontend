@@ -22,8 +22,14 @@ const AUTH_TEXT: React.CSSProperties = {
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const nextPath = searchParams.get('next');
+  const canReturnToPurchaseFlow = Boolean(
+    nextPath &&
+    (nextPath.startsWith('/cart') || nextPath.startsWith('/checkout'))
+  );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState(
     searchParams.get('error') === 'oauth_failed'
       ? 'Google 登入失敗，請再試一次。'
@@ -42,17 +48,25 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe }),
       });
       const data = await res.json();
       if (!res.ok) {
-        if (res.status === 423) router.push('/auth/lock-status');
-        else setError(data.message ?? '登入失敗，請再試一次。');
+        if (res.status === 423) {
+          router.push('/auth/lock-status');
+        } else if (data?.error === 'EMAIL_NOT_VERIFIED') {
+          router.push(
+            `/auth/register/verify-email?email=${encodeURIComponent(email)}`
+          );
+        } else {
+          setError(data.message ?? '登入失敗，請再試一次。');
+        }
         return;
       }
       window.dispatchEvent(new Event('auth-state-changed'));
-      const nextPath = searchParams.get('next');
-      router.push(nextPath || '/member/dashboard');
+      router.push(
+        canReturnToPurchaseFlow && nextPath ? nextPath : '/member/dashboard'
+      );
     } catch {
       setError('網路錯誤，請稍後再試。');
     } finally {
@@ -61,12 +75,11 @@ export default function LoginPage() {
   };
 
   const googleLogin = () => {
-    const nextPath = searchParams.get('next');
     const googleLoginUrl = new URL(
       'http://localhost:3001/api/oauth/google/login'
     );
 
-    if (nextPath) {
+    if (canReturnToPurchaseFlow && nextPath) {
       googleLoginUrl.searchParams.set('next', nextPath);
     }
 
@@ -115,6 +128,8 @@ export default function LoginPage() {
           >
             <input
               type="checkbox"
+              checked={rememberMe}
+              onChange={(event) => setRememberMe(event.target.checked)}
               className="checkbox h-4.5 w-4.5 rounded-[4px] border-2 border-[#B8ACA2] bg-[#FFFEFC] checkbox-sm [--chkbg:#E77721] [--chkfg:white] checked:border-[#E77721] checked:bg-[#E77721] checked:text-white focus-visible:ring-2 focus-visible:ring-[#F6C6A0]/60 focus-visible:outline-none"
             />
             保持登入狀態
