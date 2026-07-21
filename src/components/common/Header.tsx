@@ -2,11 +2,13 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   LuCheck,
   LuHeart,
+  LuLogOut,
   LuPackage,
   LuShoppingCart,
   LuTrash2,
@@ -32,6 +34,10 @@ interface CartResponse {
   cartItems: CartItem[];
 }
 
+interface ProfileResponse {
+  avatar?: string | null;
+}
+
 const toPublicImagePath = (path?: string) => {
   if (!path) return '';
   if (/^https?:\/\//.test(path)) return path;
@@ -40,17 +46,56 @@ const toPublicImagePath = (path?: string) => {
 };
 
 export default function Header() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartLoginRequired, setIsCartLoginRequired] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [removingCartItemId, setRemovingCartItemId] = useState<number | null>(
     null
   );
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [memberAvatar, setMemberAvatar] = useState<string | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const cartPanelRef = useRef<HTMLElement>(null);
   const cartButtonRef = useRef<HTMLButtonElement>(null);
   const updateCartTimeoutsRef = useRef<
     Map<number, ReturnType<typeof setTimeout>>
   >(new Map());
+
+  const refreshAuthState = useCallback(async () => {
+    try {
+      const res = await fetch('/api/user/profile', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+
+      if (!res.ok) {
+        setIsAuthenticated(false);
+        setMemberAvatar(null);
+        return;
+      }
+
+      const payload: unknown = await res.json();
+      const profile =
+        payload && typeof payload === 'object'
+          ? (payload as ProfileResponse)
+          : null;
+
+      setIsAuthenticated(true);
+      setMemberAvatar(
+        typeof profile?.avatar === 'string' && profile.avatar.length > 0
+          ? profile.avatar
+          : null
+      );
+    } catch {
+      setIsAuthenticated(false);
+      setMemberAvatar(null);
+    } finally {
+      setIsAuthLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isCartOpen) return;
@@ -177,6 +222,69 @@ export default function Header() {
       );
     } catch {
       toast.error('移除購物車商品失敗，請稍後再試');
+    }
+  };
+
+  useEffect(() => {
+    refreshAuthState();
+  }, [pathname, refreshAuthState]);
+
+  useEffect(() => {
+    const handleAuthStateChanged = () => {
+      refreshAuthState();
+    };
+
+    window.addEventListener('auth-state-changed', handleAuthStateChanged);
+
+    return () => {
+      window.removeEventListener('auth-state-changed', handleAuthStateChanged);
+    };
+  }, [refreshAuthState]);
+
+  const handleMemberClick = () => {
+    if (isAuthLoading) {
+      return;
+    }
+
+    if (isAuthenticated) {
+      router.push('/member/dashboard');
+      return;
+    }
+
+    router.push('/auth/login');
+  };
+
+  const handleLogout = async () => {
+    if (isAuthLoading || isLoggingOut) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      return;
+    }
+
+    setIsLoggingOut(true);
+
+    try {
+      const res = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        toast.error('登出失敗，請稍後再試。');
+        return;
+      }
+
+      setIsAuthenticated(false);
+      setMemberAvatar(null);
+      window.dispatchEvent(new Event('auth-state-changed'));
+      toast.success('已登出');
+      router.push('/auth/login');
+    } catch {
+      toast.error('網路錯誤，請稍後再試。');
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -453,12 +561,36 @@ export default function Header() {
                 )}
               </section>
             )}
-            <Link
-              href="/member/dashboard"
-              className="btn btn-circle border-none btn-ghost p-1 align-middle text-text-secondary hover:bg-button-secondary-hover hover:shadow-none"
+
+            <button
+              type="button"
+              aria-label={isAuthenticated ? '前往會員中心' : '前往登入'}
+              onClick={handleMemberClick}
+              disabled={isAuthLoading}
+              className="btn btn-circle border-none btn-ghost p-1 align-middle text-text-secondary hover:bg-button-secondary-hover hover:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <LuUser className="size-6" />
-            </Link>
+              {isAuthenticated && memberAvatar ? (
+                <img
+                  src={memberAvatar}
+                  alt="會員頭像"
+                  className="size-8 rounded-full object-cover"
+                />
+              ) : (
+                <LuUser className="size-6" />
+              )}
+            </button>
+
+            {isAuthenticated && (
+              <button
+                type="button"
+                aria-label="登出"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="btn btn-circle border-none btn-ghost p-1 align-middle text-text-secondary hover:bg-button-secondary-hover hover:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <LuLogOut className="size-6" />
+              </button>
+            )}
           </div>
         </div>
       </header>
