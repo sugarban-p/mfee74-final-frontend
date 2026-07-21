@@ -6,6 +6,20 @@ import AppShell from '@/src/components/common/AppShell';
 import { Noto_Sans_TC, Noto_Serif_TC } from 'next/font/google';
 import './globals.css';
 
+const notoSansTc = Noto_Sans_TC({
+  weight: ['400', '500', '700'],
+  subsets: ['latin'],
+  variable: '--font-noto-sans-tc',
+  display: 'swap',
+});
+
+const notoSerifTc = Noto_Serif_TC({
+  weight: ['700'],
+  subsets: ['latin'],
+  variable: '--font-noto-serif-tc',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: 'Team3 專題',
   description: '',
