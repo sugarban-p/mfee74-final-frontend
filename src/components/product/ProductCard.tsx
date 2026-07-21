@@ -137,17 +137,12 @@ export function ProductCard({ product }: ProductCardProps) {
 
         <div className="flex flex-col gap-4 p-4">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex h-[18px] gap-1 overflow-hidden">
-              {product.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="shrink-0 rounded-full bg-card-secondary px-2 text-xs leading-[18px] text-text-secondary"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
+            <Link
+              href={productSlug ? `/product/${petType}/${productSlug}` : '#'}
+              className="w-[85%] cursor-pointer hover:underline"
+            >
+              <h2 className="typo-card-title truncate">{product.name}</h2>
+            </Link>
             <button
               type="button"
               aria-pressed={isFavorite}
@@ -174,13 +169,17 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Link
-              href={productSlug ? `/product/${petType}/${productSlug}` : '#'}
-              className="cursor-pointer hover:underline"
-            >
-              <h2 className="typo-card-title truncate">{product.name}</h2>
-            </Link>
             <p className="typo-card-body truncate">{product.description}</p>
+            <div className="flex h-[18px] gap-1 overflow-hidden">
+              {product.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="shrink-0 rounded-full bg-card-secondary px-2 text-xs leading-[18px] text-text-secondary"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
 
           <p className="typo-card-body">{product.price}</p>
