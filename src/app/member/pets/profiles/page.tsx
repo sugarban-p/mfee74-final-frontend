@@ -1,33 +1,30 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LuArrowLeft, LuCirclePlus } from 'react-icons/lu';
 import { PetProfileCard } from '@/src/components/pets/PetProfileCard';
 import { getPets } from '@/src/services/pets-api';
 import type { PetListItem } from '@/src/types/pet';
 
-/**
- * async Server Component：
- * 頁面渲染前，先向後端取得目前會員的寵物資料。
- */
-export default async function PetProfilesPage() {
-  let pets: PetListItem[] = [];
-  let errorMessage = '';
+export default function PetProfilesPage() {
+  const [pets, setPets] = useState<PetListItem[]>([]);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  try {
-    /**
-     * 呼叫前端 service：
-     * GET http://localhost:3001/api/pets
-     */
-    pets = await getPets();
-  } catch (error) {
-    /**
-     * 後端沒有啟動或 API 回傳失敗時，
-     * 保留頁面版型並顯示錯誤，不讓整頁直接壞掉。
-     */
-    errorMessage =
-      error instanceof Error
-        ? error.message
-        : '目前無法取得毛孩資料，請稍後再試';
-  }
+  // 由瀏覽器呼叫同源 API，讓登入 Cookie 與會員功能使用相同流程。
+  useEffect(() => {
+    getPets()
+      .then(setPets)
+      .catch((error: unknown) => {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : '目前無法取得毛孩資料，請稍後再試'
+        );
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
 
   return (
     /**
@@ -64,8 +61,12 @@ export default async function PetProfilesPage() {
         </div>
       )}
 
+      {isLoading && (
+        <p className="typo-card-body mt-10 text-text-secondary">讀取中...</p>
+      )}
+
       {/* API 成功但會員沒有寵物 */}
-      {!errorMessage && pets.length === 0 && (
+      {!isLoading && !errorMessage && pets.length === 0 && (
         <div className="mt-10 rounded-lg border border-border bg-card-primary px-6 py-8 text-center">
           <p className="typo-card-title text-text-primary">
             目前還沒有毛孩檔案
@@ -79,7 +80,8 @@ export default async function PetProfilesPage() {
 
       {/* 真實 API 寵物列表 */}
       <div className="mt-16 flex flex-wrap gap-8">
-        {!errorMessage &&
+        {!isLoading &&
+          !errorMessage &&
           pets.map((pet) => <PetProfileCard key={pet.id} pet={pet} />)}
 
         {/**

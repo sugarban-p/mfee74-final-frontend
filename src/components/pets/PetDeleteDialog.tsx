@@ -5,16 +5,11 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { AlertDialog } from 'radix-ui';
 import { LuTriangleAlert, LuTrash2 } from 'react-icons/lu';
-import { API_SERVER } from '@/src/config/api-path';
+import { deletePet } from '@/src/services/pets-api';
 
 interface PetDeleteDialogProps {
   petId: number;
   petName: string;
-}
-
-interface DeletePetResponse {
-  success: boolean;
-  message?: string;
 }
 
 /**
@@ -37,22 +32,11 @@ export function PetDeleteDialog({ petId, petName }: PetDeleteDialogProps) {
     setIsDeleting(true);
 
     try {
-      const response = await fetch(`${API_SERVER}/api/pets/${petId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      const data = (await response.json().catch(() => ({
-        success: false,
-      }))) as DeletePetResponse;
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || '刪除毛孩失敗');
-      }
+      await deletePet(petId);
 
       toast.success(`${petName}已從毛孩檔案中刪除`);
 
-      // 刪除成功後回到列表，並重新整理 Server Component 資料。
+      // 刪除成功後回到列表；列表頁會重新向 API 取得最新資料。
       router.push('/member/pets/profiles');
       router.refresh();
     } catch (error) {

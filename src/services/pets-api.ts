@@ -1,4 +1,3 @@
-import { API_SERVER } from '@/src/config/api-path';
 import type {
   PetDetail,
   PetDetailResponse,
@@ -28,11 +27,11 @@ async function requestPetApi<T extends PetApiResponseBase>(
   path: string,
   options?: RequestInit
 ): Promise<T> {
-  const response = await fetch(`${API_SERVER}${path}`, {
+  const response = await fetch(path, {
     // 每次取得最新資料，不使用 Next.js 舊快取。
     cache: 'no-store',
 
-    // 未來 Session 登入完成後，請求需要攜帶 Cookie。
+    // 與會員功能相同，透過同源 /api rewrite 讓瀏覽器自動攜帶登入 Cookie。
     credentials: 'include',
 
     ...options,
@@ -43,6 +42,12 @@ async function requestPetApi<T extends PetApiResponseBase>(
    * 使用 null 避免 response.json() 產生解析錯誤。
    */
   const data = (await response.json().catch(() => null)) as T | null;
+
+  // 私人寵物 API 收到 401 時，回登入頁重新取得有效 Cookie。
+  if (response.status === 401) {
+    window.location.assign('/auth/login');
+    throw new Error('請先登入會員');
+  }
 
   /**
    * response.ok 判斷 HTTP 200～299；

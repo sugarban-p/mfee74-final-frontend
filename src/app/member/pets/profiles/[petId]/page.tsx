@@ -1,51 +1,49 @@
-import { notFound } from 'next/navigation';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { PetProfileForm } from '@/src/components/pets/PetProfileForm';
 import { getPetById, getPetOptions } from '@/src/services/pets-api';
+import type { PetDetail, PetFormOptions } from '@/src/types/pet';
 
-interface PetProfileDetailPageProps {
-  /**
-   * 動態路由：
-   * /member/pets/profiles/1
-   *
-   * 會得到 params.petId = "1"。
-   */
-  params: Promise<{
-    petId: string;
-  }>;
-}
-
-/**
- * 寵物詳情頁。
- *
- * Server Component 會先向後端取得寵物資料，
- * 再將資料傳入 PetProfileForm。
- */
-export default async function PetProfileDetailPage({
-  params,
-}: PetProfileDetailPageProps) {
-  const { petId } = await params;
+export default function PetProfileDetailPage() {
+  const { petId } = useParams<{ petId: string }>();
   const numericPetId = Number(petId);
+  const [pet, setPet] = useState<PetDetail | null>(null);
+  const [options, setOptions] = useState<PetFormOptions | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  /**
-   * 避免 /profiles/abc 或負數 id 被送到後端。
-   */
-  if (!Number.isInteger(numericPetId) || numericPetId <= 0) {
-    notFound();
+  useEffect(() => {
+    if (!Number.isInteger(numericPetId) || numericPetId <= 0) {
+      setErrorMessage('寵物編號格式不正確');
+      return;
+    }
+
+    Promise.all([getPetById(numericPetId), getPetOptions()])
+      .then(([petData, optionData]) => {
+        setPet(petData);
+        setOptions(optionData);
+      })
+      .catch((error: unknown) => {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : '目前無法取得毛孩資料，請稍後再試'
+        );
+      });
+  }, [numericPetId]);
+
+  if (errorMessage) {
+    return (
+      <p className="typo-card-body text-red-700" role="alert">
+        {errorMessage}
+      </p>
+    );
   }
 
-  try {
-    // 兩支互不相依的 GET API 同時執行，避免一支完成後才跑另一支。
-    const [pet, options] = await Promise.all([
-      getPetById(numericPetId),
-      getPetOptions(),
-    ]);
-
-    return <PetProfileForm mode="view" pet={pet} options={options} />;
-  } catch {
-    /**
-     * 寵物不存在、已被軟刪除或不屬於目前會員時，
-     * 顯示 Next.js Not Found。
-     */
-    notFound();
+  if (!pet || !options) {
+    return <p className="typo-card-body text-text-secondary">讀取中...</p>;
   }
+
+  return <PetProfileForm mode="view" pet={pet} options={options} />;
 }

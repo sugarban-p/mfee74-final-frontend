@@ -1,43 +1,49 @@
-import { notFound } from 'next/navigation';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { PetProfileForm } from '@/src/components/pets/PetProfileForm';
 import { getPetById, getPetOptions } from '@/src/services/pets-api';
+import type { PetDetail, PetFormOptions } from '@/src/types/pet';
 
-interface EditPetProfilePageProps {
-  /**
-   * 動態路由：
-   * /member/pets/profiles/1/edit
-   *
-   * 會得到 params.petId = "1"。
-   */
-  params: Promise<{
-    petId: string;
-  }>;
-}
-
-/**
- * 寵物編輯頁。
- *
- * 先取得資料庫中的寵物資料，
- * 再傳給可編輯的 PetProfileForm。
- */
-export default async function EditPetProfilePage({
-  params,
-}: EditPetProfilePageProps) {
-  const { petId } = await params;
+export default function EditPetProfilePage() {
+  const { petId } = useParams<{ petId: string }>();
   const numericPetId = Number(petId);
+  const [pet, setPet] = useState<PetDetail | null>(null);
+  const [options, setOptions] = useState<PetFormOptions | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  if (!Number.isInteger(numericPetId) || numericPetId <= 0) {
-    notFound();
+  useEffect(() => {
+    if (!Number.isInteger(numericPetId) || numericPetId <= 0) {
+      setErrorMessage('寵物編號格式不正確');
+      return;
+    }
+
+    Promise.all([getPetById(numericPetId), getPetOptions()])
+      .then(([petData, optionData]) => {
+        setPet(petData);
+        setOptions(optionData);
+      })
+      .catch((error: unknown) => {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : '目前無法取得毛孩資料，請稍後再試'
+        );
+      });
+  }, [numericPetId]);
+
+  if (errorMessage) {
+    return (
+      <p className="typo-card-body text-red-700" role="alert">
+        {errorMessage}
+      </p>
+    );
   }
 
-  try {
-    const [pet, options] = await Promise.all([
-      getPetById(numericPetId),
-      getPetOptions(),
-    ]);
-
-    return <PetProfileForm mode="edit" pet={pet} options={options} />;
-  } catch {
-    notFound();
+  if (!pet || !options) {
+    return <p className="typo-card-body text-text-secondary">讀取中...</p>;
   }
+
+  return <PetProfileForm mode="edit" pet={pet} options={options} />;
 }

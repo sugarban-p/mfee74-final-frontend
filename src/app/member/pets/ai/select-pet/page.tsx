@@ -1,14 +1,30 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LuCirclePlus } from 'react-icons/lu';
 import { PetProfileCard } from '@/src/components/pets/PetProfileCard';
 import { getPets } from '@/src/services/pets-api';
+import type { PetListItem } from '@/src/types/pet';
 
-export default async function SelectPetForAiPage() {
-  /**
-   * 取得目前會員尚未刪除的寵物列表。
-   * 選擇後會把資料庫中的 pet.id 放進聊天室網址。
-   */
-  const pets = await getPets();
+export default function SelectPetForAiPage() {
+  const [pets, setPets] = useState<PetListItem[]>([]);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // 取得目前會員尚未刪除的寵物，選擇後將 pet.id 放進聊天室網址。
+  useEffect(() => {
+    getPets()
+      .then(setPets)
+      .catch((error: unknown) => {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : '目前無法取得毛孩資料，請稍後再試'
+        );
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
 
   return (
     <section className="w-full">
@@ -28,14 +44,22 @@ export default async function SelectPetForAiPage() {
 
       {/* 毛孩卡片列表 */}
       <section className="mt-10 flex flex-wrap gap-8">
-        {pets.map((pet) => (
-          <PetProfileCard
-            key={pet.id}
-            pet={pet}
-            actionHref={`/member/pets/ai/chat?petId=${pet.id}`}
-            actionText="選擇這隻毛孩"
-          />
-        ))}
+        {errorMessage ? (
+          <p className="typo-card-body text-red-700" role="alert">
+            {errorMessage}
+          </p>
+        ) : isLoading ? (
+          <p className="typo-card-body text-text-secondary">讀取中...</p>
+        ) : (
+          pets.map((pet) => (
+            <PetProfileCard
+              key={pet.id}
+              pet={pet}
+              actionHref={`/member/pets/ai/chat?petId=${pet.id}`}
+              actionText="選擇這隻毛孩"
+            />
+          ))
+        )}
 
         {/* 新增毛孩入口：直接導向既有的新增寵物頁面 */}
         <Link

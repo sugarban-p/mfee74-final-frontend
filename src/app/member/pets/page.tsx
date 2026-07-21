@@ -1,8 +1,12 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { IconType } from 'react-icons';
 import { LuCat, LuCirclePlus, LuPawPrint, LuSparkles } from 'react-icons/lu';
 import { PetProfileCard } from '@/src/components/pets/PetProfileCard';
 import { getPets } from '@/src/services/pets-api';
+import type { PetListItem } from '@/src/types/pet';
 
 /**
  * FeatureItem：
@@ -50,13 +54,27 @@ const petFeatures: FeatureItem[] = [
   },
 ];
 
-export default async function PetsPage() {
+export default function PetsPage() {
+  const [pets, setPets] = useState<PetListItem[]>([]);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
   /**
-   * petCount：
-   * 從 GET /api/pets 取得目前會員的真實寵物資料，
-   * 再用 pets.length 計算毛孩數量。
+   * 與會員 Dashboard 相同，由瀏覽器呼叫 API，登入 Cookie 會自動附上。
    */
-  const pets = await getPets();
+  useEffect(() => {
+    getPets()
+      .then(setPets)
+      .catch((error: unknown) => {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : '目前無法取得毛孩資料，請稍後再試'
+        );
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
+
   const petCount = pets.length;
 
   return (
@@ -72,7 +90,9 @@ export default async function PetsPage() {
 
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="typo-h2">您有 {petCount} 隻毛孩</h1>
+            <h1 className="typo-h2">
+              {isLoading ? '正在讀取毛孩資料...' : `您有 ${petCount} 隻毛孩`}
+            </h1>
 
             <p className="typo-body-medium mt-3 text-white">
               讓 AI 根據毛孩的狀況，為牠們找到適合的商品。
@@ -178,9 +198,15 @@ export default async function PetsPage() {
          * 2. 之後要調整卡片樣式，只要改 PetProfileCard 一個檔案。
          */}
         <div className="flex flex-wrap gap-6 border border-border bg-white/40 p-6">
-          {pets.map((pet) => (
-            <PetProfileCard key={pet.id} pet={pet} />
-          ))}
+          {errorMessage ? (
+            <p className="typo-card-body text-red-700" role="alert">
+              {errorMessage}
+            </p>
+          ) : isLoading ? (
+            <p className="typo-card-body text-text-secondary">讀取中...</p>
+          ) : (
+            pets.map((pet) => <PetProfileCard key={pet.id} pet={pet} />)
+          )}
         </div>
       </section>
     </section>
