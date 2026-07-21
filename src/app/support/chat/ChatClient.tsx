@@ -159,6 +159,7 @@ export default function ChatClient() {
   const [isReady, setIsReady] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [supportUnreadCounts, setSupportUnreadCounts] = useState<
     Record<string, number>
   >({});
@@ -169,6 +170,7 @@ export default function ChatClient() {
 
   const chatCardRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const selectedCaseIdRef = useRef(selectedCaseId);
   const isSupportRef = useRef(isSupport);
@@ -756,6 +758,119 @@ export default function ChatClient() {
     }
   };
 
+  const uploadAttachment = async (file: File) => {
+    const maxSize = 8 * 1024 * 1024;
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'application/pdf',
+      'text/plain',
+    ];
+
+    if (file.size > maxSize) {
+      setErrorMessage('附件大小不可超過 8MB。');
+      return;
+    }
+    if (!allowedTypes.includes(file.type)) {
+      setErrorMessage('附件格式僅支援 JPG、PNG、WEBP、GIF、PDF、TXT。');
+      return;
+    }
+
+    if (isSupport && !selectedCaseId) {
+      setErrorMessage('請先從右側選擇一筆案件。');
+      return;
+    }
+
+    setIsUploading(true);
+    setErrorMessage('');
+
+    try {
+      const formData = new FormData();
+      formData.append('attachment', file);
+      if (selectedCaseId) {
+        formData.append('caseId', selectedCaseId);
+      }
+
+      const endpoint = isSupport
+        ? '/api/chat/support/upload'
+        : '/api/chat/upload';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const payload: unknown = await response.json().catch(() => null);
+        const parsed = asRecord(payload);
+        setErrorMessage(
+          typeof parsed?.message === 'string'
+            ? parsed.message
+            : '附件上傳失敗，請稍後再試。'
+        );
+        return;
+      }
+
+      const payload: unknown = await response.json();
+      const parsed = asRecord(payload);
+      const created = normalizeApiMessage(parsed?.message);
+      const newCaseId =
+        typeof parsed?.caseId === 'string' ? parsed.caseId : null;
+      const newCaseStatus =
+        parsed?.caseStatus === 'OPEN' || parsed?.caseStatus === 'CLOSED'
+          ? parsed.caseStatus
+          : null;
+
+      if (created) {
+        setMessages((prev) => appendUniqueMessage(prev, created));
+      }
+
+      if (!isSupport) {
+        if (newCaseId && !selectedCaseId) {
+          setSelectedCaseId(newCaseId);
+        }
+        if (newCaseStatus) {
+          setMemberCaseStatus(newCaseStatus);
+        }
+      } else {
+        setSupportCases((prev) => {
+          const targetCaseId = selectedCaseId;
+          if (!targetCaseId) return prev;
+
+          const target = prev.find((item) => item.caseId === targetCaseId);
+          if (!target) return prev;
+
+          const nextPreview = `附件：${file.name}`;
+          const updatedTarget: SupportCase = {
+            ...target,
+            status: 'OPEN',
+            preview: nextPreview,
+          };
+
+          return [
+            updatedTarget,
+            ...prev.filter((item) => item.caseId !== targetCaseId),
+          ];
+        });
+      }
+    } catch {
+      setErrorMessage('網路異常，請稍後再試。');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const onAttachmentInputChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    await uploadAttachment(file);
+  };
+
   const selectSupportCase = (caseId: string) => {
     setSelectedCaseId(caseId);
     setSupportUnreadCounts((prev) => {
@@ -929,12 +1044,36 @@ export default function ChatClient() {
                 className="flex-1 bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-300"
               />
               <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.txt"
+                  onChange={(event) => {
+                    void onAttachmentInputChange(event);
+                  }}
+                />
                 <button
                   type="button"
-                  className="text-gray-300 transition-colors hover:text-gray-400"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={
+                    isUploading ||
+                    isSending ||
+                    (isSupport && !canSendAsSupport) ||
+                    isMemberCaseClosed
+                  }
+                  className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                    isUploading ||
+                    isSending ||
+                    (isSupport && !canSendAsSupport) ||
+                    isMemberCaseClosed
+                      ? 'border-gray-200 bg-gray-100 text-gray-400'
+                      : 'border-orange-200 bg-orange-50 text-orange-500 hover:bg-orange-100'
+                  }`}
                   aria-label="附件"
                 >
                   <Paperclip size={16} strokeWidth={2} />
+                  <span>{isUploading ? '上傳中...' : '上傳附件'}</span>
                 </button>
                 <button
                   type="button"
@@ -1081,6 +1220,73 @@ interface UserMessageProps extends ChatMessageProps {
   label: string;
 }
 
+function renderMessageContent(content: string, isUserMessage: boolean) {
+  const imageExtRegex = /\.(png|jpe?g|webp|gif)(\?.*)?$/i;
+  const attachmentMatch = content.match(/^附件：(.+)\n(https?:\/\/\S+)$/);
+  if (attachmentMatch) {
+    const fileName = attachmentMatch[1];
+    const fileUrl = attachmentMatch[2];
+    const isImageAttachment =
+      imageExtRegex.test(fileName) || imageExtRegex.test(fileUrl);
+
+    return (
+      <div className="space-y-2">
+        <div>{`附件：${fileName}`}</div>
+        {isImageAttachment ? (
+          <a href={fileUrl} target="_blank" rel="noreferrer">
+            <img
+              src={fileUrl}
+              alt={fileName}
+              className="max-h-56 max-w-full rounded-xl border border-black/10 bg-white object-contain"
+              loading="lazy"
+            />
+          </a>
+        ) : null}
+        <a
+          href={fileUrl}
+          target="_blank"
+          rel="noreferrer"
+          className={`inline-block underline underline-offset-2 ${
+            isUserMessage
+              ? 'text-white/90'
+              : 'text-orange-600 hover:text-orange-500'
+          }`}
+        >
+          點擊下載
+        </a>
+      </div>
+    );
+  }
+
+  const urlRegex = /(https?:\/\/\S+)/g;
+  const segments = content.split(urlRegex);
+  if (segments.length === 1) {
+    return content;
+  }
+
+  return segments.map((segment, index) => {
+    if (/^https?:\/\//.test(segment)) {
+      return (
+        <a
+          key={`${segment}-${index}`}
+          href={segment}
+          target="_blank"
+          rel="noreferrer"
+          className={`underline underline-offset-2 ${
+            isUserMessage
+              ? 'text-white/90'
+              : 'text-orange-600 hover:text-orange-500'
+          }`}
+        >
+          {segment}
+        </a>
+      );
+    }
+
+    return <span key={`text-${index}`}>{segment}</span>;
+  });
+}
+
 function AgentMessage({ msg }: ChatMessageProps) {
   const label = msg.sender === 'AGENT' ? '客服人員' : 'AI 客服';
 
@@ -1099,7 +1305,7 @@ function AgentMessage({ msg }: ChatMessageProps) {
           </span>
         </div>
         <div className="rounded-2xl rounded-bl-sm border border-gray-100 bg-[#F4EEE8] px-4 py-2.5 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap text-gray-700">
-          {msg.content}
+          {renderMessageContent(msg.content, false)}
         </div>
       </div>
     </div>
@@ -1121,7 +1327,7 @@ function UserMessage({ msg, label }: UserMessageProps) {
           </span>
         </div>
         <div className="rounded-2xl rounded-br-sm bg-orange-400 px-4 py-2.5 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap text-white shadow-sm">
-          {msg.content}
+          {renderMessageContent(msg.content, true)}
         </div>
       </div>
       <div className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-orange-400 shadow-sm">
