@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   LuChevronDown,
   LuChevronLeft,
@@ -17,6 +17,7 @@ import {
 
 interface CartItem {
   id: number;
+  skuId: number;
   brand: string;
   name: string;
   spec: string;
@@ -25,49 +26,47 @@ interface CartItem {
   image: string;
 }
 
-const initialItems: CartItem[] = [
-  {
-    id: 1,
-    brand: 'Royal Canin',
-    name: '皇家室內成貓專用飼料',
-    spec: '2kg',
-    price: 890,
-    qty: 2,
-    image: '/cat-category.png',
-  },
-  {
-    id: 2,
-    brand: 'FORZA10',
-    name: 'FORZA10 無穀鮭魚貓罐頭',
-    spec: '85g x 6罐',
-    price: 480,
-    qty: 1,
-    image: '/events.png',
-  },
-  {
-    id: 3,
-    brand: 'NEKOZUKI',
-    name: '麻繩貓抓板柱形款',
-    spec: '米白色 / 大',
-    price: 320,
-    qty: 1,
-    image: '/dog-category.png',
-  },
-];
+interface Coupon {
+  code: string;
+  title: string;
+  discountType: 'percent' | 'fixed';
+  discountValue: number;
+  minAmount: number;
+}
 
 const cartGridClass = 'md:grid-cols-[minmax(0,1fr)_96px_132px_112px_40px]';
-
-const coupons = [
-  { code: 'PET10', label: 'PET10 — 享九折優惠' },
-  { code: 'SAVE200', label: 'SAVE200 — 折抵 NT$200' },
-  { code: 'FREESHIP', label: 'FREESHIP — 免運費' },
-];
 
 const formatPrice = (price: number) => `NT$${price.toLocaleString('zh-TW')}`;
 
 export default function CartPage() {
-  const [items, setItems] = useState(initialItems);
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [couponCode, setCouponCode] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCart = async () => {
+      const [cartResponse, couponResponse] = await Promise.all([
+        fetch('/api/orders/cart', { credentials: 'include' }),
+        fetch('/api/orders/coupons', { credentials: 'include' }),
+      ]);
+      const cartData = await cartResponse.json();
+      const couponData = await couponResponse.json();
+
+      setItems(cartData.items ?? []);
+      setCoupons(couponData.coupons ?? []);
+      setIsLoading(false);
+    };
+
+    loadCart().catch(() => setIsLoading(false));
+
+    const savedCoupon = localStorage.getItem('mofu-cart-coupon');
+    if (savedCoupon) setCouponCode(savedCoupon);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('mofu-cart-coupon', couponCode);
+  }, [couponCode]);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -80,24 +79,62 @@ export default function CartPage() {
   );
 
   const discount = useMemo(() => {
-    if (couponCode === 'PET10') return Math.round(subtotal * 0.1);
-    if (couponCode === 'SAVE200') return Math.min(200, subtotal);
-    return 0;
-  }, [couponCode, subtotal]);
+    const coupon = coupons.find((item) => item.code === couponCode);
+    if (!coupon || subtotal < coupon.minAmount) return 0;
+    if (coupon.discountType === 'percent') {
+      return Math.round(subtotal * (1 - coupon.discountValue / 100));
+    }
+    if (coupon.code === 'FREESHIP') return 0;
+    return Math.min(coupon.discountValue, subtotal);
+  }, [couponCode, coupons, subtotal]);
 
-  const total = Math.max(0, subtotal - discount);
+  const couponLabel = (coupon: Coupon) => {
+    if (coupon.discountType === 'percent') {
+      return `${coupon.code} — ${coupon.discountValue} 折優惠`;
+    }
+    if (coupon.discountValue === 0) return `${coupon.code} — ${coupon.title}`;
+    return `${coupon.code} — 折抵 ${formatPrice(coupon.discountValue)}`;
+  };
 
-  const updateQty = (id: number, diff: number) => {
+  const updateQty = async (id: number, diff: number) => {
+    const item = items.find((cartItem) => cartItem.id === id);
+    if (!item) return;
+
+    const quantity = Math.max(1, item.qty + diff);
     setItems((current) =>
-      current.map((item) =>
-        item.id === id ? { ...item, qty: Math.max(1, item.qty + diff) } : item
+      current.map((cartItem) =>
+        cartItem.id === id ? { ...cartItem, qty: quantity } : cartItem
       )
     );
+
+    await fetch(`/api/orders/cart/${id}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity }),
+    });
   };
 
-  const removeItem = (id: number) => {
+  const removeItem = async (id: number) => {
     setItems((current) => current.filter((item) => item.id !== id));
+    await fetch(`/api/orders/cart/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
   };
+
+  if (isLoading) {
+    return (
+      <section className="mx-auto w-full max-w-[1340px] bg-[#faf8f5] px-4 py-8 md:px-10">
+        <div className="rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white px-6 py-16 text-center">
+          <p className="typo-body-medium text-text-secondary">
+            購物車資料載入中...
+          </p>
+        </div>
+      </section>
+    );
+  }
+  const total = Math.max(0, subtotal - discount);
 
   if (items.length === 0) {
     return (
@@ -138,7 +175,7 @@ export default function CartPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div>
           <div
-            className={`mb-3 hidden gap-4 px-5 typo-tab text-text-secondary md:grid ${cartGridClass}`}
+            className={`typo-tab mb-3 hidden gap-4 px-5 text-text-secondary md:grid ${cartGridClass}`}
           >
             <span>商品</span>
             <span className="text-right">單價</span>
@@ -238,17 +275,17 @@ export default function CartPage() {
               <select
                 aria-label="選擇優惠券"
                 value={couponCode}
-                className="h-12 w-full appearance-none rounded-xl border border-[rgba(26,22,18,0.12)] bg-card-secondary px-4 pr-10 typo-card-body text-text-primary outline-none focus:border-primary"
+                className="typo-card-body h-12 w-full appearance-none rounded-xl border border-[rgba(26,22,18,0.12)] bg-card-secondary px-4 pr-10 text-text-primary outline-none focus:border-primary"
                 onChange={(event) => setCouponCode(event.target.value)}
               >
                 <option value="">請選擇優惠券</option>
                 {coupons.map((coupon) => (
                   <option key={coupon.code} value={coupon.code}>
-                    {coupon.label}
+                    {couponLabel(coupon)}
                   </option>
                 ))}
               </select>
-              <LuChevronDown className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-text-secondary" />
+              <LuChevronDown className="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 text-text-secondary" />
             </div>
           </section>
 
@@ -258,7 +295,7 @@ export default function CartPage() {
               訂單摘要
             </h2>
 
-            <div className="space-y-3 typo-card-body">
+            <div className="typo-card-body space-y-3">
               <div className="flex justify-between text-text-secondary">
                 <span>商品小計</span>
                 <span className="text-text-primary">

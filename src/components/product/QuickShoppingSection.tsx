@@ -141,9 +141,8 @@ const getProductFeatures = (intros?: ApiProductIntro) => {
     { text: intros?.remark, className: 'typo-tab' },
   ]
     .map((feature) => ({ ...feature, text: feature.text?.trim() }))
-    .filter(
-      (feature): feature is { text: string; className: string } =>
-        Boolean(feature.text)
+    .filter((feature): feature is { text: string; className: string } =>
+      Boolean(feature.text)
     );
 };
 

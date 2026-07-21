@@ -46,8 +46,9 @@ export default function ProductPage() {
   const petType = params.petType ?? 'dog';
   const productSlug = params.product ?? '';
   const [showAllDescriptions, setShowAllDescriptions] = useState(false);
-  const [productPageDetail, setProductPageDetail] =
-    useState<ProductPageDetail>(emptyProductPageDetail);
+  const [productPageDetail, setProductPageDetail] = useState<ProductPageDetail>(
+    emptyProductPageDetail
+  );
 
   useEffect(() => {
     setShowAllDescriptions(false);
