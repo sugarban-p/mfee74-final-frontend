@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { FaLine, FaRegCreditCard } from 'react-icons/fa6';
 import {
@@ -46,6 +47,7 @@ const orderGridClass = 'md:grid-cols-[minmax(0,1fr)_100px_80px_100px]';
 const formatPrice = (price: number) => `NT$${price.toLocaleString('zh-TW')}`;
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<'credit' | 'linepay'>(
     'credit'
@@ -76,7 +78,7 @@ export default function CheckoutPage() {
       ]);
 
       if (cartResponse.status === 401 || couponResponse.status === 401) {
-        window.location.href = '/auth/login';
+        router.push('/auth/login?next=/checkout');
         return;
       }
 
@@ -95,7 +97,7 @@ export default function CheckoutPage() {
 
     const savedCoupon = localStorage.getItem('mofu-cart-coupon');
     if (savedCoupon) setCouponCode(savedCoupon);
-  }, []);
+  }, [router]);
 
   const subtotal = useMemo(
     () => orderItems.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -184,7 +186,7 @@ export default function CheckoutPage() {
       });
 
       if (checkoutResponse.status === 401) {
-        window.location.href = '/auth/login';
+        router.push('/auth/login?next=/checkout');
         return;
       }
 

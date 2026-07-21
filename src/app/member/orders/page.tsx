@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
   LuChevronRight,
@@ -48,16 +49,24 @@ interface OrderItem {
 const formatPrice = (price: number) => `NT$${price.toLocaleString('zh-TW')}`;
 
 export default function MemberOrdersPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetch('/api/orders/list', { credentials: 'include' })
-      .then((response) => response.json())
-      .then((data) => setOrders(data.orders ?? []))
+      .then((response) => {
+        if (response.status === 401) {
+          router.push('/auth/login?next=/member/orders');
+          return null;
+        }
+
+        return response.json();
+      })
+      .then((data) => setOrders(data?.orders ?? []))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [router]);
 
   const visibleOrders = useMemo(() => {
     if (activeFilter === 'all') return orders;

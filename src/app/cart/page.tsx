@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
   LuChevronDown,
@@ -39,6 +40,7 @@ const cartGridClass = 'md:grid-cols-[minmax(0,1fr)_96px_132px_112px_40px]';
 const formatPrice = (price: number) => `NT$${price.toLocaleString('zh-TW')}`;
 
 export default function CartPage() {
+  const router = useRouter();
   const [items, setItems] = useState<CartItem[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [couponCode, setCouponCode] = useState('');
@@ -50,6 +52,12 @@ export default function CartPage() {
         fetch('/api/orders/cart', { credentials: 'include' }),
         fetch('/api/orders/coupons', { credentials: 'include' }),
       ]);
+
+      if (cartResponse.status === 401 || couponResponse.status === 401) {
+        router.push('/auth/login?next=/cart');
+        return;
+      }
+
       const cartData = await cartResponse.json();
       const couponData = await couponResponse.json();
 
@@ -62,7 +70,7 @@ export default function CartPage() {
 
     const savedCoupon = localStorage.getItem('mofu-cart-coupon');
     if (savedCoupon) setCouponCode(savedCoupon);
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     localStorage.setItem('mofu-cart-coupon', couponCode);
