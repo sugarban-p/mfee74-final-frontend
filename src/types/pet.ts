@@ -187,3 +187,15 @@ export interface PetMutationResponse {
   message: string;
   row?: PetMutationRow;
 }
+
+/**
+ * POST /api/pets/upload-avatar 的 response。
+ * avatarUrl 會再放進新增或編輯寵物的 payload。
+ */
+export interface PetAvatarUploadResponse {
+  success: boolean;
+  message: string;
+  row?: {
+    avatarUrl: string;
+  };
+}

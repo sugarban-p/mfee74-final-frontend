@@ -1,23 +1,43 @@
 import Link from 'next/link';
 import { LuArrowLeft, LuCirclePlus } from 'react-icons/lu';
 import { PetProfileCard } from '@/src/components/pets/PetProfileCard';
-import { mockPets } from '@/src/mockdata/mock-pets';
+import { getPets } from '@/src/services/pets-api';
+import type { PetListItem } from '@/src/types/pet';
 
-export default function PetProfilesPage() {
+/**
+ * async Server Component：
+ * 頁面渲染前，先向後端取得目前會員的寵物資料。
+ */
+export default async function PetProfilesPage() {
+  let pets: PetListItem[] = [];
+  let errorMessage = '';
+
+  try {
+    /**
+     * 呼叫前端 service：
+     * GET http://localhost:3001/api/pets
+     */
+    pets = await getPets();
+  } catch (error) {
+    /**
+     * 後端沒有啟動或 API 回傳失敗時，
+     * 保留頁面版型並顯示錯誤，不讓整頁直接壞掉。
+     */
+    errorMessage =
+      error instanceof Error
+        ? error.message
+        : '目前無法取得毛孩資料，請稍後再試';
+  }
+
   return (
     /**
-     * 這頁一樣被 src/app/member/layout.tsx 包住，
-     * 所以只需要 w-full，讓它吃滿 sidebar 右側內容。
+     * 這頁被 src/app/member/layout.tsx 包住，
+     * 所以只需要吃滿 sidebar 右側內容。
      */
     <section className="w-full">
-      {/* Page Header：返回、頁面標題、主要新增按鈕 */}
+      {/* 頁面標題 */}
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
         <div>
-          {/**
-           * 返回：
-           * 回到 /member/pets Dashboard。
-           * 使用 Link 而不是 button，是因為這是頁面導覽。
-           */}
           <Link
             href="/member/pets"
             className="back-button typo-tab inline-flex items-center gap-2"
@@ -34,16 +54,37 @@ export default function PetProfilesPage() {
         </div>
       </div>
 
-      {/* Card List：顯示目前所有毛孩檔案 */}
+      {/* API 失敗訊息 */}
+      {errorMessage && (
+        <div
+          role="alert"
+          className="typo-card-body mt-10 rounded-lg border border-red-200 bg-danger px-5 py-4 text-red-700"
+        >
+          {errorMessage}
+        </div>
+      )}
+
+      {/* API 成功但會員沒有寵物 */}
+      {!errorMessage && pets.length === 0 && (
+        <div className="mt-10 rounded-lg border border-border bg-card-primary px-6 py-8 text-center">
+          <p className="typo-card-title text-text-primary">
+            目前還沒有毛孩檔案
+          </p>
+
+          <p className="typo-card-body mt-2 text-text-secondary">
+            建立第一份毛孩資料，開始使用個人化 AI 導購。
+          </p>
+        </div>
+      )}
+
+      {/* 真實 API 寵物列表 */}
       <div className="mt-16 flex flex-wrap gap-8">
-        {mockPets.map((pet) => (
-          <PetProfileCard key={pet.id} pet={pet} />
-        ))}
+        {!errorMessage &&
+          pets.map((pet) => <PetProfileCard key={pet.id} pet={pet} />)}
 
         {/**
-         * 新增毛孩卡片：
-         * 這是一個視覺入口，跟右上角的新增按鈕做同一件事。
-         * 讓使用者在看完現有毛孩後，也可以直接新增。
+         * 新增毛孩卡片固定保留。
+         * 即使目前沒有寵物，會員仍可以從這裡建立資料。
          */}
         <Link
           href="/member/pets/profiles/new"

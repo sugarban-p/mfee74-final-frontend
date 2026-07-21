@@ -1,9 +1,15 @@
 import Link from 'next/link';
 import { LuCirclePlus } from 'react-icons/lu';
 import { PetProfileCard } from '@/src/components/pets/PetProfileCard';
-import { mockPets } from '@/src/mockdata/mock-pets';
+import { getPets } from '@/src/services/pets-api';
 
-export default function SelectPetForAiPage() {
+export default async function SelectPetForAiPage() {
+  /**
+   * 取得目前會員尚未刪除的寵物列表。
+   * 選擇後會把資料庫中的 pet.id 放進聊天室網址。
+   */
+  const pets = await getPets();
+
   return (
     <section className="w-full">
       {/* 返回：回到 AI 導購介紹頁 */}
@@ -22,7 +28,7 @@ export default function SelectPetForAiPage() {
 
       {/* 毛孩卡片列表 */}
       <section className="mt-10 flex flex-wrap gap-8">
-        {mockPets.map((pet) => (
+        {pets.map((pet) => (
           <PetProfileCard
             key={pet.id}
             pet={pet}

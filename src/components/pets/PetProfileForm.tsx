@@ -1,75 +1,70 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { LuImagePlus, LuInfo, LuSparkles } from 'react-icons/lu';
 import { PetDeleteDialog } from '@/src/components/pets/PetDeleteDialog';
-import type { PetItem } from '@/src/types/pet';
+import { createPet, updatePet, uploadPetAvatar } from '@/src/services/pets-api';
+import type {
+  PetDetail,
+  PetFormOptions,
+  PetFormPayload,
+} from '@/src/types/pet';
 
 type PetProfileFormMode = 'create' | 'view' | 'edit';
 
 interface PetProfileFormProps {
   mode: PetProfileFormMode;
-  pet?: PetItem;
+
+  /**
+   * 詳情與編輯模式會收到 GET /api/pets/:petId 的真實資料；
+   * 新增模式沒有既有寵物，因此 pet 可以不傳。
+   */
+  pet?: PetDetail;
+
+  /**
+   * GET /api/pets/options 回傳的六組表單選項。
+   * 畫面顯示 option.label，送出表單時使用 option.id。
+   */
+  options: PetFormOptions;
 }
 
-const speciesOptions = ['狗狗', '貓咪'];
-const genderOptions = ['男生', '女生', '未知'];
-const neuteredOptions = ['已結紮', '未結紮', '不確定'];
-const activityLevelOptions = ['低', '中', '高'];
-
 const MAX_HEALTH_CONDITIONS = 4;
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png'];
+const ALLOWED_AVATAR_EXTENSIONS = ['jpg', 'jpeg', 'png'];
 
-const healthConditionOptions = [
-  { label: '皮膚敏感', code: 'skin_sensitive' },
-  { label: '腸胃敏感', code: 'sensitive_stomach' },
-  { label: '毛球困擾', code: 'hairball' },
-  { label: '體重控制', code: 'weight_control' },
-  { label: '關節保健', code: 'joint_care' },
-  { label: '牙齒保健', code: 'dental_care' },
-  { label: '挑食', code: 'picky_eater' },
-  { label: '泌尿道保健', code: 'urinary_care' },
-  { label: '情緒緊張 / 壓力', code: 'stress_anxiety' },
-  { label: '眼睛保健', code: 'eye_care' },
-  { label: '無特殊狀況', code: 'none' },
-];
-
-const allergyIngredientOptions = [
-  '雞肉',
-  '火雞',
-  '牛肉',
-  '魚肉',
-  '羊肉',
-  '鴨肉',
-  '鹿肉',
-  '鵪鶉',
-  '鵝肉',
-  '蝦類',
-  '貝類',
-  '蛋',
-  '無',
-];
-
-export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
+export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
   const router = useRouter();
   const isViewMode = mode === 'view';
+
+  /**
+   * selectedAvatarFile 是準備送往後端的新檔案；
+   * avatarPreviewUrl 則負責在送出表單前立即顯示預覽。
+   */
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(
+    null
+  );
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(
+    pet?.avatarUrl ?? ''
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   /**
    * 健康情況：
    * 至少選 1 項，最多選 4 項。
    */
-  const [selectedHealthConditions, setSelectedHealthConditions] = useState<
-    string[]
-  >(() => pet?.healthConditions ?? []);
+  const [selectedHealthConditionIds, setSelectedHealthConditionIds] = useState<
+    number[]
+  >(() => pet?.healthConditionOptionIds ?? []);
 
   /**
    * 過敏食材：
    * 至少選 1 項。
    */
-  const [selectedAllergyIngredients, setSelectedAllergyIngredients] = useState<
-    string[]
-  >(() => pet?.allergyIngredients ?? []);
+  const [selectedAllergyIngredientIds, setSelectedAllergyIngredientIds] =
+    useState<number[]>(() => pet?.allergyIngredientOptionIds ?? []);
 
   /**
    * checkbox 群組錯誤訊息。
@@ -97,19 +92,19 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
    * - 未滿 4 項可以新增
    * - 滿 4 項後禁止新增其他項目
    */
-  const handleHealthConditionChange = (condition: string) => {
-    setSelectedHealthConditions((currentConditions) => {
-      const isSelected = currentConditions.includes(condition);
+  const handleHealthConditionChange = (optionId: number) => {
+    setSelectedHealthConditionIds((currentIds) => {
+      const isSelected = currentIds.includes(optionId);
 
       if (isSelected) {
-        return currentConditions.filter((item) => item !== condition);
+        return currentIds.filter((id) => id !== optionId);
       }
 
-      if (currentConditions.length >= MAX_HEALTH_CONDITIONS) {
-        return currentConditions;
+      if (currentIds.length >= MAX_HEALTH_CONDITIONS) {
+        return currentIds;
       }
 
-      return [...currentConditions, condition];
+      return [...currentIds, optionId];
     });
 
     setHealthConditionError('');
@@ -119,18 +114,55 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
    * 過敏食材 checkbox：
    * 可以自由新增或取消。
    */
-  const handleAllergyIngredientChange = (ingredient: string) => {
-    setSelectedAllergyIngredients((currentIngredients) => {
-      const isSelected = currentIngredients.includes(ingredient);
+  const handleAllergyIngredientChange = (optionId: number) => {
+    setSelectedAllergyIngredientIds((currentIds) => {
+      const isSelected = currentIds.includes(optionId);
 
       if (isSelected) {
-        return currentIngredients.filter((item) => item !== ingredient);
+        return currentIds.filter((id) => id !== optionId);
       }
 
-      return [...currentIngredients, ingredient];
+      return [...currentIds, optionId];
     });
 
     setAllergyIngredientError('');
+  };
+
+  /**
+   * 前端先檢查副檔名、MIME 與 5MB，讓使用者立即看到錯誤。
+   * 後端仍會再次檢查真實檔案內容，避免只改檔名就繞過限制。
+   */
+  const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+    const hasAllowedType = ALLOWED_AVATAR_TYPES.includes(file.type);
+    const hasAllowedExtension = ALLOWED_AVATAR_EXTENSIONS.includes(extension);
+
+    if (!hasAllowedType || !hasAllowedExtension) {
+      event.currentTarget.value = '';
+      toast.error('只支援 JPG、JPEG、PNG 圖片');
+      return;
+    }
+
+    if (file.size > MAX_AVATAR_SIZE) {
+      event.currentTarget.value = '';
+      toast.error('圖片大小不可超過 5MB');
+      return;
+    }
+
+    setSelectedAvatarFile(file);
+
+    // FileReader 產生本機預覽，不會在這一步上傳檔案。
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarPreviewUrl(String(reader.result ?? ''));
+    };
+    reader.readAsDataURL(file);
   };
 
   /**
@@ -138,15 +170,15 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
    * 原生 required 先處理 input / select，
    * checkbox 群組則自行檢查至少選 1 項。
    */
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (isViewMode) {
       return;
     }
 
-    const hasHealthCondition = selectedHealthConditions.length > 0;
-    const hasAllergyIngredient = selectedAllergyIngredients.length > 0;
+    const hasHealthCondition = selectedHealthConditionIds.length > 0;
+    const hasAllergyIngredient = selectedAllergyIngredientIds.length > 0;
 
     setHealthConditionError(
       hasHealthCondition ? '' : '請至少選擇 1 項健康情況'
@@ -160,37 +192,82 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
       return;
     }
 
+    /**
+     * FormData 會根據每個 input、select、textarea 的 name，
+     * 讀取使用者目前填寫的值。
+     */
+    const formData = new FormData(event.currentTarget);
+    const breed = String(formData.get('breed') ?? '').trim();
+    const specialNote = String(formData.get('specialNote') ?? '').trim();
+    const activityLevelValue = String(
+      formData.get('activityLevelOptionId') ?? ''
+    );
+
+    setIsSubmitting(true);
+
     try {
       /**
-       * TODO：
-       * 之後在這裡串接 API。
-       *
-       * 目前先做 demo：
-       * 表單驗證通過後，直接顯示成功 toast。
+       * 有選新照片才呼叫上傳 API；
+       * 編輯時沒有換照片，就保留資料庫原有 avatarUrl。
        */
-      toast.success(mode === 'create' ? '新增毛孩成功' : '毛孩資料已更新');
+      const avatarUrl = selectedAvatarFile
+        ? await uploadPetAvatar(selectedAvatarFile)
+        : (pet?.avatarUrl ?? null);
 
       /**
-       * 新增或編輯成功後，導回毛孩檔案管理頁。
-       * 之後串 API 時，這行要放在 API 成功之後。
+       * 將瀏覽器表單值整理成後端 POST、PUT 共用的資料格式。
+       * select 與 checkbox 傳選項 id，而不是畫面上的中文文字。
        */
+      const payload: PetFormPayload = {
+        name: String(formData.get('name') ?? '').trim(),
+        avatarUrl,
+        speciesOptionId: Number(formData.get('speciesOptionId')),
+        breed: breed || null,
+        genderOptionId: Number(formData.get('genderOptionId')),
+        neuteredOptionId: Number(formData.get('neuteredOptionId')),
+        activityLevelOptionId: activityLevelValue
+          ? Number(activityLevelValue)
+          : null,
+        birthday: String(formData.get('birthday') ?? ''),
+        weight: Number(formData.get('weight')),
+        specialNote: specialNote || null,
+        healthConditionOptionIds: selectedHealthConditionIds,
+        allergyIngredientOptionIds: selectedAllergyIngredientIds,
+      };
+
+      if (mode === 'create') {
+        // 新增模式對應 POST /api/pets。
+        await createPet(payload);
+        toast.success('新增毛孩成功');
+      } else {
+        if (!pet) {
+          throw new Error('缺少要編輯的寵物資料');
+        }
+
+        // 編輯模式對應 PUT /api/pets/:petId。
+        await updatePet(pet.id, payload);
+        toast.success('毛孩資料已更新');
+      }
+
+      // API 成功後返回列表，並要求 Next.js 重新取得最新資料。
       router.push('/member/pets/profiles');
+      router.refresh();
     } catch (error) {
-      /**
-       * TODO：
-       * 之後串接 API 時，如果後端回傳失敗，
-       * 就會進到 catch，並顯示失敗 toast。
-       */
+      // pets-api.ts 會把後端 message 轉成 Error，直接顯示給使用者。
       toast.error(
-        mode === 'create'
-          ? '新增毛孩失敗，請稍後再試'
-          : '更新毛孩資料失敗，請稍後再試'
+        error instanceof Error
+          ? error.message
+          : mode === 'create'
+            ? '新增毛孩失敗，請稍後再試'
+            : '更新毛孩資料失敗，請稍後再試'
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const hasReachedHealthConditionLimit =
-    selectedHealthConditions.length >= MAX_HEALTH_CONDITIONS;
+    selectedHealthConditionIds.length >= MAX_HEALTH_CONDITIONS;
 
   return (
     <section className="w-full">
@@ -219,9 +296,14 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
             <button
               type="submit"
               form="pet-profile-form"
-              className="next-button typo-tab"
+              disabled={isSubmitting}
+              className="next-button typo-tab disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {mode === 'create' ? '+ 建立寵物資料' : '儲存變更'}
+              {isSubmitting
+                ? '處理中...'
+                : mode === 'create'
+                  ? '+ 建立寵物資料'
+                  : '儲存變更'}
             </button>
           )}
 
@@ -241,12 +323,12 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
           <div className="rounded-2xl border border-border bg-card-primary p-5">
             <p className="typo-card-title mb-4 text-text-primary">毛孩照片</p>
 
-            <div className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl bg-card-secondary text-center text-text-secondary">
-              {pet?.avatarUrl ? (
+            <div className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl bg-card-secondary text-center text-text-secondary">
+              {avatarPreviewUrl ? (
                 <img
-                  src={pet.avatarUrl}
-                  alt={pet.name}
-                  className="h-full w-full rounded-2xl object-cover"
+                  src={avatarPreviewUrl}
+                  alt={pet?.name || '寵物照片預覽'}
+                  className="h-full w-full object-cover"
                 />
               ) : (
                 <div>
@@ -255,10 +337,28 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
                     aria-hidden="true"
                   />
 
-                  <p className="typo-tab">點擊上傳照片</p>
+                  <p className="typo-tab">
+                    {isViewMode ? '尚未上傳照片' : '點擊上傳照片'}
+                  </p>
 
-                  <p className="mt-1 text-xs">JPG、PNG，最大 5MB</p>
+                  {!isViewMode && (
+                    <p className="mt-1 text-xs">JPG、JPEG、PNG，最大 5MB</p>
+                  )}
                 </div>
+              )}
+
+              {/* 新增與編輯模式可點擊整個圖片區選擇照片。 */}
+              {!isViewMode && (
+                <label className="absolute inset-0 cursor-pointer">
+                  <span className="sr-only">選擇寵物照片</span>
+
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                    onChange={handleAvatarChange}
+                    className="sr-only"
+                  />
+                </label>
               )}
             </div>
           </div>
@@ -297,6 +397,7 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
                 <span className="typo-tab text-text-primary">寵物名字 *</span>
 
                 <input
+                  name="name"
                   required
                   disabled={isViewMode}
                   defaultValue={pet?.name ?? ''}
@@ -310,16 +411,17 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
                 <span className="typo-tab text-text-primary">物種 *</span>
 
                 <select
+                  name="speciesOptionId"
                   required
                   disabled={isViewMode}
-                  defaultValue={pet?.species ?? ''}
+                  defaultValue={pet?.speciesOptionId ?? ''}
                   className={selectClass}
                 >
                   <option value="">請選擇</option>
 
-                  {speciesOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
+                  {options.species.options.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
                     </option>
                   ))}
                 </select>
@@ -330,6 +432,7 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
                 <span className="typo-tab text-text-primary">品種 / 類型</span>
 
                 <input
+                  name="breed"
                   disabled={isViewMode}
                   defaultValue={pet?.breed ?? ''}
                   placeholder="例：米克斯、英國短毛貓"
@@ -342,16 +445,17 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
                 <span className="typo-tab text-text-primary">性別 *</span>
 
                 <select
+                  name="genderOptionId"
                   required
                   disabled={isViewMode}
-                  defaultValue={pet?.gender ?? ''}
+                  defaultValue={pet?.genderOptionId ?? ''}
                   className={selectClass}
                 >
                   <option value="">請選擇</option>
 
-                  {genderOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
+                  {options.gender.options.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
                     </option>
                   ))}
                 </select>
@@ -362,16 +466,17 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
                 <span className="typo-tab text-text-primary">是否結紮 *</span>
 
                 <select
+                  name="neuteredOptionId"
                   required
                   disabled={isViewMode}
-                  defaultValue={pet?.neutered ?? ''}
+                  defaultValue={pet?.neuteredOptionId ?? ''}
                   className={selectClass}
                 >
                   <option value="">請選擇</option>
 
-                  {neuteredOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
+                  {options.neutered.options.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
                     </option>
                   ))}
                 </select>
@@ -382,6 +487,7 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
                 <span className="typo-tab text-text-primary">生日 *</span>
 
                 <input
+                  name="birthday"
                   required
                   disabled={isViewMode}
                   type="date"
@@ -395,10 +501,15 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
                 <span className="typo-tab text-text-primary">體重 *</span>
 
                 <input
+                  name="weight"
                   required
                   disabled={isViewMode}
+                  type="number"
+                  min="0.01"
+                  max="999.99"
+                  step="0.01"
                   defaultValue={pet?.weight ?? ''}
-                  placeholder="例：9.5 kg"
+                  placeholder="例：9.5"
                   className={inputClass}
                 />
               </label>
@@ -408,15 +519,16 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
                 <span className="typo-tab text-text-primary">活動量</span>
 
                 <select
+                  name="activityLevelOptionId"
                   disabled={isViewMode}
-                  defaultValue={pet?.activityLevel ?? ''}
+                  defaultValue={pet?.activityLevelOptionId ?? ''}
                   className={selectClass}
                 >
                   <option value="">請選擇</option>
 
-                  {activityLevelOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
+                  {options.activity_level.options.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
                     </option>
                   ))}
                 </select>
@@ -440,16 +552,16 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
                 至少選 1 項，一次最多選 {MAX_HEALTH_CONDITIONS} 項
                 {!isViewMode && (
                   <span className="ml-2">
-                    （已選 {selectedHealthConditions.length} /{' '}
+                    （已選 {selectedHealthConditionIds.length} /{' '}
                     {MAX_HEALTH_CONDITIONS}）
                   </span>
                 )}
               </p>
 
               <div className="mt-3 grid gap-3 md:grid-cols-3">
-                {healthConditionOptions.map((option) => {
-                  const isSelected = selectedHealthConditions.includes(
-                    option.label
+                {options.health_condition.options.map((option) => {
+                  const isSelected = selectedHealthConditionIds.includes(
+                    option.id
                   );
 
                   const isDisabled =
@@ -468,9 +580,7 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
                         type="checkbox"
                         checked={isSelected}
                         disabled={isDisabled}
-                        onChange={() =>
-                          handleHealthConditionChange(option.label)
-                        }
+                        onChange={() => handleHealthConditionChange(option.id)}
                       />
 
                       {option.label}
@@ -495,24 +605,25 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
               </p>
 
               <div className="mt-3 grid gap-3 md:grid-cols-4">
-                {allergyIngredientOptions.map((ingredient) => {
-                  const isSelected =
-                    selectedAllergyIngredients.includes(ingredient);
+                {options.allergy_ingredient.options.map((option) => {
+                  const isSelected = selectedAllergyIngredientIds.includes(
+                    option.id
+                  );
 
                   return (
                     <label
-                      key={ingredient}
+                      key={option.id}
                       className="flex cursor-pointer items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm text-text-secondary"
                     >
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() =>
-                          handleAllergyIngredientChange(ingredient)
+                          handleAllergyIngredientChange(option.id)
                         }
                       />
 
-                      {ingredient}
+                      {option.label}
                     </label>
                   );
                 })}
@@ -530,6 +641,7 @@ export function PetProfileForm({ mode, pet }: PetProfileFormProps) {
               <span className="typo-tab text-text-primary">備註</span>
 
               <textarea
+                name="specialNote"
                 disabled={isViewMode}
                 defaultValue={pet?.specialNote ?? ''}
                 placeholder="其他需要記錄的資訊..."

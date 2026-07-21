@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { IconType } from 'react-icons';
 import { LuCat, LuCirclePlus, LuPawPrint, LuSparkles } from 'react-icons/lu';
 import { PetProfileCard } from '@/src/components/pets/PetProfileCard';
-import { mockPets } from '@/src/mockdata/mock-pets';
+import { getPets } from '@/src/services/pets-api';
 
 /**
  * FeatureItem：
@@ -50,13 +50,14 @@ const petFeatures: FeatureItem[] = [
   },
 ];
 
-export default function PetsPage() {
+export default async function PetsPage() {
   /**
    * petCount：
-   * 用 mockPets.length 算目前有幾隻毛孩。
-   * 之後資料改成 API 回傳時，這裡也會跟著改成 API 資料長度。
+   * 從 GET /api/pets 取得目前會員的真實寵物資料，
+   * 再用 pets.length 計算毛孩數量。
    */
-  const petCount = mockPets.length;
+  const pets = await getPets();
+  const petCount = pets.length;
 
   return (
     /**
@@ -67,9 +68,7 @@ export default function PetsPage() {
     <section className="w-full">
       {/* Hero Section：會員一進來先看到寵物總覽與主要 CTA */}
       <div className="rounded-3xl bg-primary px-8 py-8 text-white md:px-10">
-        <p className="typo-card-body mb-3 text-white/90">
-          主人您好，歡迎回來
-        </p>
+        <p className="typo-card-body mb-3 text-white/90">主人您好，歡迎回來</p>
 
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
@@ -179,7 +178,7 @@ export default function PetsPage() {
          * 2. 之後要調整卡片樣式，只要改 PetProfileCard 一個檔案。
          */}
         <div className="flex flex-wrap gap-6 border border-border bg-white/40 p-6">
-          {mockPets.map((pet) => (
+          {pets.map((pet) => (
             <PetProfileCard key={pet.id} pet={pet} />
           ))}
         </div>

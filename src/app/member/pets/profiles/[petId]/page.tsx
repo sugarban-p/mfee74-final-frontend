@@ -1,46 +1,51 @@
 import { notFound } from 'next/navigation';
 import { PetProfileForm } from '@/src/components/pets/PetProfileForm';
-import { mockPets } from '@/src/mockdata/mock-pets';
+import { getPetById, getPetOptions } from '@/src/services/pets-api';
 
 interface PetProfileDetailPageProps {
   /**
-   * Next.js 動態路由參數。
+   * 動態路由：
+   * /member/pets/profiles/1
    *
-   * 這個頁面的資料夾是 [petId]，
-   * 所以網址 /member/pets/profiles/1
-   * 會拿到 params.petId = '1'。
+   * 會得到 params.petId = "1"。
    */
   params: Promise<{
     petId: string;
   }>;
 }
 
+/**
+ * 寵物詳情頁。
+ *
+ * Server Component 會先向後端取得寵物資料，
+ * 再將資料傳入 PetProfileForm。
+ */
 export default async function PetProfileDetailPage({
   params,
 }: PetProfileDetailPageProps) {
-  /**
-   * Next 16 裡 params 是 Promise，
-   * 所以要先 await 取出 petId。
-   */
   const { petId } = await params;
+  const numericPetId = Number(petId);
 
   /**
-   * 目前先從 mockPets 找資料。
-   * 之後串 API 時，這裡會改成 fetch /api/pets/:petId。
+   * 避免 /profiles/abc 或負數 id 被送到後端。
    */
-  const pet = mockPets.find((item) => item.id === Number(petId));
-
-  /**
-   * 如果網址裡的 petId 找不到資料，
-   * 就顯示 Next.js 的 not found 頁。
-   */
-  if (!pet) {
+  if (!Number.isInteger(numericPetId) || numericPetId <= 0) {
     notFound();
   }
 
-  /**
-   * mode="view"：
-   * 代表這頁是詳情頁，表單欄位會 disabled，不能編輯。
-   */
-  return <PetProfileForm mode="view" pet={pet} />;
+  try {
+    // 兩支互不相依的 GET API 同時執行，避免一支完成後才跑另一支。
+    const [pet, options] = await Promise.all([
+      getPetById(numericPetId),
+      getPetOptions(),
+    ]);
+
+    return <PetProfileForm mode="view" pet={pet} options={options} />;
+  } catch {
+    /**
+     * 寵物不存在、已被軟刪除或不屬於目前會員時，
+     * 顯示 Next.js Not Found。
+     */
+    notFound();
+  }
 }
