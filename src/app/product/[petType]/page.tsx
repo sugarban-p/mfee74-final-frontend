@@ -94,7 +94,7 @@ interface ProductListResponse {
 interface FavoriteResponse {
   success: boolean;
   favorites: {
-    product_id: number;
+    id: number;
   }[];
 }
 
@@ -296,7 +296,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
         if (!data.success) throw new Error();
 
         setFavoriteProductIds(
-          new Set(data.favorites.map((favorite) => favorite.product_id))
+          new Set(data.favorites.map((favorite) => favorite.id))
         );
       })
       .catch((error: unknown) => {

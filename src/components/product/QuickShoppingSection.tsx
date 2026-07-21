@@ -56,7 +56,7 @@ interface ProductDetailResponse {
 interface FavoriteResponse {
   success: boolean;
   favorites: {
-    product_id: number;
+    id: number;
   }[];
 }
 
@@ -261,7 +261,7 @@ export function QuickShoppingSection({
         const nextDetail = mapProductDetail(productData);
         const favoriteProductIds = new Set(
           favoriteData?.success
-            ? favoriteData.favorites.map((favorite) => favorite.product_id)
+            ? favoriteData.favorites.map((favorite) => favorite.id)
             : []
         );
 
