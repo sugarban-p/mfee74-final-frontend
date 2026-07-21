@@ -627,7 +627,7 @@ function ProfileTab({
                   <button
                     type="button"
                     aria-label="選擇頭像"
-                    className="btn absolute -right-1.5 -bottom-1.5 btn-circle shadow btn-light btn-xs"
+                    className="btn-light btn absolute -right-1.5 -bottom-1.5 btn-circle shadow btn-xs"
                     onClick={() => avatarInputRef.current?.click()}
                   >
                     <Camera size={13} />
