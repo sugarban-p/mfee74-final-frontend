@@ -1,46 +1,49 @@
-import { notFound } from 'next/navigation';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { PetProfileForm } from '@/src/components/pets/PetProfileForm';
-import { mockPets } from '@/src/mockdata/mock-pets';
+import { getPetById, getPetOptions } from '@/src/services/pets-api';
+import type { PetDetail, PetFormOptions } from '@/src/types/pet';
 
-interface PetProfileDetailPageProps {
-  /**
-   * Next.js 動態路由參數。
-   *
-   * 這個頁面的資料夾是 [petId]，
-   * 所以網址 /member/pets/profiles/1
-   * 會拿到 params.petId = '1'。
-   */
-  params: Promise<{
-    petId: string;
-  }>;
-}
+export default function PetProfileDetailPage() {
+  const { petId } = useParams<{ petId: string }>();
+  const numericPetId = Number(petId);
+  const [pet, setPet] = useState<PetDetail | null>(null);
+  const [options, setOptions] = useState<PetFormOptions | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
-export default async function PetProfileDetailPage({
-  params,
-}: PetProfileDetailPageProps) {
-  /**
-   * Next 16 裡 params 是 Promise，
-   * 所以要先 await 取出 petId。
-   */
-  const { petId } = await params;
+  useEffect(() => {
+    if (!Number.isInteger(numericPetId) || numericPetId <= 0) {
+      setErrorMessage('寵物編號格式不正確');
+      return;
+    }
 
-  /**
-   * 目前先從 mockPets 找資料。
-   * 之後串 API 時，這裡會改成 fetch /api/pets/:petId。
-   */
-  const pet = mockPets.find((item) => item.id === Number(petId));
+    Promise.all([getPetById(numericPetId), getPetOptions()])
+      .then(([petData, optionData]) => {
+        setPet(petData);
+        setOptions(optionData);
+      })
+      .catch((error: unknown) => {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : '目前無法取得毛孩資料，請稍後再試'
+        );
+      });
+  }, [numericPetId]);
 
-  /**
-   * 如果網址裡的 petId 找不到資料，
-   * 就顯示 Next.js 的 not found 頁。
-   */
-  if (!pet) {
-    notFound();
+  if (errorMessage) {
+    return (
+      <p className="typo-card-body text-red-700" role="alert">
+        {errorMessage}
+      </p>
+    );
   }
 
-  /**
-   * mode="view"：
-   * 代表這頁是詳情頁，表單欄位會 disabled，不能編輯。
-   */
-  return <PetProfileForm mode="view" pet={pet} />;
+  if (!pet || !options) {
+    return <p className="typo-card-body text-text-secondary">讀取中...</p>;
+  }
+
+  return <PetProfileForm mode="view" pet={pet} options={options} />;
 }

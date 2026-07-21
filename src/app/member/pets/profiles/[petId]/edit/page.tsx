@@ -1,43 +1,49 @@
-import { notFound } from 'next/navigation';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { PetProfileForm } from '@/src/components/pets/PetProfileForm';
-import { mockPets } from '@/src/mockdata/mock-pets';
+import { getPetById, getPetOptions } from '@/src/services/pets-api';
+import type { PetDetail, PetFormOptions } from '@/src/types/pet';
 
-interface EditPetProfilePageProps {
-  /**
-   * 這個頁面路徑是：
-   * /member/pets/profiles/[petId]/edit
-   *
-   * 所以 petId 會從網址取得。
-   */
-  params: Promise<{
-    petId: string;
-  }>;
-}
+export default function EditPetProfilePage() {
+  const { petId } = useParams<{ petId: string }>();
+  const numericPetId = Number(petId);
+  const [pet, setPet] = useState<PetDetail | null>(null);
+  const [options, setOptions] = useState<PetFormOptions | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
-export default async function EditPetProfilePage({
-  params,
-}: EditPetProfilePageProps) {
-  /**
-   * 取得網址上的 petId。
-   */
-  const { petId } = await params;
+  useEffect(() => {
+    if (!Number.isInteger(numericPetId) || numericPetId <= 0) {
+      setErrorMessage('寵物編號格式不正確');
+      return;
+    }
 
-  /**
-   * 目前先從 mockPets 找對應寵物。
-   * 之後會改成向後端 API 要單一寵物資料。
-   */
-  const pet = mockPets.find((item) => item.id === Number(petId));
+    Promise.all([getPetById(numericPetId), getPetOptions()])
+      .then(([petData, optionData]) => {
+        setPet(petData);
+        setOptions(optionData);
+      })
+      .catch((error: unknown) => {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : '目前無法取得毛孩資料，請稍後再試'
+        );
+      });
+  }, [numericPetId]);
 
-  /**
-   * 如果找不到這隻寵物，就顯示 not found。
-   */
-  if (!pet) {
-    notFound();
+  if (errorMessage) {
+    return (
+      <p className="typo-card-body text-red-700" role="alert">
+        {errorMessage}
+      </p>
+    );
   }
 
-  /**
-   * mode="edit"：
-   * 代表這頁是編輯頁，表單欄位可以修改。
-   */
-  return <PetProfileForm mode="edit" pet={pet} />;
+  if (!pet || !options) {
+    return <p className="typo-card-body text-text-secondary">讀取中...</p>;
+  }
+
+  return <PetProfileForm mode="edit" pet={pet} options={options} />;
 }
