@@ -5,16 +5,18 @@ import './globals.css';
 import './globals-extra.css';
 import AppShell from '@/src/components/common/AppShell';
 
-const notoSansTC = Noto_Sans_TC({
-  subsets: ['latin'],
+const notoSansTc = Noto_Sans_TC({
   weight: ['400', '500', '700'],
+  subsets: ['latin'],
   variable: '--font-noto-sans-tc',
+  display: 'swap',
 });
 
-const notoSerifTC = Noto_Serif_TC({
+const notoSerifTc = Noto_Serif_TC({
+  weight: ['700'],
   subsets: ['latin'],
-  weight: ['400', '500', '700'],
   variable: '--font-noto-serif-tc',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -31,7 +33,7 @@ export default function RootLayout({
     <html lang="en" data-theme="light" style={{ colorScheme: 'light' }}>
       <body
         suppressHydrationWarning
-        className={`${notoSansTC.variable} ${notoSerifTC.variable} flex min-h-full flex-col`}
+        className={`${notoSansTc.variable} ${notoSerifTc.variable} flex min-h-full flex-col`}
       >
         <AppShell>{children}</AppShell>
       </body>

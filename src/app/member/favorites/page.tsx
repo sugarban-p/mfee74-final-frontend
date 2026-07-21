@@ -1,119 +1,194 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
 import { ProductCard } from '@/src/components/product/ProductCard';
+
+interface ApiFavoriteProduct {
+  id: number;
+  prod_name: string;
+  price: number;
+  pet_tag_id_fk: number;
+  slug: string;
+  total_stock?: number;
+  tags_id?: number[];
+  intros?: {
+    slogan?: string;
+    content?: string;
+  };
+  avatars?: {
+    src: string;
+    thumbnail?: string;
+  }[];
+  images?: {
+    src: string;
+  }[];
+}
+
+interface FavoriteResponse {
+  success: boolean;
+  favorites: ApiFavoriteProduct[];
+}
+
+interface ApiTag {
+  id: number;
+  tag_ch: string;
+}
+
+interface ProductListResponse {
+  success: boolean;
+  facets: {
+    tags: ApiTag[];
+  };
+}
 
 interface FavoriteProduct {
   id: number;
+  image: string;
+  tags: string[];
   name: string;
   description: string;
   price: string;
-  image: string;
-  tags: string[];
   slug: string;
+  gallery: string[];
   petType: string;
   isFavorite: boolean;
-  soldOut?: boolean;
+  soldOut: boolean;
 }
 
-const favoriteProducts: FavoriteProduct[] = [
-  {
-    id: 1,
-    name: '慢烘鮮食蔬肉糧',
-    description: '最接近鮮食的天然慢烘糧!',
-    price: 'NT$229',
-    image: '/images/product/蔬肉糧產品圖_01-510x510.jpg',
-    tags: ['標籤 1', '標籤 2'],
-    slug: 'slow-roast-mixed-food',
-    petType: 'dog',
-    isFavorite: true,
-    soldOut: true,
-  },
-  {
-    id: 2,
-    name: '商品名稱',
-    description: '簡短標語敘述',
-    price: 'NT$9999',
-    image: '',
-    tags: ['標籤 1', '標籤 2'],
-    slug: 'prod_x',
-    petType: 'dog',
-    isFavorite: true,
-  },
-  {
-    id: 3,
-    name: '商品名稱',
-    description: '簡短標語敘述',
-    price: 'NT$9999',
-    image: '',
-    tags: ['標籤 1', '標籤 2'],
-    slug: 'prod_x',
-    petType: 'dog',
-    isFavorite: true,
-  },
-  {
-    id: 4,
-    name: '商品名稱',
-    description: '簡短標語敘述',
-    price: 'NT$9999',
-    image: '',
-    tags: ['標籤 1', '標籤 2'],
-    slug: 'prod_x',
-    petType: 'dog',
-    isFavorite: true,
-  },
-  {
-    id: 5,
-    name: '商品名稱',
-    description: '簡短標語敘述',
-    price: 'NT$9999',
-    image: '',
-    tags: ['標籤 1', '標籤 2'],
-    slug: 'prod_x',
-    petType: 'dog',
-    isFavorite: true,
-  },
-  {
-    id: 6,
-    name: '呱呱寵物嘴套',
-    description: '簡短標語敘述',
-    price: 'NT$299',
-    image: '/images/product/favorite-dog-toy.png',
-    tags: ['標籤 1', '標籤 2'],
-    slug: 'prod_x',
-    petType: 'dog',
-    isFavorite: true,
-    soldOut: true,
-  },
-];
+const labels = {
+  empty: '目前沒有收藏商品',
+  loadError: '收藏清單載入失敗',
+  loading: '收藏清單載入中...',
+  title: '收藏清單',
+} as const;
 
-// Server Component: this page only renders static favorite-list UI.
+const toPublicImagePath = (path?: string) => {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path)) return path;
+
+  return `/${path.replace(/^\/+/, '')}`;
+};
+
+const mapFavoriteProducts = (
+  products: ApiFavoriteProduct[],
+  tagMap: Map<number, string>
+): FavoriteProduct[] => {
+  return products.map((product) => {
+    const avatarGallery =
+      product.avatars?.map((avatar) => toPublicImagePath(avatar.src)) ?? [];
+    const imageGallery =
+      product.images?.map((image) => toPublicImagePath(image.src)) ?? [];
+    const gallery = [...avatarGallery, ...imageGallery].filter(Boolean);
+
+    return {
+      id: product.id,
+      image:
+        toPublicImagePath(product.avatars?.[0]?.thumbnail) ||
+        toPublicImagePath(product.avatars?.[0]?.src),
+      tags: (product.tags_id ?? [])
+        .map((tagId) => tagMap.get(tagId))
+        .filter((tag): tag is string => Boolean(tag)),
+      name: product.prod_name,
+      description:
+        product.intros?.slogan ?? product.intros?.content?.split('\n')[0] ?? '',
+      price: `NT$${Number(product.price).toLocaleString('zh-TW')}`,
+      slug: product.slug,
+      gallery,
+      petType: String(product.pet_tag_id_fk),
+      isFavorite: true,
+      soldOut: Number(product.total_stock ?? 0) <= 0,
+    };
+  });
+};
+
+const getTagMap = async (
+  petTypeIds: number[],
+  signal: AbortSignal
+): Promise<Map<number, string>> => {
+  const responses = await Promise.all(
+    petTypeIds.map((petTypeId) =>
+      fetch(`/api/products/${petTypeId}`, { signal }).then((response) => {
+        if (!response.ok) throw new Error(labels.loadError);
+
+        return response.json() as Promise<ProductListResponse>;
+      })
+    )
+  );
+
+  return new Map(
+    responses.flatMap((response) =>
+      response.success
+        ? response.facets.tags.map((tag) => [tag.id, tag.tag_ch] as const)
+        : []
+    )
+  );
+};
+
 export default function MemberFavoritesPage() {
+  const [favoriteProducts, setFavoriteProducts] = useState<FavoriteProduct[]>(
+    []
+  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingError, setLoadingError] = useState('');
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    setIsLoading(true);
+    setLoadingError('');
+
+    void fetch('/api/products/getFavorite', { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error(labels.loadError);
+
+        return response.json();
+      })
+      .then((data: FavoriteResponse) => {
+        if (!data.success) throw new Error(labels.loadError);
+
+        const petTypeIds = [
+          ...new Set(data.favorites.map((product) => product.pet_tag_id_fk)),
+        ];
+
+        return getTagMap(petTypeIds, controller.signal).then((tagMap) => {
+          setFavoriteProducts(mapFavoriteProducts(data.favorites, tagMap));
+        });
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        setFavoriteProducts([]);
+        setLoadingError(
+          error instanceof Error ? error.message : labels.loadError
+        );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false);
+      });
+
+    return () => controller.abort();
+  }, []);
+
   return (
     <section className="flex flex-col gap-5 lg:-mt-12 lg:-mb-16">
-      <h1 className="text-xl font-bold text-text-primary">收藏清單</h1>
+      <h1 className="text-xl font-bold text-text-primary">{labels.title}</h1>
 
-      <div className="flex hidden items-center gap-3" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected="true"
-          className="typo-tab inline-flex h-9 items-center gap-2 rounded-full bg-primary px-4 text-text-button"
-        >
-          全部
-          <span className="grid size-6 place-items-center rounded-full bg-white/20 text-sm">
-            5
-          </span>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected="false"
-          className="typo-tab inline-flex h-9 items-center gap-2 rounded-full border border-border bg-white px-4 text-text-secondary"
-        >
-          缺貨中
-          <span className="grid size-6 place-items-center rounded-full bg-card-secondary text-sm">
-            2
-          </span>
-        </button>
-      </div>
+      {loadingError && (
+        <p className="typo-body text-error" role="alert">
+          {loadingError}
+        </p>
+      )}
+
+      {isLoading && (
+        <p className="typo-body text-text-secondary">{labels.loading}</p>
+      )}
+
+      {!isLoading && !loadingError && favoriteProducts.length === 0 && (
+        <p className="typo-body text-text-secondary">{labels.empty}</p>
+      )}
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,260px))] gap-x-8 gap-y-6">
         {favoriteProducts.map((product) => (

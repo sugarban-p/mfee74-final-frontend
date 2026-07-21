@@ -1,90 +1,414 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { LuChevronRight, LuShoppingCart } from 'react-icons/lu';
+import { LuShoppingCart } from 'react-icons/lu';
 import { RiHeartFill, RiHeartLine } from 'react-icons/ri';
 
 import { ProductQuantitySelector } from '@/src/components/product/ProductQuantitySelector';
 
-const flavors = ['雞肉', '牛肉', '鴨肉', '魚肉'];
+export interface QuickShoppingItem {
+  id: number;
+  item_name: string;
+  stock?: number;
+}
+
+export interface QuickShoppingProduct {
+  id: number;
+  name: string;
+  price: string;
+  image?: string;
+  tags?: string[];
+  isFavorite?: boolean;
+  items?: QuickShoppingItem[];
+}
+
+interface ApiProductIntro {
+  slogan?: string;
+  content?: string;
+  remark?: string;
+}
+
+interface ApiProductDetail {
+  id: number;
+  productName: string;
+  tags: {
+    tag_ch: string;
+  }[];
+  price: number;
+  items: QuickShoppingItem[];
+  avatars?: {
+    src: string;
+    thumbnail?: string;
+  }[];
+  images?: {
+    src: string;
+  }[];
+  intros?: ApiProductIntro;
+}
+
+interface ProductDetailResponse {
+  success: boolean;
+  productData?: ApiProductDetail;
+}
+
+interface FavoriteResponse {
+  success: boolean;
+  favorites: {
+    id: number;
+  }[];
+}
+
+interface QuickShoppingCartItem {
+  item_id: number;
+  quantity: number;
+}
+
+interface QuickShoppingCartResponse {
+  success: boolean;
+  cartItems: QuickShoppingCartItem[];
+}
+
+interface QuickShoppingDetail {
+  product: QuickShoppingProduct;
+  gallery: string[];
+  descriptionImages: string[];
+  features: {
+    text: string;
+    className: string;
+  }[];
+}
 
 interface QuickShoppingSectionProps {
-  product: {
-    name: string;
-    price: string;
-    image?: string;
-    tags?: string[];
-    isFavorite?: boolean;
-  };
+  product?: QuickShoppingProduct;
+  petType?: string;
+  productSlug?: string;
   gallery?: string[];
+  description?: string;
+  onFavoriteChange?: (isFavorite: boolean) => void;
+  onProductDetailLoad?: (detail: {
+    productName: string;
+    descriptionImages: string[];
+  }) => void;
 }
+
+const labels = {
+  addCart: '加入購物車',
+  addCartError: '加入購物車失敗，請稍後再試',
+  addedCart: '已加入購物車',
+  addFavorite: '加入收藏',
+  addedFavorite: '已加入收藏',
+  favoriteError: '更新收藏失敗，請稍後再試',
+  features: '商品特色',
+  loading: '商品資料載入中...',
+  loadError: '商品資料載入失敗',
+  noItems: '目前沒有可選規格',
+  removeFavorite: '取消收藏',
+  removedFavorite: '已取消收藏',
+  selectImage: '查看商品圖片',
+  selectItem: '請先選擇商品規格',
+  spec: '商品規格',
+  subtotal: '小計',
+} as const;
+
+const emptyItems: QuickShoppingItem[] = [];
+
+const toastStyle = {
+  style: {
+    border: '1px solid var(--button-secondary-border)',
+    padding: '16px',
+    color: 'var(--text-primary)',
+    backgroundColor: 'var(--success)',
+  },
+  iconTheme: {
+    primary: 'var(--success)',
+    secondary: 'green',
+  },
+};
+
+const toPublicImagePath = (path?: string) => {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path)) return path;
+
+  return `/${path.replace(/^\/+/, '')}`;
+};
+
+const getProductFeatures = (intros?: ApiProductIntro) => {
+  return [
+    { text: intros?.slogan, className: 'typo-body-medium' },
+    { text: intros?.content, className: 'typo-body' },
+    { text: intros?.remark, className: 'typo-tab' },
+  ]
+    .map((feature) => ({ ...feature, text: feature.text?.trim() }))
+    .filter((feature): feature is { text: string; className: string } =>
+      Boolean(feature.text)
+    );
+};
+
+const mapProductDetail = (
+  productData: ApiProductDetail
+): QuickShoppingDetail => {
+  const avatars = productData.avatars ?? [];
+  const images = productData.images ?? [];
+  const gallery = [
+    ...avatars.map((avatar) => toPublicImagePath(avatar.src)),
+    ...images.map((image) => toPublicImagePath(image.src)),
+  ].filter(Boolean);
+
+  return {
+    product: {
+      id: productData.id,
+      name: productData.productName,
+      price: `NT$${Number(productData.price).toLocaleString('zh-TW')}`,
+      image: gallery[0],
+      tags: productData.tags.map((tag) => tag.tag_ch),
+      items: productData.items,
+    },
+    gallery,
+    descriptionImages: images
+      .map((image) => toPublicImagePath(image.src))
+      .filter(Boolean),
+    features: getProductFeatures(productData.intros),
+  };
+};
 
 export function QuickShoppingSection({
   product,
+  petType,
+  productSlug,
   gallery,
+  description,
+  onFavoriteChange,
+  onProductDetailLoad,
 }: QuickShoppingSectionProps) {
-  const [isFavorite, setIsFavorite] = useState(product.isFavorite ?? false);
+  const addCartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [fetchedDetail, setFetchedDetail] =
+    useState<QuickShoppingDetail | null>(null);
+  const [loadingError, setLoadingError] = useState('');
+  const [isFavorite, setIsFavorite] = useState(product?.isFavorite ?? false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [checkedItem, setCheckedItem] = useState(flavors[0]);
+  const [checkedItemId, setCheckedItemId] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const unitPrice = Number(product.price.replace(/\D/g, ''));
-  const subtotal = `NT$${(unitPrice * quantity).toLocaleString()}`;
-  const tags = product.tags ?? ['標籤 1', '標籤 2'];
-  const productGallery = gallery ?? (product.image ? [product.image] : []);
-  const selectedImage = productGallery[selectedImageIndex];
-  const addCartSuccess = (productName: string, itemName: string) =>
-    toast.success(`${productName} ${itemName} 已加入購物車`, {
-      style: {
-        border: '1px solid var(--button-secondary-border)',
-        padding: '16px',
-        color: 'var(--text-primary)',
-        backgroundColor: 'var(--success)',
-      },
-      iconTheme: {
-        primary: 'var(--success)',
-        secondary: 'green',
-      },
-    });
-  const addFavoriteSuccess = (productName: string) =>
-    toast.success(`${productName} 已加入收藏清單`, {
-      style: {
-        border: '1px solid var(--button-secondary-border)',
-        padding: '16px',
-        color: 'var(--text-primary)',
-        backgroundColor: 'var(--success)',
-      },
-      iconTheme: {
-        primary: 'var(--success)',
-        secondary: 'green',
-      },
-    });
-  const removeFavoriteSuccess = (productName: string) =>
-    toast.success(`${productName} 已從收藏清單移除`, {
-      style: {
-        border: '1px solid var(--button-secondary-border)',
-        padding: '16px',
-        color: 'var(--text-primary)',
-        backgroundColor: 'var(--success)',
-      },
-      iconTheme: {
-        primary: 'var(--success)',
-        secondary: 'green',
-      },
-    });
-  const handleFavoriteClick = () => {
-    const nextIsFavorite = !isFavorite;
+  const [isAddingCart, setIsAddingCart] = useState(false);
 
-    setIsFavorite(nextIsFavorite);
-    if (nextIsFavorite) {
-      addFavoriteSuccess(product.name);
+  const fallbackDetail = useMemo<QuickShoppingDetail | null>(() => {
+    if (!product) return null;
+
+    return {
+      product,
+      gallery: gallery ?? (product.image ? [product.image] : []),
+      descriptionImages: [],
+      features: description
+        ? [{ text: description, className: 'typo-body' }]
+        : [],
+    };
+  }, [description, gallery, product]);
+  const productDetail = fetchedDetail ?? (!productSlug ? fallbackDetail : null);
+  const currentProduct = productDetail?.product;
+  const items = currentProduct?.items ?? emptyItems;
+  const selectedItem =
+    items.find((item) => item.id === checkedItemId) ?? items[0];
+  const unitPrice = Number(currentProduct?.price.replace(/\D/g, '') ?? 0);
+  const subtotal = `NT$${(unitPrice * quantity).toLocaleString()}`;
+  const tags = currentProduct?.tags ?? [];
+  const productGallery = productDetail?.gallery ?? [];
+  const selectedImage = productGallery[selectedImageIndex];
+  const canAddCart = Boolean(selectedItem);
+
+  useEffect(() => {
+    if (!petType || !productSlug) {
+      setFetchedDetail(null);
+      setLoadingError('');
       return;
     }
 
-    removeFavoriteSuccess(product.name);
+    const controller = new AbortController();
+
+    setFetchedDetail(null);
+    setLoadingError('');
+    setSelectedImageIndex(0);
+
+    const productRequest = fetch(
+      `/api/products/${encodeURIComponent(petType)}/${encodeURIComponent(productSlug)}`,
+      {
+        signal: controller.signal,
+      }
+    )
+      .then((response) => {
+        if (!response.ok) throw new Error(labels.loadError);
+
+        return response.json();
+      })
+      .then((data: ProductDetailResponse) => {
+        if (!data.success || !data.productData) {
+          throw new Error(labels.loadError);
+        }
+
+        return data.productData;
+      });
+
+    const favoriteRequest = fetch('/api/products/getFavorite', {
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: FavoriteResponse | null) => data)
+      .catch(() => null);
+
+    void Promise.all([productRequest, favoriteRequest])
+      .then(([productData, favoriteData]) => {
+        const nextDetail = mapProductDetail(productData);
+        const favoriteProductIds = new Set(
+          favoriteData?.success
+            ? favoriteData.favorites.map((favorite) => favorite.id)
+            : []
+        );
+
+        nextDetail.product.isFavorite = favoriteData?.success
+          ? favoriteProductIds.has(productData.id)
+          : (product?.isFavorite ?? false);
+
+        setFetchedDetail(nextDetail);
+        onProductDetailLoad?.({
+          productName: nextDetail.product.name,
+          descriptionImages: nextDetail.descriptionImages,
+        });
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        setLoadingError(
+          error instanceof Error ? error.message : labels.loadError
+        );
+      });
+
+    return () => controller.abort();
+  }, [onProductDetailLoad, petType, product?.isFavorite, productSlug]);
+
+  useEffect(() => {
+    if (!currentProduct) return;
+
+    setIsFavorite(currentProduct.isFavorite ?? false);
+  }, [currentProduct]);
+
+  useEffect(() => {
+    if (!currentProduct) return;
+
+    setCheckedItemId(items[0]?.id ?? 0);
+    setQuantity(1);
+  }, [currentProduct, items]);
+
+  useEffect(() => {
+    return () => {
+      if (addCartTimeoutRef.current) clearTimeout(addCartTimeoutRef.current);
+    };
+  }, []);
+
+  const handleFavoriteClick = async () => {
+    if (!currentProduct) return;
+
+    const nextIsFavorite = !isFavorite;
+
+    setIsFavorite(nextIsFavorite);
+    onFavoriteChange?.(nextIsFavorite);
+
+    try {
+      const response = await fetch(
+        `/api/products/updateFavorite/${currentProduct.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ favorite: nextIsFavorite }),
+        }
+      );
+
+      if (!response.ok) throw new Error();
+
+      toast.success(
+        `${currentProduct.name} ${
+          nextIsFavorite ? labels.addedFavorite : labels.removedFavorite
+        }`,
+        toastStyle
+      );
+    } catch {
+      setIsFavorite(isFavorite);
+      onFavoriteChange?.(isFavorite);
+      toast.error(labels.favoriteError);
+    }
   };
+
+  const handleAddCartClick = () => {
+    if (!currentProduct) return;
+
+    if (!selectedItem) {
+      toast.error(labels.selectItem);
+      return;
+    }
+
+    if (addCartTimeoutRef.current) clearTimeout(addCartTimeoutRef.current);
+    setIsAddingCart(true);
+
+    addCartTimeoutRef.current = setTimeout(() => {
+      void (async () => {
+        try {
+          const cartResponse = await fetch('/api/products/getCart');
+
+          if (!cartResponse.ok) throw new Error();
+
+          const cartData: QuickShoppingCartResponse = await cartResponse.json();
+
+          if (!cartData.success) throw new Error();
+
+          const currentCartQuantity =
+            cartData.cartItems.find(
+              (cartItem) => cartItem.item_id === selectedItem.id
+            )?.quantity ?? 0;
+
+          const response = await fetch(
+            `/api/products/updateCart/${selectedItem.id}`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ qty: currentCartQuantity + quantity }),
+            }
+          );
+
+          if (!response.ok) throw new Error();
+
+          toast.success(
+            `${currentProduct.name} ${selectedItem.item_name} ${labels.addedCart}`,
+            toastStyle
+          );
+        } catch {
+          toast.error(labels.addCartError);
+        } finally {
+          setIsAddingCart(false);
+        }
+      })();
+    }, 500);
+  };
+
+  if (!productDetail || !currentProduct) {
+    return (
+      <section className="grid justify-center gap-[66px] lg:grid-cols-[510px_505px]">
+        <p
+          className={[
+            'typo-body',
+            loadingError ? 'text-error' : 'text-text-secondary',
+          ].join(' ')}
+          role={loadingError ? 'alert' : undefined}
+        >
+          {loadingError || labels.loading}
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="grid justify-center gap-[66px] lg:grid-cols-[510px_505px]">
@@ -93,7 +417,7 @@ export function QuickShoppingSection({
           {selectedImage && (
             <Image
               src={selectedImage}
-              alt={product.name}
+              alt={currentProduct.name}
               fill
               priority
               sizes="510px"
@@ -108,7 +432,7 @@ export function QuickShoppingSection({
               <button
                 key={src}
                 type="button"
-                aria-label={`查看商品圖片 ${index + 1}`}
+                aria-label={`${labels.selectImage} ${index + 1}`}
                 aria-pressed={selectedImageIndex === index}
                 onClick={() => setSelectedImageIndex(index)}
                 className={[
@@ -134,99 +458,104 @@ export function QuickShoppingSection({
       </div>
 
       <div className="flex flex-col gap-6">
+        {loadingError && (
+          <p className="typo-body text-error" role="alert">
+            {loadingError}
+          </p>
+        )}
+
         <div className="flex items-start justify-between gap-6">
           <div>
             <h1 className="typo-h3 text-text-primary">
-              {product.name}
+              {currentProduct.name}
               <span className="typo-body-medium ml-2 text-text-secondary">
-                {product.price}
+                {currentProduct.price}
               </span>
             </h1>
-            <div className="mt-1 flex gap-1">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-card-secondary px-3 text-xs leading-[18px] text-text-secondary"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
+            {tags.length > 0 && (
+              <div className="mt-1 flex gap-1">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full bg-card-secondary px-3 text-xs leading-[18px] text-text-secondary"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <button
             type="button"
             aria-pressed={isFavorite}
-            aria-label={isFavorite ? '取消收藏' : '加入收藏'}
+            aria-label={isFavorite ? labels.removeFavorite : labels.addFavorite}
             className={[
-              'w-30 group cursor-pointer hover:scale-[1.02] hover:bg-button-secondary-hover typo-tab flex h-10 justify-center items-center gap-2 rounded-lg border border-secondary px-3 text-text-primary',
+              'group typo-tab flex h-10 w-30 cursor-pointer items-center justify-center gap-2 rounded-lg border border-secondary px-3 text-text-primary hover:scale-[1.02] hover:bg-button-secondary-hover',
               isFavorite
-                ? 'text-primary bg-card-secondary'
-                : 'text-text-primary hover:bg-button-secondary-hover ',
+                ? 'bg-card-secondary text-primary'
+                : 'text-text-primary hover:bg-button-secondary-hover',
             ].join(' ')}
             onClick={handleFavoriteClick}
           >
             {isFavorite ? (
               <>
-                <RiHeartFill className="size-5 text-primary " />
-                已收藏
+                <RiHeartFill className="size-5 text-primary" />
+                {labels.addedFavorite}
               </>
             ) : (
               <>
                 <RiHeartLine className="size-5 group-hover:hidden" />
                 <RiHeartFill className="hidden size-5 text-primary group-hover:block" />
-                加入收藏
+                {labels.addFavorite}
               </>
             )}
           </button>
         </div>
 
         <section className="border-t border-secondary pt-5">
-          <h2 className="typo-body-medium mb-4 text-text-primary">商品簡介</h2>
+          <h2 className="typo-body-medium mb-4 text-text-primary">
+            {labels.features}
+          </h2>
           <div className="typo-tab rounded-lg border border-primary bg-button-secondary-hover p-5 text-text-primary">
-            <p className="mb-3">最接近鮮食的天然慢烘糧！</p>
-            <ul className="flex list-disc flex-col gap-1 pl-5">
-              <li>慢烘原肉糧+凍乾蔬肉粒，肉菜機能一次滿足！</li>
-              <li>85%新鮮原肉+12%蔬果食材+3%機能保健</li>
-              <li>無人工添加物，開袋就是食材天然鮮香</li>
-            </ul>
-            <Link
-              href="#product-description"
-              className="mt-4 inline-flex items-center text-primary"
-            >
-              前往「狗狗鮮肉主食餐包」
-              <LuChevronRight className="size-4" />
-            </Link>
+            <div className="space-y-2">
+              {productDetail.features.map((feature, index) => (
+                <p
+                  key={`${index}-${feature.text}`}
+                  className={`${feature.className} whitespace-pre-line`}
+                >
+                  {feature.text}
+                </p>
+              ))}
+            </div>
           </div>
-          <p className="typo-tab mt-4 whitespace-pre-line text-text-secondary">
-            ※ 原肉糧與蔬肉粒顏色因未添加人工色素，易受季節食材及製程批次影響，
-            深淺請以實物為準
-            {'\n'}※ 一磅(lb)約等於454克
-          </p>
         </section>
 
         <form className="flex flex-col gap-5 border-t border-secondary pt-5">
           <fieldset>
             <legend className="typo-body-medium mb-3 text-text-primary">
-              選擇品項
+              {labels.spec}
             </legend>
-            <div className="flex gap-4">
-              {flavors.map((flavor) => (
+            <div className="flex flex-wrap gap-4">
+              {items.map((item) => (
                 <label
-                  key={flavor}
+                  key={item.id}
                   className="typo-tab cursor-pointer rounded-lg border border-secondary bg-white px-4 py-2 text-text-primary has-checked:bg-card-secondary"
                 >
                   <input
                     type="radio"
-                    name="flavor"
-                    value={flavor}
-                    checked={checkedItem === flavor}
-                    onChange={() => setCheckedItem(flavor)}
+                    name="item"
+                    value={item.id}
+                    checked={checkedItemId === item.id}
+                    onChange={() => setCheckedItemId(item.id)}
                     className="sr-only"
                   />
-                  {flavor}
+                  {item.item_name}
                 </label>
               ))}
+              {!items.length && (
+                <p className="typo-tab text-text-secondary">{labels.noItems}</p>
+              )}
             </div>
           </fieldset>
 
@@ -234,15 +563,16 @@ export function QuickShoppingSection({
 
           <div className="flex items-center justify-between border-t border-secondary pt-5">
             <p className="typo-body-medium text-text-secondary">
-              小計：{subtotal}
+              {labels.subtotal}: {subtotal}
             </p>
             <button
               type="button"
-              className="next-button typo-tab flex w-[200px] items-center justify-center gap-2 py-2"
-              onClick={() => addCartSuccess(product.name, checkedItem)}
+              disabled={!canAddCart || isAddingCart}
+              className="next-button typo-tab flex w-[200px] items-center justify-center gap-2 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={handleAddCartClick}
             >
               <LuShoppingCart className="size-4" />
-              加入購物車
+              {labels.addCart}
             </button>
           </div>
         </form>

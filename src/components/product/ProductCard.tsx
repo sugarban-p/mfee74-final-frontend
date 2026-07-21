@@ -1,22 +1,26 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { LuShoppingCart } from 'react-icons/lu';
 import { RiHeartFill, RiHeartLine } from 'react-icons/ri';
 
-import { QuickShoppingSection } from '@/src/components/product/QuickShoppingSection';
+import {
+  QuickShoppingSection,
+  type QuickShoppingProduct,
+} from '@/src/components/product/QuickShoppingSection';
 
 interface ProductCardProps {
   product: {
+    id?: number;
     image: string;
     tags: string[];
     name: string;
     description: string;
     price: string;
-    slug: string;
+    slug?: string;
     gallery?: string[];
     petType?: string;
     isFavorite?: boolean;
@@ -24,47 +28,96 @@ interface ProductCardProps {
   };
 }
 
+const labels = {
+  addFavorite: '加入收藏',
+  addedFavorite: '已加入收藏',
+  dialogSuffix: '快速購物',
+  favoriteError: '更新收藏失敗，請稍後再試',
+  missingProduct: '缺少商品資料，無法更新收藏',
+  quickShopping: '快速購物',
+  removeFavorite: '取消收藏',
+  removedFavorite: '已取消收藏',
+  soldOut: '已售完',
+} as const;
+
+const toastStyle = {
+  style: {
+    border: '1px solid var(--button-secondary-border)',
+    padding: '16px',
+    color: 'var(--text-primary)',
+    backgroundColor: 'var(--success)',
+  },
+  iconTheme: {
+    primary: 'var(--success)',
+    secondary: 'green',
+  },
+};
+
 export function ProductCard({ product }: ProductCardProps) {
   const [isFavorite, setIsFavorite] = useState(product.isFavorite ?? false);
   const [isQuickShoppingOpen, setIsQuickShoppingOpen] = useState(false);
   const params = useParams<{ petType?: string }>();
   const petType = product.petType ?? params.petType ?? 'dog';
-  const addFavoriteSuccess = (productName: string) =>
-    toast.success(`${productName} 已加入收藏清單`, {
-      style: {
-        border: '1px solid var(--button-secondary-border)',
-        padding: '16px',
-        color: 'var(--text-primary)',
-        backgroundColor: 'var(--success)',
-      },
-      iconTheme: {
-        primary: 'var(--success)',
-        secondary: 'green',
-      },
-    });
-  const RemoveFavoriteSuccess = (productName: string) =>
-    toast.success(`${productName} 已從收藏清單移除`, {
-      style: {
-        border: '1px solid var(--button-secondary-border)',
-        padding: '16px',
-        color: 'var(--text-primary)',
-        backgroundColor: 'var(--success)',
-      },
-      iconTheme: {
-        primary: 'var(--success)',
-        secondary: 'green',
-      },
-    });
-  const handleFavoriteClick = () => {
+  const productSlug = product.slug ?? (product.id ? String(product.id) : '');
+  const quickShoppingProduct = useMemo<QuickShoppingProduct | undefined>(() => {
+    if (!product.id) return undefined;
+
+    return {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      tags: product.tags,
+      isFavorite,
+      items: [],
+    };
+  }, [
+    isFavorite,
+    product.id,
+    product.image,
+    product.name,
+    product.price,
+    product.tags,
+  ]);
+
+  useEffect(() => {
+    setIsFavorite(product.isFavorite ?? false);
+  }, [product.id, product.isFavorite]);
+
+  const handleFavoriteClick = async () => {
     const nextIsFavorite = !isFavorite;
 
-    setIsFavorite(nextIsFavorite);
-    if (nextIsFavorite) {
-      addFavoriteSuccess(product.name);
+    if (!product.id) {
+      toast.error(labels.missingProduct);
       return;
     }
 
-    RemoveFavoriteSuccess(product.name);
+    setIsFavorite(nextIsFavorite);
+
+    try {
+      const response = await fetch(
+        `/api/products/updateFavorite/${product.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ favorite: nextIsFavorite }),
+        }
+      );
+
+      if (!response.ok) throw new Error();
+
+      toast.success(
+        `${product.name} ${
+          nextIsFavorite ? labels.addedFavorite : labels.removedFavorite
+        }`,
+        toastStyle
+      );
+    } catch {
+      setIsFavorite(isFavorite);
+      toast.error(labels.favoriteError);
+    }
   };
 
   return (
@@ -80,7 +133,7 @@ export function ProductCard({ product }: ProductCardProps) {
               ? { backgroundImage: `url(${product.image})` }
               : undefined
           }
-        ></div>
+        />
 
         <div className="flex flex-col gap-4 p-4">
           <div className="flex items-center justify-between gap-3">
@@ -98,7 +151,9 @@ export function ProductCard({ product }: ProductCardProps) {
             <button
               type="button"
               aria-pressed={isFavorite}
-              aria-label={isFavorite ? '取消收藏' : '加入收藏'}
+              aria-label={
+                isFavorite ? labels.removeFavorite : labels.addFavorite
+              }
               className={[
                 'group flex size-6 cursor-pointer items-center justify-center',
                 isFavorite
@@ -117,28 +172,30 @@ export function ProductCard({ product }: ProductCardProps) {
               )}
             </button>
           </div>
+
           <div className="flex flex-col gap-2">
             <Link
-              href={`/product/${petType}/${product.slug}`}
+              href={productSlug ? `/product/${petType}/${productSlug}` : '#'}
               className="cursor-pointer hover:underline"
             >
               <h2 className="typo-card-title truncate">{product.name}</h2>
             </Link>
             <p className="typo-card-body truncate">{product.description}</p>
           </div>
+
           <p className="typo-card-body">{product.price}</p>
           <button
             type="button"
-            disabled={product.soldOut}
-            className="next-button typo-tab flex items-center justify-center gap-2"
+            disabled={product.soldOut || !productSlug}
+            className="next-button typo-tab flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => setIsQuickShoppingOpen(true)}
           >
             {product.soldOut ? (
-              '缺貨中'
+              labels.soldOut
             ) : (
               <>
                 <LuShoppingCart className="size-4" />
-                快速選購
+                {labels.quickShopping}
               </>
             )}
           </button>
@@ -153,15 +210,16 @@ export function ProductCard({ product }: ProductCardProps) {
           <div
             role="dialog"
             aria-modal="true"
-            aria-label={`${product.name} 快速選購`}
+            aria-label={`${product.name} ${labels.dialogSuffix}`}
             className="relative max-h-[calc(100vh-32px)] w-full max-w-[1160px] overflow-y-auto rounded-lg bg-white p-6 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
             <QuickShoppingSection
-              product={{ ...product, isFavorite }}
-              gallery={
-                product.gallery ?? (product.image ? [product.image] : [])
-              }
+              product={quickShoppingProduct}
+              petType={petType}
+              productSlug={productSlug}
+              gallery={product.gallery}
+              onFavoriteChange={setIsFavorite}
             />
           </div>
         </div>
