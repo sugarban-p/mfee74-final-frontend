@@ -551,7 +551,7 @@ export function QuickShoppingSection({
                     type="radio"
                     name="item"
                     value={item.id}
-                    checked={checkedItemId === item.id}
+                    checked={selectedItem?.id === item.id}
                     onChange={() => setCheckedItemId(item.id)}
                     className="sr-only"
                   />
