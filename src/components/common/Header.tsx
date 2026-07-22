@@ -205,7 +205,7 @@ export default function Header() {
 
     try {
       const response = await fetch(
-        `/api/products/updatecart/${cartItem.item_id}`,
+        `/api/products/updateCart/${cartItem.item_id}`,
         {
           method: 'DELETE',
         }
