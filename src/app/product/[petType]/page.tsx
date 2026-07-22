@@ -380,7 +380,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     router.push(href);
   };
   const createCategoryHref = (category: string) => {
-    return createHref({ category });
+    return createHref({ category, tagSlugs: [] });
   };
   const createTagHref = (tagSlug: string) => {
     const nextTags = selectedTagSet.has(tagSlug)
@@ -578,7 +578,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
               <Link href="/">首頁</Link>
             </li>
             <li>
-              <Link href={createHref({ category: categories[0].slug })}>
+              <Link href={createCategoryHref(categories[0].slug)}>
                 {breadcrumbTitle}
               </Link>
             </li>

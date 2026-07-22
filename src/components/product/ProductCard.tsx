@@ -45,7 +45,7 @@ const labels = {
   addFavorite: '加入收藏',
   addedFavorite: '已加入收藏',
   dialogSuffix: '快速購物',
-  favoriteError: '更新收藏失敗，請稍後再試',
+  favoriteError: '請先登入',
   missingProduct: '缺少商品資料，無法更新收藏',
   quickShopping: '快速購物',
   removeFavorite: '取消收藏',
