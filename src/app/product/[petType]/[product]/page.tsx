@@ -3,16 +3,16 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LuChevronRight } from 'react-icons/lu';
 
 import { ProductCard } from '@/src/components/product/ProductCard';
-import { QuickShoppingSection } from '@/src/components/product/QuickShoppingSection';
-
-interface ProductPageDetail {
-  productName: string;
-  descriptionImages: string[];
-}
+import {
+  mapProductDetail,
+  QuickShoppingSection,
+  type ProductDetailResponse,
+  type QuickShoppingDetail,
+} from '@/src/components/product/QuickShoppingSection';
 
 const labels = {
   breadcrumbHome: '首頁',
@@ -26,10 +26,8 @@ const labels = {
   recommendedTag: '推薦',
 } as const;
 
-const emptyProductPageDetail: ProductPageDetail = {
-  productName: '',
-  descriptionImages: [],
-};
+const loadingText = '商品資料載入中...';
+const loadErrorText = '商品資料載入失敗';
 
 const recommendationProducts = Array.from({ length: 4 }, () => ({
   avatar: '',
@@ -43,24 +41,112 @@ const recommendationProducts = Array.from({ length: 4 }, () => ({
 
 export default function ProductPage() {
   const params = useParams<{ petType?: string; product?: string }>();
-  const petType = params.petType ?? 'dog';
+  const petType = params.petType ?? '';
   const productSlug = params.product ?? '';
-  const [showAllDescriptions, setShowAllDescriptions] = useState(false);
-  const [productPageDetail, setProductPageDetail] = useState<ProductPageDetail>(
-    emptyProductPageDetail
+
+  return (
+    <ProductPageContent
+      key={`${petType}:${productSlug}`}
+      petType={petType}
+      productSlug={productSlug}
+    />
   );
+}
+
+interface ProductPageContentProps {
+  petType: string;
+  productSlug: string;
+}
+
+interface ResolvedProductIds {
+  petTypeId: number;
+  productId: number;
+}
+
+interface ProductResolveResponse {
+  success: boolean;
+  petTypeId?: number;
+  productId?: number;
+  message?: string;
+}
+
+function ProductPageContent({ petType, productSlug }: ProductPageContentProps) {
+  const [resolvedProductIds, setResolvedProductIds] =
+    useState<ResolvedProductIds | null>(null);
+  const [loadingError, setLoadingError] = useState('');
+  const [showAllDescriptions, setShowAllDescriptions] = useState(false);
+  const [productDetail, setProductDetail] =
+    useState<QuickShoppingDetail | null>(null);
 
   useEffect(() => {
-    setShowAllDescriptions(false);
-    setProductPageDetail(emptyProductPageDetail);
+    if (!petType || !productSlug) return;
+
+    const controller = new AbortController();
+
+    void fetch(
+      `/api/products/resolve/${encodeURIComponent(petType)}/${encodeURIComponent(productSlug)}`,
+      { signal: controller.signal }
+    )
+      .then((response) => {
+        if (!response.ok) throw new Error(loadErrorText);
+
+        return response.json() as Promise<ProductResolveResponse>;
+      })
+      .then((data) => {
+        if (
+          !data.success ||
+          !Number.isInteger(data.petTypeId) ||
+          !Number.isInteger(data.productId) ||
+          !data.petTypeId ||
+          !data.productId
+        ) {
+          throw new Error(data.message || loadErrorText);
+        }
+
+        const nextResolvedProductIds = {
+          petTypeId: data.petTypeId,
+          productId: data.productId,
+        };
+
+        setResolvedProductIds(nextResolvedProductIds);
+
+        return fetch(
+          `/api/products/${encodeURIComponent(String(nextResolvedProductIds.petTypeId))}/${encodeURIComponent(String(nextResolvedProductIds.productId))}/detail`,
+          { signal: controller.signal }
+        );
+      })
+      .then((response) => {
+        if (!response.ok) throw new Error(loadErrorText);
+
+        return response.json() as Promise<ProductDetailResponse>;
+      })
+      .then((data) => {
+        if (!data.product) {
+          throw new Error(loadErrorText);
+        }
+
+        setProductDetail(mapProductDetail(data));
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        setLoadingError(error instanceof Error ? error.message : loadErrorText);
+      });
+
+    return () => controller.abort();
   }, [petType, productSlug]);
 
-  const handleProductDetailLoad = useCallback((detail: ProductPageDetail) => {
-    setProductPageDetail(detail);
-  }, []);
-
-  const productName = productPageDetail.productName || labels.product;
-  const descriptionImages = productPageDetail.descriptionImages;
+  const productName = productDetail?.product.name || labels.product;
+  const categoryName = productDetail?.product.category || labels.category;
+  const categorySlug = productDetail?.product.categorySlug;
+  const categoryHref = categorySlug
+    ? `/product/${petType}?category=${encodeURIComponent(categorySlug)}`
+    : `/product/${petType}`;
+  const descriptionImages = productDetail?.descriptionImages ?? [];
+  const productResolveError =
+    petType && productSlug ? loadingError : loadErrorText;
 
   return (
     <div className="flex flex-col gap-12">
@@ -73,17 +159,29 @@ export default function ProductPage() {
             <Link href="/">{labels.breadcrumbHome}</Link>
           </li>
           <li>
-            <Link href={`/product/${petType}`}>{labels.category}</Link>
+            <Link href={categoryHref}>{categoryName}</Link>
           </li>
           <li className="text-text-primary">{productName}</li>
         </ul>
       </nav>
 
-      <QuickShoppingSection
-        petType={petType}
-        productSlug={productSlug}
-        onProductDetailLoad={handleProductDetailLoad}
-      />
+      {productResolveError && (
+        <p className="typo-body text-error" role="alert">
+          {productResolveError}
+        </p>
+      )}
+
+      {!productResolveError && (!resolvedProductIds || !productDetail) && (
+        <p className="typo-body text-text-secondary">{loadingText}</p>
+      )}
+
+      {resolvedProductIds && productDetail && (
+        <QuickShoppingSection
+          petTypeId={resolvedProductIds.petTypeId}
+          productId={resolvedProductIds.productId}
+          detail={productDetail}
+        />
+      )}
 
       {descriptionImages.length > 0 && (
         <section id="product-description" className="flex flex-col gap-5">
@@ -135,7 +233,20 @@ export default function ProductPage() {
           {recommendationProducts.map((recommendedProduct, index) => (
             <ProductCard
               key={index}
-              product={{ ...recommendedProduct, petType }}
+              product={{
+                avatar: null,
+                tags: [
+                  {
+                    id: index,
+                    tag_ch: recommendedProduct.tags[0] ?? labels.recommendedTag,
+                  },
+                ],
+                name: recommendedProduct.name,
+                intro: { slogan: recommendedProduct.description },
+                price: recommendedProduct.price,
+                slug: recommendedProduct.slug,
+                petType: petType ? { tag_slug: petType } : null,
+              }}
             />
           ))}
         </div>

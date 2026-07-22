@@ -56,15 +56,22 @@ interface ApiCategory {
 interface ApiTag {
   id: number;
   tag_ch: string;
+  tag_slug?: string;
 }
 
 interface ApiAvatar {
-  src: string;
-  thumbnail: string;
+  src?: string;
+  thumbnail?: string;
 }
 
-interface ApiImage {
-  src: string;
+interface ApiIntro {
+  slogan?: string;
+}
+
+interface ApiPetType {
+  id?: number;
+  tag_slug?: string;
+  tag_page?: string;
 }
 
 interface ApiProduct {
@@ -73,13 +80,11 @@ interface ApiProduct {
   price: number;
   slug: string;
   total_stock?: number;
-  tags_id?: number[];
-  intros?: {
-    slogan?: string;
-    content?: string;
-  };
-  avatars?: ApiAvatar[];
-  images?: ApiImage[];
+  tags?: ApiTag[];
+  intro?: ApiIntro;
+  avatar?: ApiAvatar | null;
+  petType?: ApiPetType | null;
+  isFavorite?: boolean;
 }
 
 interface ProductListResponse {
@@ -97,23 +102,15 @@ interface ProductListResponse {
   products: ApiProduct[];
 }
 
-interface FavoriteResponse {
-  success: boolean;
-  favorites: {
-    id: number;
-  }[];
-}
-
 interface CardProduct {
   id: number;
-  avatar: string;
-  tags: string[];
+  avatar?: ApiAvatar | null;
+  tags?: ApiTag[];
   name: string;
-  description: string;
+  intro?: ApiIntro;
   price: string;
   slug: string;
-  gallery: string[];
-  petType: string;
+  petType?: ApiPetType | null;
   isFavorite: boolean;
   soldOut: boolean;
 }
@@ -135,13 +132,6 @@ const emptyProductData: ProductListResponse = {
   products: [],
 };
 
-const toPublicImagePath = (path?: string) => {
-  if (!path) return '';
-  if (/^https?:\/\//.test(path)) return path;
-
-  return `/${path.replace(/^\/+/, '')}`;
-};
-
 const getBreadcrumbTitle = (petType: string) => {
   return petType === 'cat' ? '貓咪專區' : '狗勾專區';
 };
@@ -160,40 +150,19 @@ const paramsFromUrlSearchParams = (
   };
 };
 
-const mapProducts = (
-  products: ApiProduct[],
-  tags: ApiTag[],
-  petType: string,
-  favoriteProductIds: Set<number>
-) => {
-  const tagMap = new Map(tags.map((tag) => [tag.id, tag.tag_ch]));
-
-  return products.map((product) => {
-    const avatarGallery =
-      product.avatars?.map((avatar) => toPublicImagePath(avatar.src)) ?? [];
-    const imageGallery =
-      product.images?.map((image) => toPublicImagePath(image.src)) ?? [];
-    const gallery = [...avatarGallery, ...imageGallery].filter(Boolean);
-
-    return {
-      id: product.id,
-      avatar:
-        toPublicImagePath(product.avatars?.[0]?.thumbnail) ||
-        toPublicImagePath(product.avatars?.[0]?.src),
-      tags: (product.tags_id ?? [])
-        .map((tagId) => tagMap.get(tagId))
-        .filter((tag): tag is string => Boolean(tag)),
-      name: product.prod_name,
-      description:
-        product.intros?.slogan ?? product.intros?.content?.split('\n')[0] ?? '',
-      price: `NT$${Number(product.price).toLocaleString('zh-TW')}`,
-      slug: product.slug,
-      gallery,
-      petType,
-      isFavorite: favoriteProductIds.has(product.id),
-      soldOut: Number(product.total_stock ?? 0) <= 0,
-    };
-  });
+const mapProducts = (products: ApiProduct[]) => {
+  return products.map((product) => ({
+    id: product.id,
+    avatar: product.avatar,
+    tags: product.tags,
+    name: product.prod_name,
+    intro: product.intro,
+    price: `NT$${Number(product.price).toLocaleString('zh-TW')}`,
+    slug: product.slug,
+    petType: product.petType,
+    isFavorite: product.isFavorite ?? false,
+    soldOut: Number(product.total_stock ?? 0) <= 0,
+  }));
 };
 
 export default function PetTypePage({ searchParams }: PetTypePageProps) {
@@ -201,26 +170,25 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   const routeParams = useParams<{ petType?: string }>();
   const petType = routeParams.petType ?? 'dog';
   const [params, setParams] = useState<ProductSearchParams>({});
-  const [searchParamsReady, setSearchParamsReady] = useState(false);
+  const [searchParamsReady, setSearchParamsReady] = useState(!searchParams);
   const [productData, setProductData] =
     useState<ProductListResponse>(emptyProductData);
   const [loadingError, setLoadingError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [favoriteProductIds, setFavoriteProductIds] = useState<Set<number>>(
-    new Set()
-  );
   const [productMegaMenuCards, setProductMegaMenuCards] = useState<
     ProductMegaMenuCard[]
   >(PRODUCT_MEGA_MENU_FALLBACK);
   const [keywordInput, setKeywordInput] = useState('');
   const [minPriceInput, setMinPriceInput] = useState('');
   const [maxPriceInput, setMaxPriceInput] = useState('');
+  const productMenuCard = getProductMegaMenuCard(productMegaMenuCards, petType);
+  const petTypeId = productMenuCard?.id ?? Number(petType);
+  const hasValidPetTypeId = Number.isInteger(petTypeId) && petTypeId > 0;
 
   useEffect(() => {
     let ignore = false;
 
     if (!searchParams) {
-      setSearchParamsReady(true);
       return;
     }
 
@@ -266,27 +234,15 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   }, []);
 
   useEffect(() => {
-    if (!searchParamsReady) return;
+    if (!searchParamsReady || !hasValidPetTypeId) return;
 
     const controller = new AbortController();
     const nextParams = new URLSearchParams();
     const category = params.category ?? ALL_PRODUCTS_CATEGORY.slug;
-    const productMenuCard = getProductMegaMenuCard(
-      productMegaMenuCards,
-      petType
-    );
-    const petTypeId = productMenuCard?.id ?? Number(petType);
     const categoryId =
       category === ALL_PRODUCTS_CATEGORY.slug
         ? 0
         : getProductCategoryId(productMenuCard, category);
-
-    if (!Number.isInteger(petTypeId) || petTypeId <= 0) {
-      setProductData(emptyProductData);
-      setLoadingError('商品資料載入失敗');
-      setIsLoading(false);
-      return () => controller.abort();
-    }
 
     if (categoryId) {
       nextParams.set('categoryId', String(categoryId));
@@ -301,9 +257,6 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     const queryString = nextParams.toString();
     const url = `/api/products/${encodeURIComponent(String(petTypeId))}${queryString ? `?${queryString}` : ''}`;
 
-    setIsLoading(true);
-    setLoadingError('');
-
     void fetch(url, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) {
@@ -314,6 +267,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
       })
       .then((nextProductData: ProductListResponse) => {
         setProductData(nextProductData);
+        setLoadingError('');
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === 'AbortError') {
@@ -330,38 +284,26 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
       });
 
     return () => controller.abort();
-  }, [params, petType, productMegaMenuCards, searchParamsReady]);
+  }, [
+    hasValidPetTypeId,
+    params,
+    petTypeId,
+    productMenuCard,
+    searchParamsReady,
+  ]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    void fetch('/api/products/getFavorite', { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error();
-
-        return response.json();
-      })
-      .then((data: FavoriteResponse) => {
-        if (!data.success) throw new Error();
-
-        setFavoriteProductIds(
-          new Set(data.favorites.map((favorite) => favorite.id))
-        );
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          return;
-        }
-      });
-
-    return () => controller.abort();
-  }, []);
-
-  const categoriesFromApi = productData.facets.categories.map((category) => ({
-    category: category.tag_ch,
-    count: Number(category.catCount),
-    slug: category.tag_slug,
-  }));
+  const activeProductData = hasValidPetTypeId ? productData : emptyProductData;
+  const effectiveLoadingError = hasValidPetTypeId
+    ? loadingError
+    : '商品資料載入失敗';
+  const effectiveIsLoading = hasValidPetTypeId && isLoading;
+  const categoriesFromApi = activeProductData.facets.categories.map(
+    (category) => ({
+      category: category.tag_ch,
+      count: Number(category.catCount),
+      slug: category.tag_slug,
+    })
+  );
   const categories = [
     {
       ...ALL_PRODUCTS_CATEGORY,
@@ -372,7 +314,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     },
     ...categoriesFromApi,
   ];
-  const tags = productData.facets.tags.map((tag) => ({
+  const tags = activeProductData.facets.tags.map((tag) => ({
     tag: tag.tag_ch,
     slug: String(tag.id),
   }));
@@ -382,29 +324,27 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   const minPrice = params['min-value'] ?? '';
   const maxPrice = params['max-value'] ?? '';
   const selectedSort = params.sort ?? '';
-  const productMenuCard = getProductMegaMenuCard(productMegaMenuCards, petType);
   const breadcrumbTitle = productMenuCard?.title ?? getBreadcrumbTitle(petType);
   const selectedTagSet = new Set(selectedTags);
   const currentCategory =
     categories.find(({ slug }) => slug === selectedCategory) ?? categories[0];
   const selectedCategoryName = currentCategory.category;
-  const pageCount = Math.max(1, productData.pagination.totalPages);
+  const pageCount = Math.max(1, activeProductData.pagination.totalPages);
   const currentPage = Math.min(
-    Math.max(productData.pagination.currentPage, 1),
+    Math.max(activeProductData.pagination.currentPage, 1),
     pageCount
   );
-  const totalRows = productData.pagination.totalRows;
+  const totalRows = activeProductData.pagination.totalRows;
   const displayStart =
-    totalRows > 0 ? (currentPage - 1) * productData.pagination.perPage + 1 : 0;
+    totalRows > 0
+      ? (currentPage - 1) * activeProductData.pagination.perPage + 1
+      : 0;
   const displayEnd = Math.min(
-    currentPage * productData.pagination.perPage,
+    currentPage * activeProductData.pagination.perPage,
     totalRows
   );
   const displayedProducts: CardProduct[] = mapProducts(
-    productData.products,
-    productData.facets.tags,
-    petType,
-    favoriteProductIds
+    activeProductData.products
   );
   const searchDisabled = keywordInput.trim() === search;
   const createHref = ({
@@ -673,9 +613,9 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
           </label>
         </div>
 
-        {loadingError && (
+        {effectiveLoadingError && (
           <p className="typo-body text-error" role="alert">
-            {loadingError}
+            {effectiveLoadingError}
           </p>
         )}
 
@@ -685,11 +625,13 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
           ))}
         </div>
 
-        {!isLoading && !loadingError && displayedProducts.length === 0 && (
-          <p className="typo-body text-text-secondary">
-            目前沒有符合條件的商品
-          </p>
-        )}
+        {!effectiveIsLoading &&
+          !effectiveLoadingError &&
+          displayedProducts.length === 0 && (
+            <p className="typo-body text-text-secondary">
+              目前沒有符合條件的商品
+            </p>
+          )}
 
         <nav
           aria-label="Pagination"

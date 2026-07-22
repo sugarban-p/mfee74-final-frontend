@@ -18,6 +18,8 @@ export interface QuickShoppingProduct {
   id: number;
   name: string;
   price: string;
+  category?: string;
+  categorySlug?: string;
   image?: string;
   tags?: string[];
   isFavorite?: boolean;
@@ -30,34 +32,38 @@ interface ApiProductIntro {
   remark?: string;
 }
 
-interface ApiProductDetail {
+interface ApiProductTag {
+  tag_ch: string;
+}
+
+interface ApiProductAvatar {
+  src: string;
+  thumbnail?: string;
+}
+
+interface ApiProductImage {
+  src: string;
+}
+
+interface ApiProduct {
   id: number;
-  productName: string;
-  tags: {
-    tag_ch: string;
-  }[];
+  prod_name: string;
   price: number;
-  items: QuickShoppingItem[];
-  avatars?: {
-    src: string;
-    thumbnail?: string;
-  }[];
-  images?: {
-    src: string;
-  }[];
+  category?: {
+    tag_ch?: string;
+    tag_slug?: string;
+  } | null;
+  tags?: ApiProductTag[];
+  intro?: ApiProductIntro;
+  isFavorite?: boolean;
+}
+
+export interface ProductDetailResponse {
+  product?: ApiProduct;
+  items?: QuickShoppingItem[];
+  avatars?: ApiProductAvatar[];
+  images?: ApiProductImage[];
   intros?: ApiProductIntro;
-}
-
-interface ProductDetailResponse {
-  success: boolean;
-  productData?: ApiProductDetail;
-}
-
-interface FavoriteResponse {
-  success: boolean;
-  favorites: {
-    id: number;
-  }[];
 }
 
 interface QuickShoppingCartItem {
@@ -70,7 +76,7 @@ interface QuickShoppingCartResponse {
   cartItems: QuickShoppingCartItem[];
 }
 
-interface QuickShoppingDetail {
+export interface QuickShoppingDetail {
   product: QuickShoppingProduct;
   gallery: string[];
   descriptionImages: string[];
@@ -80,17 +86,25 @@ interface QuickShoppingDetail {
   }[];
 }
 
+interface FetchedQuickShoppingDetail {
+  petTypeId: number;
+  productId: number;
+  detail: QuickShoppingDetail;
+}
+
+interface LoadingErrorState {
+  petTypeId: number;
+  productId: number;
+  message: string;
+}
+
 interface QuickShoppingSectionProps {
   product?: QuickShoppingProduct;
-  petType?: string;
-  productSlug?: string;
-  gallery?: string[];
+  petTypeId?: number;
+  productId?: number;
+  detail?: QuickShoppingDetail | null;
   description?: string;
   onFavoriteChange?: (isFavorite: boolean) => void;
-  onProductDetailLoad?: (detail: {
-    productName: string;
-    descriptionImages: string[];
-  }) => void;
 }
 
 const labels = {
@@ -146,47 +160,53 @@ const getProductFeatures = (intros?: ApiProductIntro) => {
     );
 };
 
-const mapProductDetail = (
-  productData: ApiProductDetail
+export const mapProductDetail = (
+  data: ProductDetailResponse
 ): QuickShoppingDetail => {
-  const avatars = productData.avatars ?? [];
-  const images = productData.images ?? [];
-  const gallery = [
-    ...avatars.map((avatar) => toPublicImagePath(avatar.src)),
-    ...images.map((image) => toPublicImagePath(image.src)),
-  ].filter(Boolean);
+  const productData = data.product;
+  const avatars = data.avatars ?? [];
+  const gallery = avatars
+    .map((avatar) => toPublicImagePath(avatar.src))
+    .filter(Boolean);
+  const descriptionImages = (data.images ?? [])
+    .map((image) => toPublicImagePath(image.src))
+    .filter(Boolean);
 
   return {
     product: {
-      id: productData.id,
-      name: productData.productName,
-      price: `NT$${Number(productData.price).toLocaleString('zh-TW')}`,
+      id: productData?.id ?? 0,
+      name: productData?.prod_name ?? '',
+      price: `NT$${Number(productData?.price ?? 0).toLocaleString('zh-TW')}`,
+      category: productData?.category?.tag_ch,
+      categorySlug: productData?.category?.tag_slug,
       image: gallery[0],
-      tags: productData.tags.map((tag) => tag.tag_ch),
-      items: productData.items,
+      tags: productData?.tags?.map((tag) => tag.tag_ch) ?? [],
+      isFavorite: productData?.isFavorite,
+      items: data.items ?? [],
     },
     gallery,
-    descriptionImages: images
-      .map((image) => toPublicImagePath(image.src))
-      .filter(Boolean),
-    features: getProductFeatures(productData.intros),
+    descriptionImages,
+    features: getProductFeatures(data.intros ?? productData?.intro),
   };
 };
 
 export function QuickShoppingSection({
   product,
-  petType,
-  productSlug,
-  gallery,
+  petTypeId,
+  productId,
+  detail,
   description,
   onFavoriteChange,
-  onProductDetailLoad,
 }: QuickShoppingSectionProps) {
   const addCartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [fetchedDetail, setFetchedDetail] =
-    useState<QuickShoppingDetail | null>(null);
-  const [loadingError, setLoadingError] = useState('');
-  const [isFavorite, setIsFavorite] = useState(product?.isFavorite ?? false);
+    useState<FetchedQuickShoppingDetail | null>(null);
+  const [loadingErrorState, setLoadingErrorState] =
+    useState<LoadingErrorState | null>(null);
+  const [favoriteOverride, setFavoriteOverride] = useState<{
+    productId: number;
+    isFavorite: boolean;
+  } | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [checkedItemId, setCheckedItemId] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -197,15 +217,35 @@ export function QuickShoppingSection({
 
     return {
       product,
-      gallery: gallery ?? (product.image ? [product.image] : []),
+      gallery: product.image ? [product.image] : [],
       descriptionImages: [],
       features: description
         ? [{ text: description, className: 'typo-body' }]
         : [],
     };
-  }, [description, gallery, product]);
-  const productDetail = fetchedDetail ?? (!productSlug ? fallbackDetail : null);
+  }, [description, product]);
+  const currentFetchedDetail =
+    detail ??
+    (fetchedDetail &&
+    fetchedDetail.petTypeId === petTypeId &&
+    fetchedDetail.productId === productId
+      ? fetchedDetail.detail
+      : null);
+  const loadingError =
+    loadingErrorState &&
+    loadingErrorState.petTypeId === petTypeId &&
+    loadingErrorState.productId === productId
+      ? loadingErrorState.message
+      : '';
+  const productDetail =
+    currentFetchedDetail ?? (!petTypeId || !productId ? fallbackDetail : null);
   const currentProduct = productDetail?.product;
+  const isFavorite =
+    currentProduct &&
+    favoriteOverride &&
+    favoriteOverride.productId === currentProduct.id
+      ? favoriteOverride.isFavorite
+      : (currentProduct?.isFavorite ?? false);
   const items = currentProduct?.items ?? emptyItems;
   const selectedItem =
     items.find((item) => item.id === checkedItemId) ?? items[0];
@@ -217,20 +257,14 @@ export function QuickShoppingSection({
   const canAddCart = Boolean(selectedItem);
 
   useEffect(() => {
-    if (!petType || !productSlug) {
-      setFetchedDetail(null);
-      setLoadingError('');
+    if (detail || !petTypeId || !productId) {
       return;
     }
 
     const controller = new AbortController();
 
-    setFetchedDetail(null);
-    setLoadingError('');
-    setSelectedImageIndex(0);
-
-    const productRequest = fetch(
-      `/api/products/${encodeURIComponent(petType)}/${encodeURIComponent(productSlug)}`,
+    void fetch(
+      `/api/products/${encodeURIComponent(String(petTypeId))}/${encodeURIComponent(String(productId))}/buy`,
       {
         signal: controller.signal,
       }
@@ -241,64 +275,29 @@ export function QuickShoppingSection({
         return response.json();
       })
       .then((data: ProductDetailResponse) => {
-        if (!data.success || !data.productData) {
+        if (!data.product) {
           throw new Error(labels.loadError);
         }
 
-        return data.productData;
-      });
+        const nextDetail = mapProductDetail(data);
 
-    const favoriteRequest = fetch('/api/products/getFavorite', {
-      signal: controller.signal,
-    })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: FavoriteResponse | null) => data)
-      .catch(() => null);
-
-    void Promise.all([productRequest, favoriteRequest])
-      .then(([productData, favoriteData]) => {
-        const nextDetail = mapProductDetail(productData);
-        const favoriteProductIds = new Set(
-          favoriteData?.success
-            ? favoriteData.favorites.map((favorite) => favorite.id)
-            : []
-        );
-
-        nextDetail.product.isFavorite = favoriteData?.success
-          ? favoriteProductIds.has(productData.id)
-          : (product?.isFavorite ?? false);
-
-        setFetchedDetail(nextDetail);
-        onProductDetailLoad?.({
-          productName: nextDetail.product.name,
-          descriptionImages: nextDetail.descriptionImages,
-        });
+        setFetchedDetail({ petTypeId, productId, detail: nextDetail });
+        setLoadingErrorState(null);
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === 'AbortError') {
           return;
         }
 
-        setLoadingError(
-          error instanceof Error ? error.message : labels.loadError
-        );
+        setLoadingErrorState({
+          petTypeId,
+          productId,
+          message: error instanceof Error ? error.message : labels.loadError,
+        });
       });
 
     return () => controller.abort();
-  }, [onProductDetailLoad, petType, product?.isFavorite, productSlug]);
-
-  useEffect(() => {
-    if (!currentProduct) return;
-
-    setIsFavorite(currentProduct.isFavorite ?? false);
-  }, [currentProduct]);
-
-  useEffect(() => {
-    if (!currentProduct) return;
-
-    setCheckedItemId(items[0]?.id ?? 0);
-    setQuantity(1);
-  }, [currentProduct, items]);
+  }, [detail, petTypeId, productId]);
 
   useEffect(() => {
     return () => {
@@ -311,7 +310,10 @@ export function QuickShoppingSection({
 
     const nextIsFavorite = !isFavorite;
 
-    setIsFavorite(nextIsFavorite);
+    setFavoriteOverride({
+      productId: currentProduct.id,
+      isFavorite: nextIsFavorite,
+    });
     onFavoriteChange?.(nextIsFavorite);
 
     try {
@@ -335,7 +337,10 @@ export function QuickShoppingSection({
         toastStyle
       );
     } catch {
-      setIsFavorite(isFavorite);
+      setFavoriteOverride({
+        productId: currentProduct.id,
+        isFavorite,
+      });
       onFavoriteChange?.(isFavorite);
       toast.error(labels.favoriteError);
     }
