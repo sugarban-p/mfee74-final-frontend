@@ -17,6 +17,13 @@ import {
 
 import { FilterButton } from '@/src/components/product/FilterButton';
 import { ProductCard } from '@/src/components/product/ProductCard';
+import {
+  getProductCategoryId,
+  getProductMegaMenuCard,
+  PRODUCT_MEGA_MENU_FALLBACK,
+  type ProductMegaMenuCard,
+  type ProductMegaMenuResponse,
+} from '@/src/services/product-mega-menu';
 
 const ALL_PRODUCTS_CATEGORY = {
   category: '所有商品',
@@ -33,7 +40,6 @@ interface ProductSearchParams {
   'max-value'?: string;
   page?: string;
   sort?: string;
-  title?: string;
 }
 
 interface PetTypePageProps {
@@ -151,7 +157,6 @@ const paramsFromUrlSearchParams = (
     'max-value': searchParams.get('max-value') ?? undefined,
     page: searchParams.get('page') ?? undefined,
     sort: searchParams.get('sort') ?? undefined,
-    title: searchParams.get('title') ?? undefined,
   };
 };
 
@@ -204,6 +209,9 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   const [favoriteProductIds, setFavoriteProductIds] = useState<Set<number>>(
     new Set()
   );
+  const [productMegaMenuCards, setProductMegaMenuCards] = useState<
+    ProductMegaMenuCard[]
+  >(PRODUCT_MEGA_MENU_FALLBACK);
   const [keywordInput, setKeywordInput] = useState('');
   const [minPriceInput, setMinPriceInput] = useState('');
   const [maxPriceInput, setMaxPriceInput] = useState('');
@@ -233,14 +241,55 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   }, [searchParams]);
 
   useEffect(() => {
+    const controller = new AbortController();
+
+    void fetch('/api/products/mega-menu', { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error();
+
+        return response.json() as Promise<ProductMegaMenuResponse>;
+      })
+      .then((data) => {
+        if (!data.success || data.cards.length === 0) throw new Error();
+
+        setProductMegaMenuCards(data.cards);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        setProductMegaMenuCards(PRODUCT_MEGA_MENU_FALLBACK);
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
     if (!searchParamsReady) return;
 
     const controller = new AbortController();
     const nextParams = new URLSearchParams();
     const category = params.category ?? ALL_PRODUCTS_CATEGORY.slug;
+    const productMenuCard = getProductMegaMenuCard(
+      productMegaMenuCards,
+      petType
+    );
+    const petTypeId = productMenuCard?.id ?? Number(petType);
+    const categoryId =
+      category === ALL_PRODUCTS_CATEGORY.slug
+        ? 0
+        : getProductCategoryId(productMenuCard, category);
 
-    if (category !== ALL_PRODUCTS_CATEGORY.slug) {
-      nextParams.set('category', category);
+    if (!Number.isInteger(petTypeId) || petTypeId <= 0) {
+      setProductData(emptyProductData);
+      setLoadingError('商品資料載入失敗');
+      setIsLoading(false);
+      return () => controller.abort();
+    }
+
+    if (categoryId) {
+      nextParams.set('categoryId', String(categoryId));
     }
     if (params.tags) nextParams.set('tags', params.tags);
     if (params.search) nextParams.set('search', params.search);
@@ -250,7 +299,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     if (params.page) nextParams.set('page', params.page);
 
     const queryString = nextParams.toString();
-    const url = `/api/products/${encodeURIComponent(petType)}${queryString ? `?${queryString}` : ''}`;
+    const url = `/api/products/${encodeURIComponent(String(petTypeId))}${queryString ? `?${queryString}` : ''}`;
 
     setIsLoading(true);
     setLoadingError('');
@@ -281,7 +330,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
       });
 
     return () => controller.abort();
-  }, [params, petType, searchParamsReady]);
+  }, [params, petType, productMegaMenuCards, searchParamsReady]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -333,7 +382,8 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   const minPrice = params['min-value'] ?? '';
   const maxPrice = params['max-value'] ?? '';
   const selectedSort = params.sort ?? '';
-  const breadcrumbTitle = params.title ?? getBreadcrumbTitle(petType);
+  const productMenuCard = getProductMegaMenuCard(productMegaMenuCards, petType);
+  const breadcrumbTitle = productMenuCard?.title ?? getBreadcrumbTitle(petType);
   const selectedTagSet = new Set(selectedTags);
   const currentCategory =
     categories.find(({ slug }) => slug === selectedCategory) ?? categories[0];
@@ -382,7 +432,6 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     if (maxPriceValue) nextParams.set('max-value', maxPriceValue);
     if (sort) nextParams.set('sort', sort);
     if (page) nextParams.set('page', String(page));
-    if (params.title) nextParams.set('title', params.title);
 
     return `?${nextParams.toString()}`;
   };
