@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { LuChevronRight } from 'react-icons/lu';
 
@@ -20,6 +20,7 @@ const labels = {
   collapseDescription: '收起介紹',
   description: '商品介紹',
   expandDescription: '展開介紹',
+  allProducts: '所有商品',
   product: '商品',
   recommendedDescription: '精選商品',
   recommendedProduct: '推薦商品',
@@ -41,14 +42,17 @@ const recommendationProducts = Array.from({ length: 4 }, () => ({
 
 export default function ProductPage() {
   const params = useParams<{ petType?: string; product?: string }>();
+  const searchParams = useSearchParams();
   const petType = params.petType ?? '';
   const productSlug = params.product ?? '';
+  const categoryParam = searchParams.get('category') ?? '';
 
   return (
     <ProductPageContent
-      key={`${petType}:${productSlug}`}
+      key={`${petType}:${productSlug}:${categoryParam}`}
       petType={petType}
       productSlug={productSlug}
+      categoryParam={categoryParam}
     />
   );
 }
@@ -56,6 +60,7 @@ export default function ProductPage() {
 interface ProductPageContentProps {
   petType: string;
   productSlug: string;
+  categoryParam: string;
 }
 
 interface ResolvedProductIds {
@@ -70,7 +75,11 @@ interface ProductResolveResponse {
   message?: string;
 }
 
-function ProductPageContent({ petType, productSlug }: ProductPageContentProps) {
+function ProductPageContent({
+  petType,
+  productSlug,
+  categoryParam,
+}: ProductPageContentProps) {
   const [resolvedProductIds, setResolvedProductIds] =
     useState<ResolvedProductIds | null>(null);
   const [loadingError, setLoadingError] = useState('');
@@ -138,12 +147,17 @@ function ProductPageContent({ petType, productSlug }: ProductPageContentProps) {
     return () => controller.abort();
   }, [petType, productSlug]);
 
+  const fromAllProducts = categoryParam === 'all-products';
   const productName = productDetail?.product.name || labels.product;
-  const categoryName = productDetail?.product.category || labels.category;
+  const categoryName = fromAllProducts
+    ? labels.allProducts
+    : productDetail?.product.category || labels.category;
   const categorySlug = productDetail?.product.categorySlug;
-  const categoryHref = categorySlug
-    ? `/product/${petType}?category=${encodeURIComponent(categorySlug)}`
-    : `/product/${petType}`;
+  const categoryHref = fromAllProducts
+    ? `/product/${petType}?category=all-products`
+    : categorySlug
+      ? `/product/${petType}?category=${encodeURIComponent(categorySlug)}`
+      : `/product/${petType}`;
   const descriptionImages = productDetail?.descriptionImages ?? [];
   const productResolveError =
     petType && productSlug ? loadingError : loadErrorText;

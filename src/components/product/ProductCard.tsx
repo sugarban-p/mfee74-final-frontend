@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { LuShoppingCart } from 'react-icons/lu';
@@ -79,6 +79,7 @@ export function ProductCard({ product }: ProductCardProps) {
   } | null>(null);
   const [isQuickShoppingOpen, setIsQuickShoppingOpen] = useState(false);
   const params = useParams<{ petType?: string }>();
+  const searchParams = useSearchParams();
   const petTypeId = product.petType?.id;
   const petTypeSlug = product.petType?.tag_slug ?? params.petType;
   const isFavorite =
@@ -91,8 +92,14 @@ export function ProductCard({ product }: ProductCardProps) {
   );
   const tags = product.tags?.map((tag) => tag.tag_ch) ?? [];
   const description = product.intro?.slogan ?? '';
+  const categoryParam = searchParams.get('category');
+  const categoryQuery = categoryParam
+    ? `?category=${encodeURIComponent(categoryParam)}`
+    : '';
   const productHref =
-    petTypeSlug && productSlug ? `/product/${petTypeSlug}/${productSlug}` : '#';
+    petTypeSlug && productSlug
+      ? `/product/${petTypeSlug}/${productSlug}${categoryQuery}`
+      : '#';
   const quickShoppingProduct: QuickShoppingProduct | undefined = product.id
     ? {
         id: product.id,
