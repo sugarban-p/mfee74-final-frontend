@@ -45,10 +45,6 @@ const toPublicImagePath = (path?: string) => {
   return `/${path.replace(/^\/+/, '')}`;
 };
 
-interface ProfileResponse {
-  avatar?: string | null;
-}
-
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
@@ -67,39 +63,6 @@ export default function Header() {
   const updateCartTimeoutsRef = useRef<
     Map<number, ReturnType<typeof setTimeout>>
   >(new Map());
-
-  const refreshAuthState = useCallback(async () => {
-    try {
-      const res = await fetch('/api/user/profile', {
-        credentials: 'include',
-        cache: 'no-store',
-      });
-
-      if (!res.ok) {
-        setIsAuthenticated(false);
-        setMemberAvatar(null);
-        return;
-      }
-
-      const payload: unknown = await res.json();
-      const profile =
-        payload && typeof payload === 'object'
-          ? (payload as ProfileResponse)
-          : null;
-
-      setIsAuthenticated(true);
-      setMemberAvatar(
-        typeof profile?.avatar === 'string' && profile.avatar.length > 0
-          ? profile.avatar
-          : null
-      );
-    } catch {
-      setIsAuthenticated(false);
-      setMemberAvatar(null);
-    } finally {
-      setIsAuthLoading(false);
-    }
-  }, []);
 
   const refreshAuthState = useCallback(async () => {
     try {
@@ -325,69 +288,6 @@ export default function Header() {
     }
   };
 
-  useEffect(() => {
-    refreshAuthState();
-  }, [pathname, refreshAuthState]);
-
-  useEffect(() => {
-    const handleAuthStateChanged = () => {
-      refreshAuthState();
-    };
-
-    window.addEventListener('auth-state-changed', handleAuthStateChanged);
-
-    return () => {
-      window.removeEventListener('auth-state-changed', handleAuthStateChanged);
-    };
-  }, [refreshAuthState]);
-
-  const handleMemberClick = () => {
-    if (isAuthLoading) {
-      return;
-    }
-
-    if (isAuthenticated) {
-      router.push('/member/dashboard');
-      return;
-    }
-
-    router.push('/auth/login');
-  };
-
-  const handleLogout = async () => {
-    if (isAuthLoading || isLoggingOut) {
-      return;
-    }
-
-    if (!isAuthenticated) {
-      return;
-    }
-
-    setIsLoggingOut(true);
-
-    try {
-      const res = await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (!res.ok) {
-        toast.error('登出失敗，請稍後再試。');
-        return;
-      }
-
-      setIsAuthenticated(false);
-      setMemberAvatar(null);
-      window.dispatchEvent(new Event('auth-state-changed'));
-      toast.success('已登出');
-      router.push('/auth/login');
-    } catch {
-      toast.error('網路錯誤，請稍後再試。');
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
   return (
     <>
       <header className="sticky top-0 z-20 h-20 bg-card-primary/95">
@@ -541,12 +441,12 @@ export default function Header() {
                 <section
                   ref={cartPanelRef}
                   id="cart-panel"
-                  className="absolute top-12 -right-13 w-[470px] max-w-[calc(100vw-40px)] rounded-2xl border border-secondary bg-white p-3 shadow-xl"
+                  className="absolute top-12 -right-13 w-117.5 max-w-[calc(100vw-40px)] rounded-2xl border border-secondary bg-white p-3 shadow-xl"
                   aria-label="購物車"
                 >
-                  <span className="absolute -top-[10px] right-[61px] size-5 rotate-45 border-t border-l border-secondary bg-white" />
+                  <span className="absolute -top-2.5 right-15.25 size-5 rotate-45 border-t border-l border-secondary bg-white" />
 
-                  <div className="flex max-h-[349px] flex-col overflow-y-auto rounded-xl bg-white">
+                  <div className="flex max-h-87.25 flex-col overflow-y-auto rounded-xl bg-white">
                     <div className="flex items-center gap-2 border-b border-card-secondary px-2 py-3 text-text-primary">
                       <LuPackage className="size-5 text-primary" />
                       <h2 className="typo-body-medium">購物車</h2>

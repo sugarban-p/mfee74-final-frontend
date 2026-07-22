@@ -2,7 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { AlertCircle, Headphones, Paperclip, Plus, Send } from 'lucide-react';
+import {
+  AlertCircle,
+  Download,
+  ExternalLink,
+  FileText,
+  Headphones,
+  Image as ImageIcon,
+  Paperclip,
+  Plus,
+  Send,
+} from 'lucide-react';
 // @ts-ignore -- editor language service may intermittently fail to resolve pnpm workspace deps.
 import { io, type Socket } from 'socket.io-client';
 
@@ -112,6 +122,34 @@ function formatMessageTime(isoTime: string) {
     minute: '2-digit',
     hour12: true,
   });
+}
+
+type AttachmentMessage = {
+  fileName: string;
+  fileUrl: string;
+  isImage: boolean;
+};
+
+function getFileLabel(fileName: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase() || '';
+  if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(extension)) return '圖片';
+  if (extension === 'pdf') return 'PDF';
+  if (extension === 'txt') return '文字檔';
+  return '附件';
+}
+
+function parseAttachmentMessage(content: string): AttachmentMessage | null {
+  const imageExtRegex = /\.(png|jpe?g|webp|gif)(\?.*)?$/i;
+  const attachmentMatch = content.match(/^附件：(.+)\n(https?:\/\/\S+)$/);
+  if (!attachmentMatch) return null;
+
+  const fileName = attachmentMatch[1];
+  const fileUrl = attachmentMatch[2];
+  return {
+    fileName,
+    fileUrl,
+    isImage: imageExtRegex.test(fileName) || imageExtRegex.test(fileUrl),
+  };
 }
 
 const BOT_GREETING = '您好！歡迎使用客服中心，請輸入您的問題。';
@@ -688,8 +726,7 @@ export default function ChatClient() {
   };
 
   const modeTitle = isSupport ? '客服工作台' : '會員客服';
-  const canSendAsSupport =
-    !isSupport || Boolean(selectedCaseId && supportCases.length > 0);
+  const canSendAsSupport = !isSupport || Boolean(selectedCaseId);
   const isMemberCaseClosed = !isSupport && memberCaseStatus === 'CLOSED';
   const isSupportCaseClosed =
     isSupport && selectedSupportCase?.status === 'CLOSED';
@@ -1059,13 +1096,13 @@ export default function ChatClient() {
                   disabled={
                     isUploading ||
                     isSending ||
-                    (isSupport && !canSendAsSupport) ||
+                    (isSupport && !selectedCaseId) ||
                     isMemberCaseClosed
                   }
                   className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
                     isUploading ||
                     isSending ||
-                    (isSupport && !canSendAsSupport) ||
+                    (isSupport && !selectedCaseId) ||
                     isMemberCaseClosed
                       ? 'border-gray-200 bg-gray-100 text-gray-400'
                       : 'border-orange-200 bg-orange-50 text-orange-500 hover:bg-orange-100'
@@ -1080,12 +1117,12 @@ export default function ChatClient() {
                   onClick={() => void send(input)}
                   aria-label="送出訊息"
                   disabled={
-                    (isSupport && !canSendAsSupport) || isMemberCaseClosed
+                    (isSupport && !selectedCaseId) || isMemberCaseClosed
                   }
                   className={`flex h-7 w-7 items-center justify-center rounded-xl transition-colors ${
                     input.trim() &&
                     !isSending &&
-                    (!isSupport || canSendAsSupport) &&
+                    (!isSupport || Boolean(selectedCaseId)) &&
                     !isMemberCaseClosed
                       ? 'bg-orange-400 text-white'
                       : 'bg-gray-200 text-gray-400'
@@ -1099,7 +1136,7 @@ export default function ChatClient() {
         </div>
 
         {isSupport ? (
-          <aside className="h-[690px] overflow-y-auto rounded-3xl border border-[#ece3d9] bg-white p-4 shadow-lg">
+          <aside className="h-172.5 overflow-y-auto rounded-3xl border border-[#ece3d9] bg-white p-4 shadow-lg">
             <h3 className="text-[16px] font-bold text-gray-900">
               客服案件列表
             </h3>
@@ -1221,39 +1258,119 @@ interface UserMessageProps extends ChatMessageProps {
 }
 
 function renderMessageContent(content: string, isUserMessage: boolean) {
-  const imageExtRegex = /\.(png|jpe?g|webp|gif)(\?.*)?$/i;
-  const attachmentMatch = content.match(/^附件：(.+)\n(https?:\/\/\S+)$/);
-  if (attachmentMatch) {
-    const fileName = attachmentMatch[1];
-    const fileUrl = attachmentMatch[2];
-    const isImageAttachment =
-      imageExtRegex.test(fileName) || imageExtRegex.test(fileUrl);
+  const attachment = parseAttachmentMessage(content);
+  if (attachment) {
+    const badgeLabel = getFileLabel(attachment.fileName);
 
     return (
       <div className="space-y-2">
-        <div>{`附件：${fileName}`}</div>
-        {isImageAttachment ? (
-          <a href={fileUrl} target="_blank" rel="noreferrer">
-            <img
-              src={fileUrl}
-              alt={fileName}
-              className="max-h-56 max-w-full rounded-xl border border-black/10 bg-white object-contain"
-              loading="lazy"
-            />
-          </a>
-        ) : null}
-        <a
-          href={fileUrl}
-          target="_blank"
-          rel="noreferrer"
-          className={`inline-block underline underline-offset-2 ${
+        <div
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
             isUserMessage
-              ? 'text-white/90'
-              : 'text-orange-600 hover:text-orange-500'
+              ? 'bg-white/15 text-white/90'
+              : 'bg-orange-100 text-orange-600'
           }`}
         >
-          點擊下載
-        </a>
+          {attachment.isImage ? (
+            <ImageIcon size={12} />
+          ) : (
+            <FileText size={12} />
+          )}
+          <span>{badgeLabel}</span>
+        </div>
+
+        <div
+          className={`overflow-hidden rounded-2xl border shadow-sm ${
+            isUserMessage
+              ? 'border-white/10 bg-white/10'
+              : 'border-orange-100 bg-white'
+          }`}
+        >
+          <div className="flex items-center gap-3 px-3 py-2.5">
+            <div
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                isUserMessage ? 'bg-white/15' : 'bg-orange-50'
+              }`}
+            >
+              {attachment.isImage ? (
+                <ImageIcon
+                  size={18}
+                  className={isUserMessage ? 'text-white' : 'text-orange-500'}
+                />
+              ) : (
+                <FileText
+                  size={18}
+                  className={isUserMessage ? 'text-white' : 'text-orange-500'}
+                />
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div
+                className={`truncate text-sm font-medium ${
+                  isUserMessage ? 'text-white' : 'text-gray-800'
+                }`}
+                title={attachment.fileName}
+              >
+                {attachment.fileName}
+              </div>
+              <div
+                className={`text-xs ${
+                  isUserMessage ? 'text-white/70' : 'text-gray-500'
+                }`}
+              >
+                點擊下載或預覽
+              </div>
+            </div>
+
+            <a
+              href={attachment.fileUrl}
+              download={attachment.fileName}
+              aria-label={`下載 ${attachment.fileName}`}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
+                isUserMessage
+                  ? 'bg-white/15 text-white hover:bg-white/25'
+                  : 'bg-orange-100 text-orange-600 hover:bg-orange-200'
+              }`}
+            >
+              <Download size={14} />
+            </a>
+          </div>
+
+          {attachment.isImage ? (
+            <a href={attachment.fileUrl} target="_blank" rel="noreferrer">
+              <img
+                src={attachment.fileUrl}
+                alt={attachment.fileName}
+                className="max-h-60 w-full bg-black/5 object-contain"
+                loading="lazy"
+              />
+            </a>
+          ) : (
+            <div
+              className={`flex items-center justify-between border-t px-3 py-2 text-xs ${
+                isUserMessage
+                  ? 'border-white/10 text-white/75'
+                  : 'border-orange-100 text-gray-500'
+              }`}
+            >
+              <span>點擊下載查看內容</span>
+              <a
+                href={attachment.fileUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={`inline-flex items-center gap-1 font-medium ${
+                  isUserMessage
+                    ? 'text-white/90'
+                    : 'text-orange-600 hover:text-orange-500'
+                }`}
+              >
+                <span>開啟</span>
+                <ExternalLink size={12} />
+              </a>
+            </div>
+          )}
+        </div>
       </div>
     );
   }

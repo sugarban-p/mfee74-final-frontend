@@ -90,7 +90,7 @@ export default function LoginPage() {
     <AuthShell title="會員登入" subtitle="歡迎回到 MOFU">
       <div className="bg-[#FFFEFC] px-6 pt-5 pb-2">
         <p
-          className="text-[16px] leading-[1.5] text-[#9A9088]"
+          className="text-[16px] leading-normal text-[#9A9088]"
           style={AUTH_TEXT}
         >
           使用電子郵件登入，或透過 Google 快速登入
@@ -130,7 +130,7 @@ export default function LoginPage() {
               type="checkbox"
               checked={rememberMe}
               onChange={(event) => setRememberMe(event.target.checked)}
-              className="checkbox h-4.5 w-4.5 rounded-[4px] border-2 border-[#B8ACA2] bg-[#FFFEFC] checkbox-sm [--chkbg:#E77721] [--chkfg:white] checked:border-[#E77721] checked:bg-[#E77721] checked:text-white focus-visible:ring-2 focus-visible:ring-[#F6C6A0]/60 focus-visible:outline-none"
+              className="checkbox h-4.5 w-4.5 rounded-sm border-2 border-[#B8ACA2] bg-[#FFFEFC] checkbox-sm [--chkbg:#E77721] [--chkfg:white] checked:border-[#E77721] checked:bg-[#E77721] checked:text-white focus-visible:ring-2 focus-visible:ring-[#F6C6A0]/60 focus-visible:outline-none"
             />
             保持登入狀態
           </label>
@@ -151,7 +151,7 @@ export default function LoginPage() {
 
         <button
           onClick={googleLogin}
-          className="h-[46px] w-full overflow-hidden rounded-full border border-[#E7DDD3] bg-[#FFFEFC] p-0"
+          className="h-11.5 w-full overflow-hidden rounded-full border border-[#E7DDD3] bg-[#FFFEFC] p-0"
         >
           <span
             className="flex h-full w-full items-center justify-center gap-2 bg-[#FFFEFC] text-[#3C3631] transition-colors hover:bg-[#F8EFE6]"
@@ -162,7 +162,7 @@ export default function LoginPage() {
         </button>
 
         <div
-          className="rounded-2xl border border-[#F0DEC8] bg-[#F2DDB9] px-4 py-3 text-[16px] leading-[1.5] text-[#7A6F67]"
+          className="rounded-2xl border border-[#F0DEC8] bg-[#F2DDB9] px-4 py-3 text-[16px] leading-normal text-[#7A6F67]"
           style={AUTH_TEXT}
         >
           登入後即可查看您的會員專屬優惠與訂單資料。

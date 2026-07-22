@@ -143,7 +143,7 @@ export default function PetAiChatPage() {
   return (
     <section className="grid w-full justify-items-center gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:justify-items-stretch">
       {/* 左側：目前正在幫哪一隻毛孩導購 */}
-      <aside className="w-full max-w-[280px] lg:max-w-none">
+      <aside className="w-full max-w-70 lg:max-w-none">
         <Link
           href="/member/pets/ai/select-pet"
           className="back-button typo-tab inline-flex items-center gap-2"
@@ -159,7 +159,7 @@ export default function PetAiChatPage() {
           <img
             src={pet.avatarUrl || '/mofu.svg'}
             alt={pet.name}
-            className={`aspect-[4/3] w-full rounded-xl ${
+            className={`aspect-4/3 w-full rounded-xl ${
               pet.avatarUrl ? 'object-cover' : 'object-contain p-6'
             }`}
           />
@@ -208,7 +208,7 @@ export default function PetAiChatPage() {
       </aside>
 
       {/* 右側：聊天室主區塊 */}
-      <section className="flex min-h-[680px] flex-col rounded-2xl border border-border bg-card-primary">
+      <section className="flex min-h-170 flex-col rounded-2xl border border-border bg-card-primary">
         {/* 訊息區 */}
         <div className="flex-1 space-y-5 p-6">
           {/* AI 第一段訊息 */}
@@ -218,7 +218,7 @@ export default function PetAiChatPage() {
             </div>
 
             <div>
-              <div className="max-w-[620px] space-y-2 rounded-2xl border border-border bg-white px-5 py-4">
+              <div className="max-w-155 space-y-2 rounded-2xl border border-border bg-white px-5 py-4">
                 <p className="typo-card-body text-text-primary">
                   嗨！我是 MOFU 的 AI 導購助理。
                 </p>
@@ -246,7 +246,7 @@ export default function PetAiChatPage() {
             </div>
 
             <div>
-              <div className="max-w-[560px] rounded-2xl border border-border bg-white px-5 py-4">
+              <div className="max-w-140 rounded-2xl border border-border bg-white px-5 py-4">
                 <p className="typo-card-body text-text-primary">
                   找到幾款適合{pet.name}的商品，推薦原因會依照毛孩資料產生。
                 </p>
@@ -263,7 +263,7 @@ export default function PetAiChatPage() {
            * 現在 recommendedProducts 還是假資料；
            * 之後 AI / 後端回傳推薦商品時，只要讓資料格式符合 ProductCard 需要的 product 物件即可。
            */}
-          <div className="flex gap-5 overflow-x-auto pb-2 lg:flex-wrap lg:overflow-visible lg:pl-[52px]">
+          <div className="flex gap-5 overflow-x-auto pb-2 lg:flex-wrap lg:overflow-visible lg:pl-13">
             {recommendedProducts.map((product) => (
               <ProductCard key={product.slug} product={product} />
             ))}
