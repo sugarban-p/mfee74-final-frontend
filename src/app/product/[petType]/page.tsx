@@ -14,6 +14,7 @@ import {
   LuSendHorizontal,
   LuArrowDownWideNarrow,
 } from 'react-icons/lu';
+import { RiCloseCircleLine, RiCloseCircleFill } from 'react-icons/ri';
 
 import { FilterButton } from '@/src/components/product/FilterButton';
 import { ProductCard } from '@/src/components/product/ProductCard';
@@ -400,6 +401,10 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     setKeywordInput(nextSearch);
     pushHref(createHref({ nextSearch }));
   };
+  const handleSearchClear = () => {
+    setKeywordInput('');
+    pushHref(createHref({ nextSearch: '' }));
+  };
   const handleSortChange = (event: SyntheticEvent<HTMLSelectElement>) => {
     pushHref(createHref({ sort: event.currentTarget.value }));
   };
@@ -416,6 +421,16 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
 
     setMaxPriceInput(nextValue);
     pushHref(createHref({ maxPriceValue: nextValue }));
+  };
+  const handlePriceClear = (param: PriceParam) => {
+    if (param === 'min-value') {
+      setMinPriceInput('');
+      pushHref(createHref({ minPriceValue: '' }));
+      return;
+    }
+
+    setMaxPriceInput('');
+    pushHref(createHref({ maxPriceValue: '' }));
   };
   const handlePriceKeyDown = (
     event: KeyboardEvent<HTMLInputElement>,
@@ -472,6 +487,17 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
               value={keywordInput}
               onChange={(event) => setKeywordInput(event.currentTarget.value)}
             />
+            {keywordInput !== '' && (
+              <button
+                type="button"
+                aria-label="清除搜尋"
+                className="group cursor-pointer"
+                onClick={handleSearchClear}
+              >
+                <RiCloseCircleLine className="size-4 shrink-0 group-hover:hidden" />
+                <RiCloseCircleFill className="hidden size-4 shrink-0 group-hover:block" />
+              </button>
+            )}
             <button
               type="submit"
               aria-label="搜尋商品"
@@ -551,6 +577,17 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
                         handlePriceKeyDown(event, param, value)
                       }
                     />
+                    {value !== '' && (
+                      <button
+                        type="button"
+                        aria-label={`清除${label}`}
+                        className="group cursor-pointer"
+                        onClick={() => handlePriceClear(param)}
+                      >
+                        <RiCloseCircleLine className="size-4 shrink-0 group-hover:hidden" />
+                        <RiCloseCircleFill className="hidden size-4 shrink-0 group-hover:block" />
+                      </button>
+                    )}
                     <button
                       type="button"
                       aria-label={ariaLabel}
