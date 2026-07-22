@@ -88,6 +88,14 @@ export default function MemberFavoritesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingError, setLoadingError] = useState('');
 
+  const handleFavoriteChange = (productId: number, isFavorite: boolean) => {
+    if (isFavorite) return;
+
+    setFavoriteProducts((products) =>
+      products.filter((product) => product.id !== productId)
+    );
+  };
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -139,7 +147,11 @@ export default function MemberFavoritesPage() {
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,260px))] gap-x-8 gap-y-6">
         {favoriteProducts.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            onFavoriteChange={handleFavoriteChange}
+          />
         ))}
       </div>
     </section>

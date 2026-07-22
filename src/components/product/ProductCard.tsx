@@ -38,6 +38,7 @@ interface ProductCardProps {
     isFavorite?: boolean;
     soldOut?: boolean;
   };
+  onFavoriteChange?: (productId: number, isFavorite: boolean) => void;
 }
 
 const labels = {
@@ -72,7 +73,7 @@ const toPublicImagePath = (path?: string) => {
   return `/${path.replace(/^\/+/, '')}`;
 };
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, onFavoriteChange }: ProductCardProps) {
   const [favoriteOverride, setFavoriteOverride] = useState<{
     productId?: number;
     isFavorite: boolean;
@@ -135,6 +136,8 @@ export function ProductCard({ product }: ProductCardProps) {
       );
 
       if (!response.ok) throw new Error();
+
+      onFavoriteChange?.(product.id, nextIsFavorite);
 
       toast.success(
         `${product.name} ${
