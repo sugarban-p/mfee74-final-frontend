@@ -260,7 +260,9 @@ export default function Header() {
   };
 
   useEffect(() => {
-    refreshAuthState();
+    void (async () => {
+      await refreshAuthState();
+    })();
   }, [pathname, refreshAuthState]);
 
   useEffect(() => {
