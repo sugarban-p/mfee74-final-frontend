@@ -6,23 +6,16 @@ import { ProductCard } from '@/src/components/product/ProductCard';
 
 interface ApiFavoriteProduct {
   id: number;
+  favorite_id?: number;
+  favorited_at?: string;
   prod_name: string;
   price: number;
-  pet_tag_id_fk: number;
   slug: string;
   total_stock?: number;
-  tags_id?: number[];
-  intros?: {
-    slogan?: string;
-    content?: string;
-  };
-  avatars?: {
-    src: string;
-    thumbnail?: string;
-  }[];
-  images?: {
-    src: string;
-  }[];
+  avatar?: ApiAvatar | null;
+  tags?: ApiTag[];
+  intro?: ApiIntro;
+  petType?: ApiPetType | null;
 }
 
 interface FavoriteResponse {
@@ -33,32 +26,33 @@ interface FavoriteResponse {
 interface ApiTag {
   id: number;
   tag_ch: string;
+  tag_slug?: string;
 }
 
-interface ProductListResponse {
-  success: boolean;
-  facets: {
-    tags: ApiTag[];
-  };
+interface ApiAvatar {
+  src?: string;
+  thumbnail?: string;
+}
+
+interface ApiIntro {
+  slogan?: string;
+}
+
+interface ApiPetType {
+  id?: number;
+  tag_slug?: string;
+  tag_page?: string;
 }
 
 interface FavoriteProduct {
   id: number;
-  avatar?: {
-    src?: string;
-    thumbnail?: string;
-  } | null;
+  avatar?: ApiAvatar | null;
   tags?: ApiTag[];
   name: string;
-  intro?: {
-    slogan?: string;
-  };
+  intro?: ApiIntro;
   price: string;
   slug: string;
-  petType: {
-    id: number;
-    tag_slug: string;
-  };
+  petType?: ApiPetType | null;
   isFavorite: boolean;
   soldOut: boolean;
 }
@@ -71,49 +65,20 @@ const labels = {
 } as const;
 
 const mapFavoriteProducts = (
-  products: ApiFavoriteProduct[],
-  tagMap: Map<number, ApiTag>
+  products: ApiFavoriteProduct[]
 ): FavoriteProduct[] => {
   return products.map((product) => ({
     id: product.id,
-    avatar: product.avatars?.[0] ?? null,
-    tags: (product.tags_id ?? [])
-      .map((tagId) => tagMap.get(tagId))
-      .filter((tag): tag is ApiTag => Boolean(tag)),
+    avatar: product.avatar ?? null,
+    tags: product.tags,
     name: product.prod_name,
-    intro: product.intros,
+    intro: product.intro,
     price: `NT$${Number(product.price).toLocaleString('zh-TW')}`,
     slug: product.slug,
-    petType: {
-      id: product.pet_tag_id_fk,
-      tag_slug: String(product.pet_tag_id_fk),
-    },
+    petType: product.petType,
     isFavorite: true,
     soldOut: Number(product.total_stock ?? 0) <= 0,
   }));
-};
-
-const getTagMap = async (
-  petTypeIds: number[],
-  signal: AbortSignal
-): Promise<Map<number, ApiTag>> => {
-  const responses = await Promise.all(
-    petTypeIds.map((petTypeId) =>
-      fetch(`/api/products/${petTypeId}`, { signal }).then((response) => {
-        if (!response.ok) throw new Error(labels.loadError);
-
-        return response.json() as Promise<ProductListResponse>;
-      })
-    )
-  );
-
-  return new Map(
-    responses.flatMap((response) =>
-      response.success
-        ? response.facets.tags.map((tag) => [tag.id, tag] as const)
-        : []
-    )
-  );
 };
 
 export default function MemberFavoritesPage() {
@@ -135,13 +100,7 @@ export default function MemberFavoritesPage() {
       .then((data: FavoriteResponse) => {
         if (!data.success) throw new Error(labels.loadError);
 
-        const petTypeIds = [
-          ...new Set(data.favorites.map((product) => product.pet_tag_id_fk)),
-        ];
-
-        return getTagMap(petTypeIds, controller.signal).then((tagMap) => {
-          setFavoriteProducts(mapFavoriteProducts(data.favorites, tagMap));
-        });
+        setFavoriteProducts(mapFavoriteProducts(data.favorites));
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === 'AbortError') {
