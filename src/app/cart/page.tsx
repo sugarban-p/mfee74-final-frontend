@@ -46,6 +46,7 @@ export default function CartPage() {
   const [items, setItems] = useState<CartItem[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [couponCode, setCouponCode] = useState('');
+  const [hasLoadedSavedCoupon, setHasLoadedSavedCoupon] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -72,17 +73,26 @@ export default function CartPage() {
 
     const savedCoupon = localStorage.getItem('mofu-cart-coupon');
     if (savedCoupon) setCouponCode(savedCoupon);
+    setHasLoadedSavedCoupon(true);
   }, [router]);
 
   useEffect(() => {
-    localStorage.setItem('mofu-cart-coupon', couponCode);
-  }, [couponCode]);
+    if (!hasLoadedSavedCoupon) return;
+    if (couponCode) {
+      localStorage.setItem('mofu-cart-coupon', couponCode);
+      return;
+    }
+
+    localStorage.removeItem('mofu-cart-coupon');
+  }, [couponCode, hasLoadedSavedCoupon]);
 
   useEffect(() => {
+    if (isLoading) return;
     if (couponCode && !coupons.some((coupon) => coupon.code === couponCode)) {
       setCouponCode('');
+      localStorage.removeItem('mofu-cart-coupon');
     }
-  }, [couponCode, coupons]);
+  }, [couponCode, coupons, isLoading]);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -373,6 +383,14 @@ export default function CartPage() {
             <Link
               href="/checkout"
               className="next-button typo-tab mt-6 flex w-full items-center justify-center gap-2"
+              onClick={() => {
+                if (couponCode) {
+                  localStorage.setItem('mofu-cart-coupon', couponCode);
+                  return;
+                }
+
+                localStorage.removeItem('mofu-cart-coupon');
+              }}
             >
               前往結帳
               <LuChevronRight className="size-4" />
