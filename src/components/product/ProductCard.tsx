@@ -9,6 +9,7 @@ import { RiHeartFill, RiHeartLine } from 'react-icons/ri';
 
 import {
   QuickShoppingSection,
+  type QuickShoppingAllergyWarning,
   type QuickShoppingProduct,
 } from '@/src/components/product/QuickShoppingSection';
 
@@ -38,6 +39,7 @@ interface ProductCardProps {
     isFavorite?: boolean;
     soldOut?: boolean;
   };
+  allergyWarning?: QuickShoppingAllergyWarning;
   onFavoriteChange?: (productId: number, isFavorite: boolean) => void;
 }
 
@@ -73,7 +75,11 @@ const toPublicImagePath = (path?: string) => {
   return `/${path.replace(/^\/+/, '')}`;
 };
 
-export function ProductCard({ product, onFavoriteChange }: ProductCardProps) {
+export function ProductCard({
+  product,
+  allergyWarning,
+  onFavoriteChange,
+}: ProductCardProps) {
   const [favoriteOverride, setFavoriteOverride] = useState<{
     productId?: number;
     isFavorite: boolean;
@@ -244,6 +250,7 @@ export function ProductCard({ product, onFavoriteChange }: ProductCardProps) {
               product={quickShoppingProduct}
               petTypeId={petTypeId}
               productId={product.id}
+              allergyWarning={allergyWarning}
               onFavoriteChange={(nextIsFavorite) =>
                 setFavoriteOverride({
                   productId: product.id,
