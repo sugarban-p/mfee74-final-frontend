@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   AlertCircle,
   Download,
-  ExternalLink,
   FileText,
   Headphones,
   Image as ImageIcon,
@@ -56,6 +55,11 @@ type SupportCasesResponse = {
   cases?: SupportCase[];
 };
 
+type SupportPresenceResponse = {
+  onlineCount?: number;
+  isOnline?: boolean;
+};
+
 type CaseMessageEvent = {
   caseId?: string;
   message?: unknown;
@@ -81,6 +85,9 @@ const SUPPORT_QUICK_REPLIES = [
   '已為您確認處理中，請稍候。',
   '此案已協助處理完成，若有其他問題歡迎再詢問。',
 ];
+
+const SUPPORT_ROLE_CACHE_KEY = 'chat:is-support';
+const SUPPORT_PRESENCE_CACHE_KEY = 'chat:support-presence-count';
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -122,6 +129,28 @@ function formatMessageTime(isoTime: string) {
     minute: '2-digit',
     hour12: true,
   });
+}
+
+async function downloadAttachment(fileUrl: string, fileName: string) {
+  const response = await fetch(fileUrl, {
+    credentials: 'include',
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error('DOWNLOAD_FAILED');
+  }
+
+  const blob = await response.blob();
+  const objectUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = fileName;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(objectUrl);
 }
 
 type AttachmentMessage = {
@@ -201,6 +230,8 @@ export default function ChatClient() {
   const [supportUnreadCounts, setSupportUnreadCounts] = useState<
     Record<string, number>
   >({});
+  const [supportPresenceOnlineCount, setSupportPresenceOnlineCount] =
+    useState(0);
   const [memberCaseStatus, setMemberCaseStatus] = useState<
     'OPEN' | 'CLOSED' | null
   >(null);
@@ -216,6 +247,47 @@ export default function ChatClient() {
 
   const backendSocketOrigin =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  useEffect(() => {
+    const cachedPresence = Number(
+      window.sessionStorage.getItem(SUPPORT_PRESENCE_CACHE_KEY) || '0'
+    );
+    if (Number.isFinite(cachedPresence) && cachedPresence > 0) {
+      setSupportPresenceOnlineCount(cachedPresence);
+    }
+
+    const isCachedSupport =
+      window.sessionStorage.getItem(SUPPORT_ROLE_CACHE_KEY) === '1';
+    if (!isCachedSupport) return;
+
+    setIsSupport(true);
+    setSupportPresenceOnlineCount((prev) => (prev > 0 ? prev : 1));
+  }, []);
+
+  const refreshSupportPresenceSnapshot = useCallback(async () => {
+    try {
+      const response = await fetch('/api/chat/support/presence', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+
+      if (!response.ok) return;
+
+      const payload: unknown = await response.json();
+      const parsed = asRecord(payload) as SupportPresenceResponse | null;
+      const onlineCount = Number(parsed?.onlineCount);
+      const nextCount =
+        Number.isFinite(onlineCount) && onlineCount > 0 ? onlineCount : 0;
+
+      setSupportPresenceOnlineCount(nextCount);
+      window.sessionStorage.setItem(
+        SUPPORT_PRESENCE_CACHE_KEY,
+        String(nextCount)
+      );
+    } catch {
+      // Keep previous state if quick snapshot fetch fails.
+    }
+  }, []);
 
   useEffect(() => {
     selectedCaseIdRef.current = selectedCaseId;
@@ -309,6 +381,9 @@ export default function ChatClient() {
         if (!response.ok) {
           setIsSupport(false);
           setSupportCases([]);
+          if (typeof window !== 'undefined') {
+            window.sessionStorage.removeItem(SUPPORT_ROLE_CACHE_KEY);
+          }
           return;
         }
 
@@ -325,6 +400,10 @@ export default function ChatClient() {
           : [];
 
         setIsSupport(true);
+        setSupportPresenceOnlineCount((prev) => (prev > 0 ? prev : 1));
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.setItem(SUPPORT_ROLE_CACHE_KEY, '1');
+        }
         setSupportCases(cases);
 
         const openCase = cases.find((item) => item.status === 'OPEN');
@@ -341,6 +420,9 @@ export default function ChatClient() {
       } catch {
         setIsSupport(false);
         setSupportCases([]);
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.removeItem(SUPPORT_ROLE_CACHE_KEY);
+        }
       } finally {
         setIsReady(true);
       }
@@ -466,8 +548,27 @@ export default function ChatClient() {
   }, [greetingMessage, isReady, isSupport, selectedCaseId]);
 
   useEffect(() => {
-    if (!isReady) return;
+    void refreshSupportPresenceSnapshot();
+  }, [refreshSupportPresenceSnapshot]);
 
+  useEffect(() => {
+    const refreshIfVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshSupportPresenceSnapshot();
+      }
+    };
+
+    refreshIfVisible();
+    const timerId = window.setInterval(refreshIfVisible, 2000);
+    document.addEventListener('visibilitychange', refreshIfVisible);
+
+    return () => {
+      window.clearInterval(timerId);
+      document.removeEventListener('visibilitychange', refreshIfVisible);
+    };
+  }, [refreshSupportPresenceSnapshot]);
+
+  useEffect(() => {
     const socket = io(backendSocketOrigin, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
@@ -478,11 +579,34 @@ export default function ChatClient() {
       socket.emit('chat:join-case', { caseId });
     };
 
+    const requestSupportPresence = () => {
+      socket.emit('chat:support-presence:request');
+    };
+
     socket.on('connect', () => {
       const caseId = selectedCaseIdRef.current;
       if (caseId) {
         joinCaseRoom(caseId);
       }
+      void refreshSupportPresenceSnapshot();
+      requestSupportPresence();
+
+      if (isSupportRef.current) {
+        setSupportPresenceOnlineCount((prev) => (prev > 0 ? prev : 1));
+      }
+
+      const shouldEnter =
+        typeof document === 'undefined' ||
+        document.visibilityState === 'visible';
+      socket.emit(
+        shouldEnter
+          ? 'presence:support-page:enter'
+          : 'presence:support-page:leave'
+      );
+    });
+
+    socket.on('disconnect', () => {
+      setSupportPresenceOnlineCount(0);
     });
 
     socket.on('chat:message', (payload: CaseMessageEvent) => {
@@ -554,17 +678,82 @@ export default function ChatClient() {
       }
     });
 
+    socket.on('chat:support-presence', (payload: unknown) => {
+      const record = asRecord(payload);
+      const onlineCount = Number(record?.onlineCount);
+      const nextCount =
+        Number.isFinite(onlineCount) && onlineCount > 0 ? onlineCount : 0;
+
+      setSupportPresenceOnlineCount(nextCount);
+      window.sessionStorage.setItem(
+        SUPPORT_PRESENCE_CACHE_KEY,
+        String(nextCount)
+      );
+    });
+
     return () => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [backendSocketOrigin, isReady]);
+  }, [backendSocketOrigin, refreshSupportPresenceSnapshot]);
+
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+
+    if (isSupport) {
+      setSupportPresenceOnlineCount((prev) => (prev > 0 ? prev : 1));
+    }
+
+    const emitPresenceByVisibility = () => {
+      const isVisible = document.visibilityState === 'visible';
+
+      if (isVisible && !socket.connected) {
+        socket.connect();
+      }
+
+      socket.emit(
+        isVisible
+          ? 'presence:support-page:enter'
+          : 'presence:support-page:leave'
+      );
+
+      if (isVisible) {
+        void refreshSupportPresenceSnapshot();
+        socket.emit('chat:support-presence:request');
+      }
+    };
+
+    const requestPresenceOnFocus = () => {
+      if (!socket.connected) {
+        socket.connect();
+      }
+      void refreshSupportPresenceSnapshot();
+      socket.emit('chat:support-presence:request');
+    };
+
+    emitPresenceByVisibility();
+    document.addEventListener('visibilitychange', emitPresenceByVisibility);
+    window.addEventListener('focus', requestPresenceOnFocus);
+
+    return () => {
+      document.removeEventListener(
+        'visibilitychange',
+        emitPresenceByVisibility
+      );
+      window.removeEventListener('focus', requestPresenceOnFocus);
+      if (socket.connected) {
+        socket.emit('presence:support-page:leave');
+      }
+    };
+  }, [isSupport, refreshSupportPresenceSnapshot]);
 
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket || !socket.connected || !selectedCaseId) return;
 
     socket.emit('chat:join-case', { caseId: selectedCaseId });
+    socket.emit('chat:support-presence:request');
   }, [selectedCaseId]);
 
   useEffect(() => {
@@ -736,6 +925,10 @@ export default function ChatClient() {
       selectedSupportCase?.user?.email ||
       '會員'
     : '我';
+  const supportPresenceText =
+    supportPresenceOnlineCount > 0 ? '● 線上服務中' : '● 暫無人工客服在線';
+  const supportPresenceDotClass =
+    supportPresenceOnlineCount > 0 ? 'bg-emerald-400' : 'bg-gray-300';
 
   const startNewConsultation = () => {
     setMessages([greetingMessage]);
@@ -959,14 +1152,22 @@ export default function ChatClient() {
                       strokeWidth={2}
                     />
                   </div>
-                  <span className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />
+                  <span
+                    className={`absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-white ${supportPresenceDotClass}`}
+                  />
                 </div>
                 <div>
                   <h2 className="text-[15px] leading-tight font-bold text-gray-900">
                     {modeTitle}
                   </h2>
-                  <p className="mt-0.5 text-[11px] font-medium text-emerald-500">
-                    ● 線上服務中
+                  <p
+                    className={`mt-0.5 text-[11px] font-medium ${
+                      supportPresenceOnlineCount > 0
+                        ? 'text-emerald-500'
+                        : 'text-gray-400'
+                    }`}
+                  >
+                    {supportPresenceText}
                   </p>
                 </div>
               </div>
@@ -1011,9 +1212,7 @@ export default function ChatClient() {
             </div>
 
             <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-medium tracking-wide text-gray-400">
-              {isSupport
-                ? '支援 /api/chat/support/* API'
-                : '支援 /api/chat/send API'}
+              {isSupport ? '支援 AI 客服' : '支援 AI 客服'}
             </span>
             {errorMessage ? (
               <p className="mt-2 text-[12px] text-red-500">{errorMessage}</p>
@@ -1095,13 +1294,11 @@ export default function ChatClient() {
                   onClick={() => fileInputRef.current?.click()}
                   disabled={
                     isUploading ||
-                    isSending ||
                     (isSupport && !selectedCaseId) ||
                     isMemberCaseClosed
                   }
                   className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
                     isUploading ||
-                    isSending ||
                     (isSupport && !selectedCaseId) ||
                     isMemberCaseClosed
                       ? 'border-gray-200 bg-gray-100 text-gray-400'
@@ -1260,8 +1457,6 @@ interface UserMessageProps extends ChatMessageProps {
 function renderMessageContent(content: string, isUserMessage: boolean) {
   const attachment = parseAttachmentMessage(content);
   if (attachment) {
-    const badgeLabel = getFileLabel(attachment.fileName);
-
     return (
       <div className="space-y-2">
         <div
@@ -1271,12 +1466,8 @@ function renderMessageContent(content: string, isUserMessage: boolean) {
               : 'bg-orange-100 text-orange-600'
           }`}
         >
-          {attachment.isImage ? (
-            <ImageIcon size={12} />
-          ) : (
-            <FileText size={12} />
-          )}
-          <span>{badgeLabel}</span>
+          <FileText size={12} />
+          <span>{getFileLabel(attachment.fileName)}</span>
         </div>
 
         <div
@@ -1319,13 +1510,18 @@ function renderMessageContent(content: string, isUserMessage: boolean) {
                   isUserMessage ? 'text-white/70' : 'text-gray-500'
                 }`}
               >
-                點擊下載或預覽
+                點擊可預覽
               </div>
             </div>
 
-            <a
-              href={attachment.fileUrl}
-              download={attachment.fileName}
+            <button
+              type="button"
+              onClick={() => {
+                void downloadAttachment(
+                  attachment.fileUrl,
+                  attachment.fileName
+                );
+              }}
               aria-label={`下載 ${attachment.fileName}`}
               className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
                 isUserMessage
@@ -1334,7 +1530,7 @@ function renderMessageContent(content: string, isUserMessage: boolean) {
               }`}
             >
               <Download size={14} />
-            </a>
+            </button>
           </div>
 
           {attachment.isImage ? (
@@ -1346,30 +1542,7 @@ function renderMessageContent(content: string, isUserMessage: boolean) {
                 loading="lazy"
               />
             </a>
-          ) : (
-            <div
-              className={`flex items-center justify-between border-t px-3 py-2 text-xs ${
-                isUserMessage
-                  ? 'border-white/10 text-white/75'
-                  : 'border-orange-100 text-gray-500'
-              }`}
-            >
-              <span>點擊下載查看內容</span>
-              <a
-                href={attachment.fileUrl}
-                target="_blank"
-                rel="noreferrer"
-                className={`inline-flex items-center gap-1 font-medium ${
-                  isUserMessage
-                    ? 'text-white/90'
-                    : 'text-orange-600 hover:text-orange-500'
-                }`}
-              >
-                <span>開啟</span>
-                <ExternalLink size={12} />
-              </a>
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     );
