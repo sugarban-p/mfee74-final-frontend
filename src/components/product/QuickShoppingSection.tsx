@@ -128,7 +128,7 @@ const labels = {
   addedCart: '已加入購物車',
   addFavorite: '加入收藏',
   addedFavorite: '已加入收藏',
-  favoriteError: '更新收藏失敗，請稍後再試',
+  favoriteError: '請先登入',
   features: '商品特色',
   loading: '商品資料載入中...',
   loadError: '商品資料載入失敗',
