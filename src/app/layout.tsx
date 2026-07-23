@@ -4,7 +4,6 @@ import './globals.css';
 import './globals-extra.css';
 import AppShell from '@/src/components/common/AppShell';
 import { Noto_Sans_TC, Noto_Serif_TC } from 'next/font/google';
-import './globals.css';
 
 const notoSansTc = Noto_Sans_TC({
   weight: ['400', '500', '700'],

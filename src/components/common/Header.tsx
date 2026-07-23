@@ -18,6 +18,12 @@ import {
 
 import MegaMenuCard from '@/src/components/header/MegaMenuCard';
 import { ProductQuantitySelector } from '@/src/components/product/ProductQuantitySelector';
+import {
+  getProductMegaMenuImage,
+  PRODUCT_MEGA_MENU_FALLBACK,
+  type ProductMegaMenuCard,
+  type ProductMegaMenuResponse,
+} from '@/src/services/product-mega-menu';
 
 interface CartItem {
   cart_id: number;
@@ -56,6 +62,9 @@ export default function Header() {
   );
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [memberAvatar, setMemberAvatar] = useState<string | null>(null);
+  const [productMegaMenuCards, setProductMegaMenuCards] = useState<
+    ProductMegaMenuCard[]
+  >(PRODUCT_MEGA_MENU_FALLBACK);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const cartPanelRef = useRef<HTMLElement>(null);
@@ -166,6 +175,31 @@ export default function Header() {
     };
   }, []);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void fetch('/api/products/mega-menu', { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error();
+
+        return response.json() as Promise<ProductMegaMenuResponse>;
+      })
+      .then((data) => {
+        if (!data.success || data.cards.length === 0) throw new Error();
+
+        setProductMegaMenuCards(data.cards);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        setProductMegaMenuCards(PRODUCT_MEGA_MENU_FALLBACK);
+      });
+
+    return () => controller.abort();
+  }, []);
+
   const handleCartQuantityChange = (itemId: number, quantity: number) => {
     setCartItems((items) =>
       items.map((item) =>
@@ -205,7 +239,7 @@ export default function Header() {
 
     try {
       const response = await fetch(
-        `/api/products/updatecart/${cartItem.item_id}`,
+        `/api/products/updateCart/${cartItem.item_id}`,
         {
           method: 'DELETE',
         }
@@ -226,7 +260,9 @@ export default function Header() {
   };
 
   useEffect(() => {
-    refreshAuthState();
+    void (async () => {
+      await refreshAuthState();
+    })();
   }, [pathname, refreshAuthState]);
 
   useEffect(() => {
@@ -317,58 +353,18 @@ export default function Header() {
               >
                 <div className="items-start">
                   <ul className="menu-horizontal flex">
-                    <li>
-                      <MegaMenuCard
-                        image="/cat-category.png"
-                        imageAlt="貓咪專區"
-                        title="貓咪專區"
-                        href={`/product/cat?title=${encodeURIComponent('貓咪專區')}`}
-                        items={[
-                          {
-                            title: '主食',
-                            href: '/product/cat?category=main-food',
-                          },
-                          {
-                            title: '零食/點心',
-                            href: '/product/cat?category=treat',
-                          },
-                          {
-                            title: '保健品',
-                            href: '/product/cat?category=supplement',
-                          },
-                          {
-                            title: '生活用品',
-                            href: '/product/cat?category=supplies',
-                          },
-                        ]}
-                      />
-                    </li>
-                    <li>
-                      <MegaMenuCard
-                        image="/dog-category.png"
-                        imageAlt="狗狗專區"
-                        title="狗狗專區"
-                        href={`/product/dog?title=${encodeURIComponent('狗狗專區')}`}
-                        items={[
-                          {
-                            title: '主食',
-                            href: '/product/dog?category=main-food',
-                          },
-                          {
-                            title: '零食/點心',
-                            href: '/product/dog?category=treat',
-                          },
-                          {
-                            title: '牽繩用品',
-                            href: '/product/dog?category=leash',
-                          },
-                          {
-                            title: '生活用品',
-                            href: '/product/dog?category=supplies',
-                          },
-                        ]}
-                      />
-                    </li>
+                    {productMegaMenuCards.map((card) => (
+                      <li key={card.id}>
+                        <MegaMenuCard
+                          id={card.id}
+                          image={getProductMegaMenuImage(card.petType)}
+                          imageAlt={card.imageAlt}
+                          title={card.title}
+                          href={card.href}
+                          items={card.items}
+                        />
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>
@@ -384,14 +380,15 @@ export default function Header() {
                 popover="auto"
               >
                 <MegaMenuCard
+                  id={0}
                   image="/events.png"
                   imageAlt="所有活動"
                   title="所有活動"
                   items={[
-                    { title: '會員優惠', href: '/event' },
-                    { title: '新品活動', href: '/event' },
-                    { title: '購物滿額折扣', href: '/event' },
-                    { title: '寵物講座', href: '/event' },
+                    { id: 1, title: '會員優惠', href: '/event' },
+                    { id: 2, title: '新品活動', href: '/event' },
+                    { id: 3, title: '購物滿額折扣', href: '/event' },
+                    { id: 4, title: '寵物講座', href: '/event' },
                   ]}
                 />
               </div>
