@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
   LuChevronRight,
@@ -38,6 +39,7 @@ interface OrderItem {
   statusText: string;
   paymentStatus: keyof typeof statusStyle;
   paymentText: string;
+  paymentMethod: 'credit' | 'linepay';
   createdAt: string;
   title: string;
   payment: string;
@@ -47,26 +49,70 @@ interface OrderItem {
 
 const formatPrice = (price: number) => `NT$${price.toLocaleString('zh-TW')}`;
 
+const getPaymentHref = (order: OrderItem) => {
+  const provider = order.paymentMethod === 'linepay' ? 'linepay' : 'ecpay';
+  const params = new URLSearchParams({
+    amount: String(order.total),
+    items: order.title,
+    orderNo: order.id,
+  });
+
+  return `/api/orders/payments/${provider}?${params.toString()}`;
+};
+
 export default function MemberOrdersPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [rebuyingOrderId, setRebuyingOrderId] = useState('');
 
   useEffect(() => {
     fetch('/api/orders/list', { credentials: 'include' })
-      .then((response) => response.json())
-      .then((data) => setOrders(data.orders ?? []))
+      .then((response) => {
+        if (response.status === 401) {
+          router.push('/auth/login?next=/member/orders');
+          return null;
+        }
+
+        return response.json();
+      })
+      .then((data) => setOrders(data?.orders ?? []))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [router]);
 
   const visibleOrders = useMemo(() => {
     if (activeFilter === 'all') return orders;
     return orders.filter((order) => order.status === activeFilter);
-  }, [activeFilter]);
+  }, [activeFilter, orders]);
 
   const countByFilter = (key: FilterKey) => {
     if (key === 'all') return orders.length;
     return orders.filter((order) => order.status === key).length;
+  };
+
+  const rebuyOrder = async (orderId: string) => {
+    setRebuyingOrderId(orderId);
+
+    try {
+      const response = await fetch(`/api/orders/rebuy/${orderId}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        router.push('/auth/login?next=/member/orders');
+        return;
+      }
+
+      if (!response.ok) throw new Error();
+
+      router.push('/cart');
+    } catch {
+      window.alert('加入購物車失敗，請稍後再試。');
+    } finally {
+      setRebuyingOrderId('');
+    }
   };
 
   return (
@@ -194,13 +240,27 @@ export default function MemberOrdersPage() {
                       <LuChevronRight className="size-4" />
                     </Link>
 
-                    <button
-                      type="button"
-                      className="back-button typo-tab inline-flex items-center justify-center gap-2 px-5"
-                    >
-                      再買一次
-                      <LuRotateCcw className="size-4" />
-                    </button>
+                    {order.paymentStatus === 'pending' ? (
+                      <Link
+                        href={getPaymentHref(order)}
+                        className="back-button typo-tab inline-flex items-center justify-center gap-2 px-5"
+                      >
+                        重新付款
+                        <LuRotateCcw className="size-4" />
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={rebuyingOrderId === order.id}
+                        className="back-button typo-tab inline-flex items-center justify-center gap-2 px-5 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() => void rebuyOrder(order.id)}
+                      >
+                        {rebuyingOrderId === order.id
+                          ? '加入中...'
+                          : '再買一次'}
+                        <LuRotateCcw className="size-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

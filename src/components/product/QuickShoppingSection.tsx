@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { LuShoppingCart } from 'react-icons/lu';
@@ -198,6 +199,8 @@ export function QuickShoppingSection({
   description,
   onFavoriteChange,
 }: QuickShoppingSectionProps) {
+  const pathname = usePathname();
+  const router = useRouter();
   const addCartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [fetchedDetail, setFetchedDetail] =
     useState<FetchedQuickShoppingDetail | null>(null);
@@ -362,6 +365,11 @@ export function QuickShoppingSection({
         try {
           const cartResponse = await fetch('/api/products/getCart');
 
+          if (cartResponse.status === 401) {
+            router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
+            return;
+          }
+
           if (!cartResponse.ok) throw new Error();
 
           const cartData: QuickShoppingCartResponse = await cartResponse.json();
@@ -383,6 +391,11 @@ export function QuickShoppingSection({
               body: JSON.stringify({ qty: currentCartQuantity + quantity }),
             }
           );
+
+          if (response.status === 401) {
+            router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
+            return;
+          }
 
           if (!response.ok) throw new Error();
 
