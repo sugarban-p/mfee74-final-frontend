@@ -67,7 +67,7 @@ export interface PetAiGuidedNeed {
 }
 
 /**
- * 商品中通過過敏食材與庫存檢查的品項。
+ * 商品中通過過敏食材檢查的品項。
  *
  * 後續如果快速購物需要指定 SKU，
  * 可以使用這份 safeItems。
@@ -80,6 +80,16 @@ export interface PetAiSafeItem {
 }
 
 /**
+ * 快速選購中需要針對目前這隻寵物顯示過敏提醒的品項。
+ *
+ * 這只是提醒資料，不會禁止使用者選擇或購買。
+ */
+export interface PetAiAllergyRiskItem {
+  itemId: number;
+  allergyLabels: string[];
+}
+
+/**
  * 後端完成篩選後，回傳給聊天室的推薦商品。
  */
 export interface PetAiRecommendedProduct {
@@ -87,6 +97,8 @@ export interface PetAiRecommendedProduct {
   name: string;
   price: number;
   slug: string;
+  isFavorite: boolean;
+  petTypeId: number;
   petType: string;
   categorySlug: string;
   categoryLabel: string;
@@ -97,6 +109,7 @@ export interface PetAiRecommendedProduct {
   matchedHealthConditions: string[];
   matchScore: number;
   safeItems: PetAiSafeItem[];
+  allergyRiskItems: PetAiAllergyRiskItem[];
 
   /**
    * Azure 或後端 fallback 產生的推薦理由。

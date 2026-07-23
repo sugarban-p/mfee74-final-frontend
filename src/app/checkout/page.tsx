@@ -124,11 +124,12 @@ export default function CheckoutPage() {
   }, [router]);
 
   useEffect(() => {
+    if (isLoading) return;
     if (couponCode && !coupons.some((coupon) => coupon.code === couponCode)) {
       setCouponCode('');
       localStorage.removeItem('mofu-cart-coupon');
     }
-  }, [couponCode, coupons]);
+  }, [couponCode, coupons, isLoading]);
 
   const subtotal = useMemo(
     () => orderItems.reduce((sum, item) => sum + item.price * item.qty, 0),
