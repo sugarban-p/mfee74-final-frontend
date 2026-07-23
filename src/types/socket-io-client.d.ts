@@ -3,6 +3,7 @@ declare module 'socket.io-client' {
     connected: boolean;
     on(event: string, listener: (...args: any[]) => void): this;
     emit(event: string, ...args: any[]): this;
+    connect(): this;
     disconnect(): this;
   }
 

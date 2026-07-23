@@ -81,11 +81,13 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     const loadCheckout = async () => {
-      const [cartResponse, couponResponse, profileResponse] = await Promise.all([
-        fetch('/api/orders/cart', { credentials: 'include' }),
-        fetch('/api/orders/coupons', { credentials: 'include' }),
-        fetch('/api/user/profile', { credentials: 'include' }),
-      ]);
+      const [cartResponse, couponResponse, profileResponse] = await Promise.all(
+        [
+          fetch('/api/orders/cart', { credentials: 'include' }),
+          fetch('/api/orders/coupons', { credentials: 'include' }),
+          fetch('/api/user/profile', { credentials: 'include' }),
+        ]
+      );
 
       if (
         cartResponse.status === 401 ||

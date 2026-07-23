@@ -179,12 +179,12 @@ export default function DashboardPage() {
       </div>
 
       {/* Tab switcher */}
-      <div className="tabs-box tabs w-fit rounded-2xl border border-base-300 bg-base-200 p-1 2xl:rounded-[16px] 2xl:border-[#E9DED3] 2xl:bg-transparent 2xl:shadow-none">
+      <div className="tabs-box tabs w-fit rounded-2xl border border-base-300 bg-base-200 p-1 2xl:rounded-2xl 2xl:border-[#E9DED3] 2xl:bg-transparent 2xl:shadow-none">
         {(['overview', 'profile', 'security'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`tab-sm tab h-8 min-h-8 rounded-xl px-6 text-[14px] 2xl:h-10 2xl:min-h-10 2xl:rounded-[12px] 2xl:px-8 ${tab === t ? 'tab-active bg-base-100 text-[#2D2826] shadow-sm 2xl:bg-[#F4EEE8]' : 'text-text-primary/60 2xl:text-[#4A453F]'}`}
+            className={`tab-sm tab h-8 min-h-8 rounded-xl px-6 text-[14px] 2xl:h-10 2xl:min-h-10 2xl:rounded-xl 2xl:px-8 ${tab === t ? 'tab-active bg-base-100 text-[#2D2826] shadow-sm 2xl:bg-[#F4EEE8]' : 'text-text-primary/60 2xl:text-[#4A453F]'}`}
           >
             {t === 'overview'
               ? '總覽'

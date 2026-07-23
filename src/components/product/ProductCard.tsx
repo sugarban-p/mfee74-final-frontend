@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { LuShoppingCart } from 'react-icons/lu';
 import { RiHeartFill, RiHeartLine } from 'react-icons/ri';
@@ -15,24 +15,37 @@ import {
 interface ProductCardProps {
   product: {
     id?: number;
-    image: string;
-    tags: string[];
+    avatar?: {
+      src?: string;
+      thumbnail?: string;
+    } | null;
+    tags?: {
+      id: number;
+      tag_ch: string;
+      tag_slug?: string;
+    }[];
     name: string;
-    description: string;
+    intro?: {
+      slogan?: string;
+    };
     price: string;
     slug?: string;
-    gallery?: string[];
-    petType?: string;
+    petType?: {
+      id?: number;
+      tag_slug?: string;
+      tag_page?: string;
+    } | null;
     isFavorite?: boolean;
     soldOut?: boolean;
   };
+  onFavoriteChange?: (productId: number, isFavorite: boolean) => void;
 }
 
 const labels = {
   addFavorite: '加入收藏',
   addedFavorite: '已加入收藏',
   dialogSuffix: '快速購物',
-  favoriteError: '更新收藏失敗，請稍後再試',
+  favoriteError: '請先登入',
   missingProduct: '缺少商品資料，無法更新收藏',
   quickShopping: '快速購物',
   removeFavorite: '取消收藏',
@@ -53,36 +66,52 @@ const toastStyle = {
   },
 };
 
-export function ProductCard({ product }: ProductCardProps) {
-  const [isFavorite, setIsFavorite] = useState(product.isFavorite ?? false);
+const toPublicImagePath = (path?: string) => {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path)) return path;
+
+  return `/${path.replace(/^\/+/, '')}`;
+};
+
+export function ProductCard({ product, onFavoriteChange }: ProductCardProps) {
+  const [favoriteOverride, setFavoriteOverride] = useState<{
+    productId?: number;
+    isFavorite: boolean;
+  } | null>(null);
   const [isQuickShoppingOpen, setIsQuickShoppingOpen] = useState(false);
   const params = useParams<{ petType?: string }>();
-  const petType = product.petType ?? params.petType ?? 'dog';
-  const productSlug = product.slug ?? (product.id ? String(product.id) : '');
-  const quickShoppingProduct = useMemo<QuickShoppingProduct | undefined>(() => {
-    if (!product.id) return undefined;
-
-    return {
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      tags: product.tags,
-      isFavorite,
-      items: [],
-    };
-  }, [
-    isFavorite,
-    product.id,
-    product.image,
-    product.name,
-    product.price,
-    product.tags,
-  ]);
-
-  useEffect(() => {
-    setIsFavorite(product.isFavorite ?? false);
-  }, [product.id, product.isFavorite]);
+  const searchParams = useSearchParams();
+  const petTypeId = product.petType?.id;
+  const petTypeSlug = product.petType?.tag_slug ?? params.petType;
+  const isFavorite =
+    favoriteOverride && favoriteOverride.productId === product.id
+      ? favoriteOverride.isFavorite
+      : (product.isFavorite ?? false);
+  const productSlug = product.slug ?? '';
+  const avatar = toPublicImagePath(
+    product.avatar?.thumbnail || product.avatar?.src
+  );
+  const tags = product.tags?.map((tag) => tag.tag_ch) ?? [];
+  const description = product.intro?.slogan ?? '';
+  const categoryParam = searchParams.get('category');
+  const categoryQuery = categoryParam
+    ? `?category=${encodeURIComponent(categoryParam)}`
+    : '';
+  const productHref =
+    petTypeSlug && productSlug
+      ? `/product/${petTypeSlug}/${productSlug}${categoryQuery}`
+      : '#';
+  const quickShoppingProduct: QuickShoppingProduct | undefined = product.id
+    ? {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: avatar,
+        tags,
+        isFavorite,
+        items: [],
+      }
+    : undefined;
 
   const handleFavoriteClick = async () => {
     const nextIsFavorite = !isFavorite;
@@ -92,7 +121,7 @@ export function ProductCard({ product }: ProductCardProps) {
       return;
     }
 
-    setIsFavorite(nextIsFavorite);
+    setFavoriteOverride({ productId: product.id, isFavorite: nextIsFavorite });
 
     try {
       const response = await fetch(
@@ -108,6 +137,8 @@ export function ProductCard({ product }: ProductCardProps) {
 
       if (!response.ok) throw new Error();
 
+      onFavoriteChange?.(product.id, nextIsFavorite);
+
       toast.success(
         `${product.name} ${
           nextIsFavorite ? labels.addedFavorite : labels.removedFavorite
@@ -115,7 +146,7 @@ export function ProductCard({ product }: ProductCardProps) {
         toastStyle
       );
     } catch {
-      setIsFavorite(isFavorite);
+      setFavoriteOverride({ productId: product.id, isFavorite });
       toast.error(labels.favoriteError);
     }
   };
@@ -126,28 +157,19 @@ export function ProductCard({ product }: ProductCardProps) {
         <div
           className={[
             'h-[150px] w-full bg-button-disabled',
-            product.image ? 'bg-cover bg-center' : '',
+            avatar ? 'bg-cover bg-center' : '',
           ].join(' ')}
-          style={
-            product.image
-              ? { backgroundImage: `url(${product.image})` }
-              : undefined
-          }
+          style={avatar ? { backgroundImage: `url(${avatar})` } : undefined}
         />
 
         <div className="flex flex-col gap-4 p-4">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex h-[18px] gap-1 overflow-hidden">
-              {product.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="shrink-0 rounded-full bg-card-secondary px-2 text-xs leading-[18px] text-text-secondary"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
+            <Link
+              href={productHref}
+              className="w-[85%] cursor-pointer hover:underline"
+            >
+              <h2 className="typo-card-title truncate">{product.name}</h2>
+            </Link>
             <button
               type="button"
               aria-pressed={isFavorite}
@@ -174,19 +196,23 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Link
-              href={productSlug ? `/product/${petType}/${productSlug}` : '#'}
-              className="cursor-pointer hover:underline"
-            >
-              <h2 className="typo-card-title truncate">{product.name}</h2>
-            </Link>
-            <p className="typo-card-body truncate">{product.description}</p>
+            <p className="typo-card-body truncate">{description}</p>
+            <div className="flex h-[18px] gap-1 overflow-hidden">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="shrink-0 rounded-full bg-card-secondary px-2 text-xs leading-[18px] text-text-secondary"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
 
           <p className="typo-card-body">{product.price}</p>
           <button
             type="button"
-            disabled={product.soldOut || !productSlug}
+            disabled={product.soldOut || !petTypeId || !product.id}
             className="next-button typo-tab flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => setIsQuickShoppingOpen(true)}
           >
@@ -216,10 +242,14 @@ export function ProductCard({ product }: ProductCardProps) {
           >
             <QuickShoppingSection
               product={quickShoppingProduct}
-              petType={petType}
-              productSlug={productSlug}
-              gallery={product.gallery}
-              onFavoriteChange={setIsFavorite}
+              petTypeId={petTypeId}
+              productId={product.id}
+              onFavoriteChange={(nextIsFavorite) =>
+                setFavoriteOverride({
+                  productId: product.id,
+                  isFavorite: nextIsFavorite,
+                })
+              }
             />
           </div>
         </div>
