@@ -15,6 +15,19 @@ export interface QuickShoppingItem {
   stock?: number;
 }
 
+/**
+ * 寵物 AI 導購可以選擇性傳入的過敏提醒。
+ *
+ * 一般商品頁沒有傳入時，快速選購維持原本的顯示方式。
+ */
+export interface QuickShoppingAllergyWarning {
+  petName: string;
+  items: {
+    itemId: number;
+    allergyLabels: string[];
+  }[];
+}
+
 export interface QuickShoppingProduct {
   id: number;
   name: string;
@@ -105,6 +118,7 @@ interface QuickShoppingSectionProps {
   productId?: number;
   detail?: QuickShoppingDetail | null;
   description?: string;
+  allergyWarning?: QuickShoppingAllergyWarning;
   onFavoriteChange?: (isFavorite: boolean) => void;
 }
 
@@ -197,6 +211,7 @@ export function QuickShoppingSection({
   productId,
   detail,
   description,
+  allergyWarning,
   onFavoriteChange,
 }: QuickShoppingSectionProps) {
   const pathname = usePathname();
@@ -555,22 +570,36 @@ export function QuickShoppingSection({
               {labels.spec}
             </legend>
             <div className="flex flex-wrap gap-4">
-              {items.map((item) => (
-                <label
-                  key={item.id}
-                  className="typo-tab cursor-pointer rounded-lg border border-secondary bg-white px-4 py-2 text-text-primary has-checked:bg-card-secondary"
-                >
-                  <input
-                    type="radio"
-                    name="item"
-                    value={item.id}
-                    checked={selectedItem?.id === item.id}
-                    onChange={() => setCheckedItemId(item.id)}
-                    className="sr-only"
-                  />
-                  {item.item_name}
-                </label>
-              ))}
+              {items.map((item) => {
+                const allergyRisk = allergyWarning?.items.find(
+                  (riskItem) => riskItem.itemId === item.id
+                );
+
+                return (
+                  <label
+                    key={item.id}
+                    className="typo-tab cursor-pointer rounded-lg border border-secondary bg-white px-4 py-2 text-text-primary has-checked:bg-card-secondary"
+                  >
+                    <input
+                      type="radio"
+                      name="item"
+                      value={item.id}
+                      checked={selectedItem?.id === item.id}
+                      onChange={() => setCheckedItemId(item.id)}
+                      className="sr-only"
+                    />
+
+                    <span className="block">{item.item_name}</span>
+
+                    {allergyRisk && (
+                      <span className="mt-1 block text-xs leading-5 text-red-700">
+                        {allergyWarning?.petName} 已註記對
+                        {allergyRisk.allergyLabels.join('、')}過敏
+                      </span>
+                    )}
+                  </label>
+                );
+              })}
               {!items.length && (
                 <p className="typo-tab text-text-secondary">{labels.noItems}</p>
               )}
