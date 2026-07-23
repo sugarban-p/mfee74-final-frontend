@@ -125,7 +125,8 @@ export default function CartPage() {
     if (coupon.discountType === 'percent') {
       return `${coupon.title} — ${minAmountLabel}享 ${coupon.discountValue / 10} 折`;
     }
-    if (coupon.discountValue === 0) return `${coupon.title} — ${minAmountLabel}`;
+    if (coupon.discountValue === 0)
+      return `${coupon.title} — ${minAmountLabel}`;
     return `${coupon.title} — ${minAmountLabel}折抵 ${formatPrice(coupon.discountValue)}`;
   };
 
