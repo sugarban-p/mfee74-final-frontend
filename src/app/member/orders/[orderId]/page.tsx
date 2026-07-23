@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
   LuChevronLeft,
@@ -49,6 +49,7 @@ interface OrderDetail {
 const formatPrice = (price: number) => `NT$${price.toLocaleString('zh-TW')}`;
 
 export default function MemberOrderDetailPage() {
+  const router = useRouter();
   const params = useParams<{ orderId: string }>();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,10 +58,19 @@ export default function MemberOrderDetailPage() {
     if (!params.orderId) return;
 
     fetch(`/api/orders/list/${params.orderId}`, { credentials: 'include' })
-      .then((response) => response.json())
-      .then((data) => setOrder(data.order ?? null))
+      .then((response) => {
+        if (response.status === 401) {
+          router.push(
+            `/auth/login?next=/member/orders/${encodeURIComponent(params.orderId)}`
+          );
+          return null;
+        }
+
+        return response.json();
+      })
+      .then((data) => setOrder(data?.order ?? null))
       .finally(() => setIsLoading(false));
-  }, [params.orderId]);
+  }, [params.orderId, router]);
 
   const items = order?.items ?? [];
   const subtotal = useMemo(
