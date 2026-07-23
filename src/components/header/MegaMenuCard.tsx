@@ -5,11 +5,13 @@ import Link from 'next/link';
 import type { MouseEvent } from 'react';
 import { LuChevronRight } from 'react-icons/lu';
 interface MenuItem {
+  id: number;
   title: string;
   href: string;
 }
 
 interface MegaMenuCardProps {
+  id: number;
   image: string;
   imageAlt: string;
   title: string;
@@ -18,6 +20,7 @@ interface MegaMenuCardProps {
 }
 
 export default function MegaMenuCard({
+  id,
   image,
   imageAlt,
   title,
@@ -34,7 +37,7 @@ export default function MegaMenuCard({
   };
 
   return (
-    <div className="card w-75 gap-4 p-5" onClick={handleClick}>
+    <div className="card w-75 gap-4 p-5" data-id={id} onClick={handleClick}>
       {href ? (
         <>
           <Link href={href} className="card-image relative">
@@ -72,7 +75,7 @@ export default function MegaMenuCard({
           {items.map((item) => (
             <li
               className="rounded-lg hover:bg-button-secondary-hover"
-              key={item.title}
+              key={item.id}
             >
               <Link
                 href={item.href}
