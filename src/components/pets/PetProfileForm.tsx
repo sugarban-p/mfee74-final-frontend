@@ -72,6 +72,17 @@ export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
   const [healthConditionError, setHealthConditionError] = useState('');
   const [allergyIngredientError, setAllergyIngredientError] = useState('');
 
+  /**
+   * 使用 option_code 尋找「無」的選項，不寫死資料庫 ID。
+   * 健康情況與過敏食材的「無」都不能和其他選項一起送出。
+   */
+  const noHealthConditionId = options.health_condition.options.find(
+    (option) => option.code === 'none'
+  )?.id;
+  const noAllergyIngredientId = options.allergy_ingredient.options.find(
+    (option) => option.code === 'none'
+  )?.id;
+
   const formTitle =
     mode === 'create' ? '新增毛孩' : mode === 'edit' ? '編輯毛孩' : '寵物詳情';
 
@@ -100,11 +111,21 @@ export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
         return currentIds.filter((id) => id !== optionId);
       }
 
-      if (currentIds.length >= MAX_HEALTH_CONDITIONS) {
-        return currentIds;
+      // 選擇「無特殊狀況」時，直接清除其他健康情況。
+      if (optionId === noHealthConditionId) {
+        return [optionId];
       }
 
-      return [...currentIds, optionId];
+      // 選擇其他健康情況時，自動取消「無特殊狀況」。
+      const currentIdsWithoutNone = currentIds.filter(
+        (id) => id !== noHealthConditionId
+      );
+
+      if (currentIdsWithoutNone.length >= MAX_HEALTH_CONDITIONS) {
+        return currentIdsWithoutNone;
+      }
+
+      return [...currentIdsWithoutNone, optionId];
     });
 
     setHealthConditionError('');
@@ -122,7 +143,15 @@ export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
         return currentIds.filter((id) => id !== optionId);
       }
 
-      return [...currentIds, optionId];
+      // 選擇「無」時清除其他食材；選擇食材時則自動取消「無」。
+      if (optionId === noAllergyIngredientId) {
+        return [optionId];
+      }
+
+      return [
+        ...currentIds.filter((id) => id !== noAllergyIngredientId),
+        optionId,
+      ];
     });
 
     setAllergyIngredientError('');
@@ -563,9 +592,12 @@ export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
                   const isSelected = selectedHealthConditionIds.includes(
                     option.id
                   );
+                  const isNoneOption = option.code === 'none';
 
                   const isDisabled =
-                    !isSelected && hasReachedHealthConditionLimit;
+                    !isSelected &&
+                    !isNoneOption &&
+                    hasReachedHealthConditionLimit;
 
                   return (
                     <label

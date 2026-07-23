@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { LuShoppingCart } from 'react-icons/lu';
@@ -198,6 +199,8 @@ export function QuickShoppingSection({
   description,
   onFavoriteChange,
 }: QuickShoppingSectionProps) {
+  const pathname = usePathname();
+  const router = useRouter();
   const addCartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [fetchedDetail, setFetchedDetail] =
     useState<FetchedQuickShoppingDetail | null>(null);
@@ -362,6 +365,11 @@ export function QuickShoppingSection({
         try {
           const cartResponse = await fetch('/api/products/getCart');
 
+          if (cartResponse.status === 401) {
+            router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
+            return;
+          }
+
           if (!cartResponse.ok) throw new Error();
 
           const cartData: QuickShoppingCartResponse = await cartResponse.json();
@@ -384,6 +392,11 @@ export function QuickShoppingSection({
             }
           );
 
+          if (response.status === 401) {
+            router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
+            return;
+          }
+
           if (!response.ok) throw new Error();
 
           toast.success(
@@ -401,7 +414,7 @@ export function QuickShoppingSection({
 
   if (!productDetail || !currentProduct) {
     return (
-      <section className="grid justify-center gap-[66px] lg:grid-cols-[510px_505px]">
+      <section className="grid justify-center gap-16.5 lg:grid-cols-[510px_505px]">
         <p
           className={[
             'typo-body',
@@ -416,7 +429,7 @@ export function QuickShoppingSection({
   }
 
   return (
-    <section className="grid justify-center gap-[66px] lg:grid-cols-[510px_505px]">
+    <section className="grid justify-center gap-16.5 lg:grid-cols-[510px_505px]">
       <div className="flex flex-col gap-8">
         <div className="relative aspect-square overflow-hidden rounded-lg bg-card-primary">
           {selectedImage && (
@@ -441,7 +454,7 @@ export function QuickShoppingSection({
                 aria-pressed={selectedImageIndex === index}
                 onClick={() => setSelectedImageIndex(index)}
                 className={[
-                  'relative size-[128px] shrink-0 overflow-hidden rounded-lg border-2 bg-card-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text-primary',
+                  'relative size-32 shrink-0 overflow-hidden rounded-lg border-2 bg-card-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text-primary',
                   selectedImageIndex === index
                     ? 'border-text-primary'
                     : 'border-transparent',
@@ -482,7 +495,7 @@ export function QuickShoppingSection({
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full bg-card-secondary px-3 text-xs leading-[18px] text-text-secondary"
+                    className="rounded-full bg-card-secondary px-3 text-xs leading-4.5 text-text-secondary"
                   >
                     {tag}
                   </span>
@@ -573,7 +586,7 @@ export function QuickShoppingSection({
             <button
               type="button"
               disabled={!canAddCart || isAddingCart}
-              className="next-button typo-tab flex w-[200px] items-center justify-center gap-2 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="next-button typo-tab flex w-50 items-center justify-center gap-2 py-2 disabled:cursor-not-allowed disabled:opacity-50"
               onClick={handleAddCartClick}
             >
               <LuShoppingCart className="size-4" />

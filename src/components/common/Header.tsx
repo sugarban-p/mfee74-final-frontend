@@ -443,7 +443,7 @@ export default function Header() {
                 >
                   <span className="absolute -top-[10px] right-[61px] size-5 rotate-45 border-t border-l border-secondary bg-white" />
 
-                  <div className="flex max-h-[349px] flex-col overflow-y-auto rounded-xl bg-white">
+                  <div className="flex max-h-87.25 flex-col overflow-y-auto rounded-xl bg-white">
                     <div className="flex items-center gap-2 border-b border-card-secondary px-2 py-3 text-text-primary">
                       <LuPackage className="size-5 text-primary" />
                       <h2 className="typo-body-medium">購物車</h2>

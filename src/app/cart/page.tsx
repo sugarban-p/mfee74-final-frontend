@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import {
   LuChevronDown,
@@ -35,10 +36,13 @@ interface Coupon {
 }
 
 const cartGridClass = 'md:grid-cols-[minmax(0,1fr)_96px_132px_112px_40px]';
+const continueShoppingHref = `/product/cat?title=${encodeURIComponent('貓咪專區')}`;
+const shippingFee = 60;
 
 const formatPrice = (price: number) => `NT$${price.toLocaleString('zh-TW')}`;
 
 export default function CartPage() {
+  const router = useRouter();
   const [items, setItems] = useState<CartItem[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [couponCode, setCouponCode] = useState('');
@@ -50,6 +54,12 @@ export default function CartPage() {
         fetch('/api/orders/cart', { credentials: 'include' }),
         fetch('/api/orders/coupons', { credentials: 'include' }),
       ]);
+
+      if (cartResponse.status === 401 || couponResponse.status === 401) {
+        router.push('/auth/login?next=/cart');
+        return;
+      }
+
       const cartData = await cartResponse.json();
       const couponData = await couponResponse.json();
 
@@ -62,11 +72,17 @@ export default function CartPage() {
 
     const savedCoupon = localStorage.getItem('mofu-cart-coupon');
     if (savedCoupon) setCouponCode(savedCoupon);
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     localStorage.setItem('mofu-cart-coupon', couponCode);
   }, [couponCode]);
+
+  useEffect(() => {
+    if (couponCode && !coupons.some((coupon) => coupon.code === couponCode)) {
+      setCouponCode('');
+    }
+  }, [couponCode, coupons]);
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -87,13 +103,31 @@ export default function CartPage() {
     if (coupon.code === 'FREESHIP') return 0;
     return Math.min(coupon.discountValue, subtotal);
   }, [couponCode, coupons, subtotal]);
+  const selectedCoupon = coupons.find((item) => item.code === couponCode);
+  const isCouponBelowMin =
+    Boolean(selectedCoupon) && subtotal < Number(selectedCoupon?.minAmount);
+  const couponMessage = selectedCoupon
+    ? isCouponBelowMin
+      ? `尚未達使用門檻，還差 ${formatPrice(
+          Number(selectedCoupon.minAmount) - subtotal
+        )}`
+      : selectedCoupon.code === 'FREESHIP'
+        ? '已套用免運券，目前訂單已免運。'
+        : discount > 0
+          ? `已套用 ${selectedCoupon.code}，折抵 ${formatPrice(discount)}`
+          : '此優惠券目前沒有可折抵金額。'
+    : '';
 
   const couponLabel = (coupon: Coupon) => {
+    const minAmountLabel =
+      coupon.minAmount > 0 ? `滿 ${formatPrice(coupon.minAmount)}` : '無低消';
+
     if (coupon.discountType === 'percent') {
-      return `${coupon.code} — ${coupon.discountValue} 折優惠`;
+      return `${coupon.title} — ${minAmountLabel}享 ${coupon.discountValue / 10} 折`;
     }
-    if (coupon.discountValue === 0) return `${coupon.code} — ${coupon.title}`;
-    return `${coupon.code} — 折抵 ${formatPrice(coupon.discountValue)}`;
+    if (coupon.discountValue === 0)
+      return `${coupon.title} — ${minAmountLabel}`;
+    return `${coupon.title} — ${minAmountLabel}折抵 ${formatPrice(coupon.discountValue)}`;
   };
 
   const updateQty = async (id: number, diff: number) => {
@@ -125,7 +159,7 @@ export default function CartPage() {
 
   if (isLoading) {
     return (
-      <section className="mx-auto w-full max-w-[1340px] bg-[#faf8f5] px-4 py-8 md:px-10">
+      <section className="mx-auto w-full max-w-[1340px] px-4 py-8 md:px-10">
         <div className="rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white px-6 py-16 text-center">
           <p className="typo-body-medium text-text-secondary">
             購物車資料載入中...
@@ -134,11 +168,11 @@ export default function CartPage() {
       </section>
     );
   }
-  const total = Math.max(0, subtotal - discount);
+  const total = Math.max(0, subtotal + shippingFee - discount);
 
   if (items.length === 0) {
     return (
-      <section className="mx-auto w-full max-w-[1340px] bg-[#faf8f5] px-4 py-8 md:px-10">
+      <section className="mx-auto w-full max-w-[1340px] px-4 py-8 md:px-10">
         <header className="mb-8 flex items-end gap-3">
           <h1 className="typo-h3 text-text-primary">購物車</h1>
           <p className="typo-card-body text-text-secondary">（0 件商品）</p>
@@ -152,7 +186,7 @@ export default function CartPage() {
           </p>
 
           <Link
-            href="/products"
+            href={continueShoppingHref}
             className="next-button typo-tab inline-flex items-center justify-center gap-2"
           >
             繼續購物
@@ -164,7 +198,7 @@ export default function CartPage() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-[1340px] bg-[#faf8f5] px-4 py-8 md:px-10">
+    <section className="mx-auto w-full max-w-[1340px] px-4 py-8 md:px-10">
       <header className="mb-8 flex items-end gap-3">
         <h1 className="typo-h3 text-text-primary">購物車</h1>
         <p className="typo-card-body text-text-secondary">
@@ -256,7 +290,7 @@ export default function CartPage() {
           </div>
 
           <Link
-            href="/products"
+            href={continueShoppingHref}
             className="back-button typo-tab mt-4 inline-flex items-center gap-2"
           >
             <LuChevronLeft className="size-4" />
@@ -287,6 +321,15 @@ export default function CartPage() {
               </select>
               <LuChevronDown className="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 text-text-secondary" />
             </div>
+            {couponMessage && (
+              <p
+                className={`typo-card-body mt-3 ${
+                  isCouponBelowMin ? 'text-red-500' : 'text-primary'
+                }`}
+              >
+                {couponMessage}
+              </p>
+            )}
           </section>
 
           <section className="rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white p-6">
@@ -312,7 +355,9 @@ export default function CartPage() {
 
               <div className="flex justify-between text-text-secondary">
                 <span>運費</span>
-                <span className="font-medium text-green-600">免運費</span>
+                <span className="text-text-primary">
+                  {formatPrice(shippingFee)}
+                </span>
               </div>
 
               <div className="border-t border-[rgba(26,22,18,0.12)] pt-4">

@@ -1,8 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { AlertCircle, Headphones, Paperclip, Plus, Send } from 'lucide-react';
+import {
+  AlertCircle,
+  Download,
+  FileText,
+  Headphones,
+  Image as ImageIcon,
+  Paperclip,
+  Plus,
+  Send,
+} from 'lucide-react';
 // @ts-ignore -- editor language service may intermittently fail to resolve pnpm workspace deps.
 import { io, type Socket } from 'socket.io-client';
 
@@ -46,6 +55,11 @@ type SupportCasesResponse = {
   cases?: SupportCase[];
 };
 
+type SupportPresenceResponse = {
+  onlineCount?: number;
+  isOnline?: boolean;
+};
+
 type CaseMessageEvent = {
   caseId?: string;
   message?: unknown;
@@ -71,6 +85,9 @@ const SUPPORT_QUICK_REPLIES = [
   '已為您確認處理中，請稍候。',
   '此案已協助處理完成，若有其他問題歡迎再詢問。',
 ];
+
+const SUPPORT_ROLE_CACHE_KEY = 'chat:is-support';
+const SUPPORT_PRESENCE_CACHE_KEY = 'chat:support-presence-count';
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -112,6 +129,56 @@ function formatMessageTime(isoTime: string) {
     minute: '2-digit',
     hour12: true,
   });
+}
+
+async function downloadAttachment(fileUrl: string, fileName: string) {
+  const response = await fetch(fileUrl, {
+    credentials: 'include',
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error('DOWNLOAD_FAILED');
+  }
+
+  const blob = await response.blob();
+  const objectUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = fileName;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(objectUrl);
+}
+
+type AttachmentMessage = {
+  fileName: string;
+  fileUrl: string;
+  isImage: boolean;
+};
+
+function getFileLabel(fileName: string) {
+  const extension = fileName.split('.').pop()?.toLowerCase() || '';
+  if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(extension)) return '圖片';
+  if (extension === 'pdf') return 'PDF';
+  if (extension === 'txt') return '文字檔';
+  return '附件';
+}
+
+function parseAttachmentMessage(content: string): AttachmentMessage | null {
+  const imageExtRegex = /\.(png|jpe?g|webp|gif)(\?.*)?$/i;
+  const attachmentMatch = content.match(/^附件：(.+)\n(https?:\/\/\S+)$/);
+  if (!attachmentMatch) return null;
+
+  const fileName = attachmentMatch[1];
+  const fileUrl = attachmentMatch[2];
+  return {
+    fileName,
+    fileUrl,
+    isImage: imageExtRegex.test(fileName) || imageExtRegex.test(fileUrl),
+  };
 }
 
 const BOT_GREETING = '您好！歡迎使用客服中心，請輸入您的問題。';
@@ -159,9 +226,12 @@ export default function ChatClient() {
   const [isReady, setIsReady] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [supportUnreadCounts, setSupportUnreadCounts] = useState<
     Record<string, number>
   >({});
+  const [supportPresenceOnlineCount, setSupportPresenceOnlineCount] =
+    useState(0);
   const [memberCaseStatus, setMemberCaseStatus] = useState<
     'OPEN' | 'CLOSED' | null
   >(null);
@@ -169,6 +239,7 @@ export default function ChatClient() {
 
   const chatCardRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const selectedCaseIdRef = useRef(selectedCaseId);
   const isSupportRef = useRef(isSupport);
@@ -176,6 +247,47 @@ export default function ChatClient() {
 
   const backendSocketOrigin =
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  useEffect(() => {
+    const cachedPresence = Number(
+      window.sessionStorage.getItem(SUPPORT_PRESENCE_CACHE_KEY) || '0'
+    );
+    if (Number.isFinite(cachedPresence) && cachedPresence > 0) {
+      setSupportPresenceOnlineCount(cachedPresence);
+    }
+
+    const isCachedSupport =
+      window.sessionStorage.getItem(SUPPORT_ROLE_CACHE_KEY) === '1';
+    if (!isCachedSupport) return;
+
+    setIsSupport(true);
+    setSupportPresenceOnlineCount((prev) => (prev > 0 ? prev : 1));
+  }, []);
+
+  const refreshSupportPresenceSnapshot = useCallback(async () => {
+    try {
+      const response = await fetch('/api/chat/support/presence', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+
+      if (!response.ok) return;
+
+      const payload: unknown = await response.json();
+      const parsed = asRecord(payload) as SupportPresenceResponse | null;
+      const onlineCount = Number(parsed?.onlineCount);
+      const nextCount =
+        Number.isFinite(onlineCount) && onlineCount > 0 ? onlineCount : 0;
+
+      setSupportPresenceOnlineCount(nextCount);
+      window.sessionStorage.setItem(
+        SUPPORT_PRESENCE_CACHE_KEY,
+        String(nextCount)
+      );
+    } catch {
+      // Keep previous state if quick snapshot fetch fails.
+    }
+  }, []);
 
   useEffect(() => {
     selectedCaseIdRef.current = selectedCaseId;
@@ -269,6 +381,9 @@ export default function ChatClient() {
         if (!response.ok) {
           setIsSupport(false);
           setSupportCases([]);
+          if (typeof window !== 'undefined') {
+            window.sessionStorage.removeItem(SUPPORT_ROLE_CACHE_KEY);
+          }
           return;
         }
 
@@ -285,6 +400,10 @@ export default function ChatClient() {
           : [];
 
         setIsSupport(true);
+        setSupportPresenceOnlineCount((prev) => (prev > 0 ? prev : 1));
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.setItem(SUPPORT_ROLE_CACHE_KEY, '1');
+        }
         setSupportCases(cases);
 
         const openCase = cases.find((item) => item.status === 'OPEN');
@@ -301,6 +420,9 @@ export default function ChatClient() {
       } catch {
         setIsSupport(false);
         setSupportCases([]);
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.removeItem(SUPPORT_ROLE_CACHE_KEY);
+        }
       } finally {
         setIsReady(true);
       }
@@ -426,8 +548,27 @@ export default function ChatClient() {
   }, [greetingMessage, isReady, isSupport, selectedCaseId]);
 
   useEffect(() => {
-    if (!isReady) return;
+    void refreshSupportPresenceSnapshot();
+  }, [refreshSupportPresenceSnapshot]);
 
+  useEffect(() => {
+    const refreshIfVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshSupportPresenceSnapshot();
+      }
+    };
+
+    refreshIfVisible();
+    const timerId = window.setInterval(refreshIfVisible, 2000);
+    document.addEventListener('visibilitychange', refreshIfVisible);
+
+    return () => {
+      window.clearInterval(timerId);
+      document.removeEventListener('visibilitychange', refreshIfVisible);
+    };
+  }, [refreshSupportPresenceSnapshot]);
+
+  useEffect(() => {
     const socket = io(backendSocketOrigin, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
@@ -438,11 +579,34 @@ export default function ChatClient() {
       socket.emit('chat:join-case', { caseId });
     };
 
+    const requestSupportPresence = () => {
+      socket.emit('chat:support-presence:request');
+    };
+
     socket.on('connect', () => {
       const caseId = selectedCaseIdRef.current;
       if (caseId) {
         joinCaseRoom(caseId);
       }
+      void refreshSupportPresenceSnapshot();
+      requestSupportPresence();
+
+      if (isSupportRef.current) {
+        setSupportPresenceOnlineCount((prev) => (prev > 0 ? prev : 1));
+      }
+
+      const shouldEnter =
+        typeof document === 'undefined' ||
+        document.visibilityState === 'visible';
+      socket.emit(
+        shouldEnter
+          ? 'presence:support-page:enter'
+          : 'presence:support-page:leave'
+      );
+    });
+
+    socket.on('disconnect', () => {
+      setSupportPresenceOnlineCount(0);
     });
 
     socket.on('chat:message', (payload: CaseMessageEvent) => {
@@ -514,17 +678,82 @@ export default function ChatClient() {
       }
     });
 
+    socket.on('chat:support-presence', (payload: unknown) => {
+      const record = asRecord(payload);
+      const onlineCount = Number(record?.onlineCount);
+      const nextCount =
+        Number.isFinite(onlineCount) && onlineCount > 0 ? onlineCount : 0;
+
+      setSupportPresenceOnlineCount(nextCount);
+      window.sessionStorage.setItem(
+        SUPPORT_PRESENCE_CACHE_KEY,
+        String(nextCount)
+      );
+    });
+
     return () => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [backendSocketOrigin, isReady]);
+  }, [backendSocketOrigin, refreshSupportPresenceSnapshot]);
+
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket) return;
+
+    if (isSupport) {
+      setSupportPresenceOnlineCount((prev) => (prev > 0 ? prev : 1));
+    }
+
+    const emitPresenceByVisibility = () => {
+      const isVisible = document.visibilityState === 'visible';
+
+      if (isVisible && !socket.connected) {
+        socket.connect();
+      }
+
+      socket.emit(
+        isVisible
+          ? 'presence:support-page:enter'
+          : 'presence:support-page:leave'
+      );
+
+      if (isVisible) {
+        void refreshSupportPresenceSnapshot();
+        socket.emit('chat:support-presence:request');
+      }
+    };
+
+    const requestPresenceOnFocus = () => {
+      if (!socket.connected) {
+        socket.connect();
+      }
+      void refreshSupportPresenceSnapshot();
+      socket.emit('chat:support-presence:request');
+    };
+
+    emitPresenceByVisibility();
+    document.addEventListener('visibilitychange', emitPresenceByVisibility);
+    window.addEventListener('focus', requestPresenceOnFocus);
+
+    return () => {
+      document.removeEventListener(
+        'visibilitychange',
+        emitPresenceByVisibility
+      );
+      window.removeEventListener('focus', requestPresenceOnFocus);
+      if (socket.connected) {
+        socket.emit('presence:support-page:leave');
+      }
+    };
+  }, [isSupport, refreshSupportPresenceSnapshot]);
 
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket || !socket.connected || !selectedCaseId) return;
 
     socket.emit('chat:join-case', { caseId: selectedCaseId });
+    socket.emit('chat:support-presence:request');
   }, [selectedCaseId]);
 
   useEffect(() => {
@@ -541,6 +770,8 @@ export default function ChatClient() {
   const send = async (rawText: string) => {
     const text = rawText.trim();
     if (!text || isSending) return;
+
+    const optimisticUserMessageId = `tmp-user-${Date.now()}`;
 
     setIsSending(true);
     setErrorMessage('');
@@ -605,6 +836,16 @@ export default function ChatClient() {
         return;
       }
 
+      const optimisticUserMessage: UIMessage = {
+        id: optimisticUserMessageId,
+        sender: 'USER',
+        type: 'TEXT',
+        content: text,
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => appendUniqueMessage(prev, optimisticUserMessage));
+      setInput('');
+
       const response = await fetch('/api/chat/send', {
         method: 'POST',
         credentials: 'include',
@@ -618,6 +859,10 @@ export default function ChatClient() {
       });
 
       if (!response.ok) {
+        setMessages((prev) =>
+          prev.filter((item) => item.id !== optimisticUserMessageId)
+        );
+        setInput(text);
         setErrorMessage('訊息送出失敗，請稍後再試。');
         return;
       }
@@ -643,15 +888,26 @@ export default function ChatClient() {
       );
 
       if (nextMessages.length > 0) {
-        setMessages((prev) => appendUniqueMessages(prev, nextMessages));
+        setMessages((prev) => {
+          const withoutOptimistic = prev.filter(
+            (item) => item.id !== optimisticUserMessageId
+          );
+          return appendUniqueMessages(withoutOptimistic, nextMessages);
+        });
+      } else {
+        setMessages((prev) =>
+          prev.filter((item) => item.id !== optimisticUserMessageId)
+        );
       }
 
       if (newCaseStatus) {
         setMemberCaseStatus(newCaseStatus);
       }
-
-      setInput('');
     } catch {
+      setMessages((prev) =>
+        prev.filter((item) => item.id !== optimisticUserMessageId)
+      );
+      setInput(text);
       setErrorMessage('網路異常，請稍後再試。');
     } finally {
       setIsSending(false);
@@ -659,8 +915,7 @@ export default function ChatClient() {
   };
 
   const modeTitle = isSupport ? '客服工作台' : '會員客服';
-  const canSendAsSupport =
-    !isSupport || Boolean(selectedCaseId && supportCases.length > 0);
+  const canSendAsSupport = !isSupport || Boolean(selectedCaseId);
   const isMemberCaseClosed = !isSupport && memberCaseStatus === 'CLOSED';
   const isSupportCaseClosed =
     isSupport && selectedSupportCase?.status === 'CLOSED';
@@ -670,6 +925,10 @@ export default function ChatClient() {
       selectedSupportCase?.user?.email ||
       '會員'
     : '我';
+  const supportPresenceText =
+    supportPresenceOnlineCount > 0 ? '● 線上服務中' : '● 暫無人工客服在線';
+  const supportPresenceDotClass =
+    supportPresenceOnlineCount > 0 ? 'bg-emerald-400' : 'bg-gray-300';
 
   const startNewConsultation = () => {
     setMessages([greetingMessage]);
@@ -729,6 +988,119 @@ export default function ChatClient() {
     }
   };
 
+  const uploadAttachment = async (file: File) => {
+    const maxSize = 8 * 1024 * 1024;
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'application/pdf',
+      'text/plain',
+    ];
+
+    if (file.size > maxSize) {
+      setErrorMessage('附件大小不可超過 8MB。');
+      return;
+    }
+    if (!allowedTypes.includes(file.type)) {
+      setErrorMessage('附件格式僅支援 JPG、PNG、WEBP、GIF、PDF、TXT。');
+      return;
+    }
+
+    if (isSupport && !selectedCaseId) {
+      setErrorMessage('請先從右側選擇一筆案件。');
+      return;
+    }
+
+    setIsUploading(true);
+    setErrorMessage('');
+
+    try {
+      const formData = new FormData();
+      formData.append('attachment', file);
+      if (selectedCaseId) {
+        formData.append('caseId', selectedCaseId);
+      }
+
+      const endpoint = isSupport
+        ? '/api/chat/support/upload'
+        : '/api/chat/upload';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const payload: unknown = await response.json().catch(() => null);
+        const parsed = asRecord(payload);
+        setErrorMessage(
+          typeof parsed?.message === 'string'
+            ? parsed.message
+            : '附件上傳失敗，請稍後再試。'
+        );
+        return;
+      }
+
+      const payload: unknown = await response.json();
+      const parsed = asRecord(payload);
+      const created = normalizeApiMessage(parsed?.message);
+      const newCaseId =
+        typeof parsed?.caseId === 'string' ? parsed.caseId : null;
+      const newCaseStatus =
+        parsed?.caseStatus === 'OPEN' || parsed?.caseStatus === 'CLOSED'
+          ? parsed.caseStatus
+          : null;
+
+      if (created) {
+        setMessages((prev) => appendUniqueMessage(prev, created));
+      }
+
+      if (!isSupport) {
+        if (newCaseId && !selectedCaseId) {
+          setSelectedCaseId(newCaseId);
+        }
+        if (newCaseStatus) {
+          setMemberCaseStatus(newCaseStatus);
+        }
+      } else {
+        setSupportCases((prev) => {
+          const targetCaseId = selectedCaseId;
+          if (!targetCaseId) return prev;
+
+          const target = prev.find((item) => item.caseId === targetCaseId);
+          if (!target) return prev;
+
+          const nextPreview = `附件：${file.name}`;
+          const updatedTarget: SupportCase = {
+            ...target,
+            status: 'OPEN',
+            preview: nextPreview,
+          };
+
+          return [
+            updatedTarget,
+            ...prev.filter((item) => item.caseId !== targetCaseId),
+          ];
+        });
+      }
+    } catch {
+      setErrorMessage('網路異常，請稍後再試。');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const onAttachmentInputChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    await uploadAttachment(file);
+  };
+
   const selectSupportCase = (caseId: string) => {
     setSelectedCaseId(caseId);
     setSupportUnreadCounts((prev) => {
@@ -780,14 +1152,22 @@ export default function ChatClient() {
                       strokeWidth={2}
                     />
                   </div>
-                  <span className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />
+                  <span
+                    className={`absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-white ${supportPresenceDotClass}`}
+                  />
                 </div>
                 <div>
                   <h2 className="text-[15px] leading-tight font-bold text-gray-900">
                     {modeTitle}
                   </h2>
-                  <p className="mt-0.5 text-[11px] font-medium text-emerald-500">
-                    ● 線上服務中
+                  <p
+                    className={`mt-0.5 text-[11px] font-medium ${
+                      supportPresenceOnlineCount > 0
+                        ? 'text-emerald-500'
+                        : 'text-gray-400'
+                    }`}
+                  >
+                    {supportPresenceText}
                   </p>
                 </div>
               </div>
@@ -832,9 +1212,7 @@ export default function ChatClient() {
             </div>
 
             <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-medium tracking-wide text-gray-400">
-              {isSupport
-                ? '支援 /api/chat/support/* API'
-                : '支援 /api/chat/send API'}
+              {isSupport ? '支援 AI 客服' : '支援 AI 客服'}
             </span>
             {errorMessage ? (
               <p className="mt-2 text-[12px] text-red-500">{errorMessage}</p>
@@ -892,30 +1270,56 @@ export default function ChatClient() {
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter') void send(input);
+                  const isComposing =
+                    event.nativeEvent.isComposing || event.keyCode === 229;
+                  if (event.key === 'Enter' && !isComposing) {
+                    void send(input);
+                  }
                 }}
                 placeholder={isSupport ? '輸入客服回覆...' : '請輸入訊息...'}
                 className="flex-1 bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-300"
               />
               <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.txt"
+                  onChange={(event) => {
+                    void onAttachmentInputChange(event);
+                  }}
+                />
                 <button
                   type="button"
-                  className="text-gray-300 transition-colors hover:text-gray-400"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={
+                    isUploading ||
+                    (isSupport && !selectedCaseId) ||
+                    isMemberCaseClosed
+                  }
+                  className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                    isUploading ||
+                    (isSupport && !selectedCaseId) ||
+                    isMemberCaseClosed
+                      ? 'border-gray-200 bg-gray-100 text-gray-400'
+                      : 'border-orange-200 bg-orange-50 text-orange-500 hover:bg-orange-100'
+                  }`}
                   aria-label="附件"
                 >
                   <Paperclip size={16} strokeWidth={2} />
+                  <span>{isUploading ? '上傳中...' : '上傳附件'}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => void send(input)}
                   aria-label="送出訊息"
                   disabled={
-                    (isSupport && !canSendAsSupport) || isMemberCaseClosed
+                    (isSupport && !selectedCaseId) || isMemberCaseClosed
                   }
                   className={`flex h-7 w-7 items-center justify-center rounded-xl transition-colors ${
                     input.trim() &&
                     !isSending &&
-                    (!isSupport || canSendAsSupport) &&
+                    (!isSupport || Boolean(selectedCaseId)) &&
                     !isMemberCaseClosed
                       ? 'bg-orange-400 text-white'
                       : 'bg-gray-200 text-gray-400'
@@ -929,7 +1333,7 @@ export default function ChatClient() {
         </div>
 
         {isSupport ? (
-          <aside className="h-[690px] overflow-y-auto rounded-3xl border border-[#ece3d9] bg-white p-4 shadow-lg">
+          <aside className="h-172.5 overflow-y-auto rounded-3xl border border-[#ece3d9] bg-white p-4 shadow-lg">
             <h3 className="text-[16px] font-bold text-gray-900">
               客服案件列表
             </h3>
@@ -1050,6 +1454,129 @@ interface UserMessageProps extends ChatMessageProps {
   label: string;
 }
 
+function renderMessageContent(content: string, isUserMessage: boolean) {
+  const attachment = parseAttachmentMessage(content);
+  if (attachment) {
+    return (
+      <div className="space-y-2">
+        <div
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+            isUserMessage
+              ? 'bg-white/15 text-white/90'
+              : 'bg-orange-100 text-orange-600'
+          }`}
+        >
+          <FileText size={12} />
+          <span>{getFileLabel(attachment.fileName)}</span>
+        </div>
+
+        <div
+          className={`overflow-hidden rounded-2xl border shadow-sm ${
+            isUserMessage
+              ? 'border-white/10 bg-white/10'
+              : 'border-orange-100 bg-white'
+          }`}
+        >
+          <div className="flex items-center gap-3 px-3 py-2.5">
+            <div
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                isUserMessage ? 'bg-white/15' : 'bg-orange-50'
+              }`}
+            >
+              {attachment.isImage ? (
+                <ImageIcon
+                  size={18}
+                  className={isUserMessage ? 'text-white' : 'text-orange-500'}
+                />
+              ) : (
+                <FileText
+                  size={18}
+                  className={isUserMessage ? 'text-white' : 'text-orange-500'}
+                />
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div
+                className={`truncate text-sm font-medium ${
+                  isUserMessage ? 'text-white' : 'text-gray-800'
+                }`}
+                title={attachment.fileName}
+              >
+                {attachment.fileName}
+              </div>
+              <div
+                className={`text-xs ${
+                  isUserMessage ? 'text-white/70' : 'text-gray-500'
+                }`}
+              >
+                點擊可預覽
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                void downloadAttachment(
+                  attachment.fileUrl,
+                  attachment.fileName
+                );
+              }}
+              aria-label={`下載 ${attachment.fileName}`}
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
+                isUserMessage
+                  ? 'bg-white/15 text-white hover:bg-white/25'
+                  : 'bg-orange-100 text-orange-600 hover:bg-orange-200'
+              }`}
+            >
+              <Download size={14} />
+            </button>
+          </div>
+
+          {attachment.isImage ? (
+            <a href={attachment.fileUrl} target="_blank" rel="noreferrer">
+              <img
+                src={attachment.fileUrl}
+                alt={attachment.fileName}
+                className="max-h-60 w-full bg-black/5 object-contain"
+                loading="lazy"
+              />
+            </a>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  const urlRegex = /(https?:\/\/\S+)/g;
+  const segments = content.split(urlRegex);
+  if (segments.length === 1) {
+    return content;
+  }
+
+  return segments.map((segment, index) => {
+    if (/^https?:\/\//.test(segment)) {
+      return (
+        <a
+          key={`${segment}-${index}`}
+          href={segment}
+          target="_blank"
+          rel="noreferrer"
+          className={`underline underline-offset-2 ${
+            isUserMessage
+              ? 'text-white/90'
+              : 'text-orange-600 hover:text-orange-500'
+          }`}
+        >
+          {segment}
+        </a>
+      );
+    }
+
+    return <span key={`text-${index}`}>{segment}</span>;
+  });
+}
+
 function AgentMessage({ msg }: ChatMessageProps) {
   const label = msg.sender === 'AGENT' ? '客服人員' : 'AI 客服';
 
@@ -1068,7 +1595,7 @@ function AgentMessage({ msg }: ChatMessageProps) {
           </span>
         </div>
         <div className="rounded-2xl rounded-bl-sm border border-gray-100 bg-[#F4EEE8] px-4 py-2.5 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap text-gray-700">
-          {msg.content}
+          {renderMessageContent(msg.content, false)}
         </div>
       </div>
     </div>
@@ -1090,7 +1617,7 @@ function UserMessage({ msg, label }: UserMessageProps) {
           </span>
         </div>
         <div className="rounded-2xl rounded-br-sm bg-orange-400 px-4 py-2.5 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap text-white shadow-sm">
-          {msg.content}
+          {renderMessageContent(msg.content, true)}
         </div>
       </div>
       <div className="mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-orange-400 shadow-sm">
