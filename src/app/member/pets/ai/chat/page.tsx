@@ -329,7 +329,7 @@ export default function PetAiChatPage() {
          * 當四種引導需求都不符合時，直接帶使用者前往客服中心。
          */}
         <Link
-          href="/support"
+          href="/member/support"
           className="typo-card-body mt-3 flex w-full items-center justify-center rounded-lg border border-border bg-white p-4 text-text-secondary transition hover:border-primary hover:text-primary"
         >
           以上都不是我想找的，聯絡客服
@@ -382,7 +382,7 @@ export default function PetAiChatPage() {
                 </p>
 
                 <Link
-                  href="/support"
+                  href="/member/support"
                   className="link-button typo-tab mt-4 inline-flex"
                 >
                   前往客服中心
@@ -401,19 +401,31 @@ export default function PetAiChatPage() {
                   <ProductCard
                     product={{
                       id: product.productId,
-                      image: toPublicImagePath(product.image),
-                      tags: product.tags,
+                      avatar: {
+                        thumbnail: toPublicImagePath(product.image),
+                      },
+                      tags: product.tags.map((tag, index) => ({
+                        id: index + 1,
+                        tag_ch: tag,
+                      })),
                       name: product.name,
 
                       // 商品卡顯示正式商品簡介。
-                      description: product.slogan || product.description,
+                      intro: {
+                        slogan: product.slogan || product.description,
+                      },
 
                       price: `NT$${product.price.toLocaleString('zh-TW')}`,
                       slug: product.slug,
-                      petType: product.petType,
-
-                      // 沒有安全且有庫存的 SKU 時不允許購買。
-                      soldOut: product.safeItems.length === 0,
+                      isFavorite: product.isFavorite,
+                      petType: {
+                        id: product.petTypeId,
+                        tag_slug: product.petType,
+                      },
+                    }}
+                    allergyWarning={{
+                      petName: pet.name,
+                      items: product.allergyRiskItems,
                     }}
                   />
 
