@@ -32,6 +32,13 @@ interface Coupon {
   minAmount: number;
 }
 
+interface UserProfile {
+  email: string;
+  name: string | null;
+  phone: string | null;
+  address: string | null;
+}
+
 interface ShippingInfo {
   receiverName: string;
   receiverPhone: string;
@@ -43,6 +50,7 @@ interface ShippingInfo {
 const steps = ['確認訂購內容', '填寫收件資訊', '選擇付款方式'];
 
 const orderGridClass = 'md:grid-cols-[minmax(0,1fr)_100px_80px_100px]';
+const shippingFee = 60;
 
 const formatPrice = (price: number) => `NT$${price.toLocaleString('zh-TW')}`;
 
@@ -58,11 +66,12 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [shouldUpdateMemberInfo, setShouldUpdateMemberInfo] = useState(false);
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
-    receiverName: '林小美',
-    receiverPhone: '0912-345-678',
-    receiverEmail: 'mei@petfull.tw',
-    receiverAddress: '台北市信義區信義路五段 7 號 10 樓',
+    receiverName: '',
+    receiverPhone: '',
+    receiverEmail: '',
+    receiverAddress: '',
     remark: '',
   });
 
@@ -72,21 +81,34 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     const loadCheckout = async () => {
-      const [cartResponse, couponResponse] = await Promise.all([
+      const [cartResponse, couponResponse, profileResponse] = await Promise.all([
         fetch('/api/orders/cart', { credentials: 'include' }),
         fetch('/api/orders/coupons', { credentials: 'include' }),
+        fetch('/api/user/profile', { credentials: 'include' }),
       ]);
 
-      if (cartResponse.status === 401 || couponResponse.status === 401) {
+      if (
+        cartResponse.status === 401 ||
+        couponResponse.status === 401 ||
+        profileResponse.status === 401
+      ) {
         router.push('/auth/login?next=/checkout');
         return;
       }
 
       const cartData = await cartResponse.json();
       const couponData = await couponResponse.json();
+      const profileData: UserProfile = await profileResponse.json();
 
       setOrderItems(cartData.items ?? []);
       setCoupons(couponData.coupons ?? []);
+      setShippingInfo((current) => ({
+        ...current,
+        receiverName: profileData.name ?? '',
+        receiverPhone: profileData.phone ?? '',
+        receiverEmail: profileData.email ?? '',
+        receiverAddress: profileData.address ?? '',
+      }));
       setIsLoading(false);
     };
 
@@ -98,6 +120,13 @@ export default function CheckoutPage() {
     const savedCoupon = localStorage.getItem('mofu-cart-coupon');
     if (savedCoupon) setCouponCode(savedCoupon);
   }, [router]);
+
+  useEffect(() => {
+    if (couponCode && !coupons.some((coupon) => coupon.code === couponCode)) {
+      setCouponCode('');
+      localStorage.removeItem('mofu-cart-coupon');
+    }
+  }, [couponCode, coupons]);
 
   const subtotal = useMemo(
     () => orderItems.reduce((sum, item) => sum + item.price * item.qty, 0),
@@ -112,11 +141,25 @@ export default function CheckoutPage() {
     if (coupon.code === 'FREESHIP') return 0;
     return Math.min(coupon.discountValue, subtotal);
   }, [couponCode, coupons, subtotal]);
-  const total = Math.max(0, subtotal - discount);
+  const total = Math.max(0, subtotal + shippingFee - discount);
+  const selectedCoupon = coupons.find((item) => item.code === couponCode);
+  const isCouponBelowMin =
+    Boolean(selectedCoupon) && subtotal < Number(selectedCoupon?.minAmount);
+  const couponMessage = selectedCoupon
+    ? isCouponBelowMin
+      ? `優惠券尚未達使用門檻，還差 ${formatPrice(
+          Number(selectedCoupon.minAmount) - subtotal
+        )}`
+      : selectedCoupon.code === 'FREESHIP'
+        ? '已套用免運券，目前訂單已免運。'
+        : discount > 0
+          ? `已套用 ${selectedCoupon.code}，折抵 ${formatPrice(discount)}`
+          : '此優惠券目前沒有可折抵金額。'
+    : '';
 
   if (isLoading) {
     return (
-      <section className="mx-auto flex w-full max-w-[1520px] justify-center bg-[#faf8f5] px-4 py-16 md:px-10">
+      <section className="mx-auto flex w-full max-w-[1520px] justify-center px-4 py-16 md:px-10">
         <div className="w-full max-w-[520px] rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white p-8 text-center">
           <p className="typo-body-medium text-text-secondary">
             結帳資料載入中...
@@ -128,7 +171,7 @@ export default function CheckoutPage() {
 
   if (orderItems.length === 0) {
     return (
-      <section className="mx-auto flex w-full max-w-[1520px] justify-center bg-[#faf8f5] px-4 py-16 md:px-10">
+      <section className="mx-auto flex w-full max-w-[1520px] justify-center px-4 py-16 md:px-10">
         <div className="w-full max-w-[520px] rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white p-8 text-center">
           <h1 className="typo-h3 mb-3 text-text-primary">購物車目前是空的</h1>
           <p className="typo-card-body mb-6 text-text-secondary">
@@ -169,6 +212,30 @@ export default function CheckoutPage() {
     setError('');
 
     try {
+      if (shouldUpdateMemberInfo) {
+        const profileResponse = await fetch('/api/user/update', {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: shippingInfo.receiverName,
+            phone: shippingInfo.receiverPhone,
+            address: shippingInfo.receiverAddress,
+          }),
+        });
+
+        if (profileResponse.status === 401) {
+          router.push('/auth/login?next=/checkout');
+          return;
+        }
+
+        if (!profileResponse.ok) {
+          setError('會員收件資訊更新失敗，請稍後再試。');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const checkoutResponse = await fetch('/api/orders/checkout', {
         method: 'POST',
         credentials: 'include',
@@ -214,7 +281,7 @@ export default function CheckoutPage() {
   };
 
   return (
-    <section className="mx-auto w-full max-w-[1520px] bg-[#faf8f5] px-4 py-8 md:px-10">
+    <section className="mx-auto w-full max-w-[1520px] px-4 py-8 md:px-10">
       <ol className="mx-auto mb-10 flex max-w-[520px] items-center justify-center">
         {steps.map((step, index) => {
           const isDone = index < currentStep;
@@ -332,9 +399,18 @@ export default function CheckoutPage() {
                   <span>-{formatPrice(discount)}</span>
                 </div>
               )}
+              {couponMessage && (
+                <p
+                  className={`${
+                    isCouponBelowMin ? 'text-red-500' : 'text-primary'
+                  }`}
+                >
+                  {couponMessage}
+                </p>
+              )}
               <div className="flex justify-between text-text-secondary">
                 <span>運費</span>
-                <span className="font-medium text-green-600">免運費</span>
+                <span>{formatPrice(shippingFee)}</span>
               </div>
               <div className="flex justify-between border-t border-[rgba(26,22,18,0.08)] pt-4">
                 <span className="typo-h4 text-text-primary">應付總額</span>
@@ -406,12 +482,13 @@ export default function CheckoutPage() {
                   電子信箱
                 </span>
                 <input
-                  className="typo-card-body h-11 w-full rounded-xl border border-[rgba(26,22,18,0.12)] bg-card-primary px-4 text-text-primary outline-none focus:border-primary"
+                  readOnly
+                  className="typo-card-body h-11 w-full rounded-xl border border-[rgba(26,22,18,0.12)] bg-card-primary px-4 text-text-secondary outline-none"
                   value={shippingInfo.receiverEmail}
-                  onChange={(event) =>
-                    updateShippingInfo('receiverEmail', event.target.value)
-                  }
                 />
+                <span className="mt-2 block text-right text-sm leading-5 text-text-secondary">
+                  自動帶入註冊會員信箱，結帳時無法另外修改。
+                </span>
               </label>
 
               <label className="block md:col-span-2">
@@ -443,13 +520,20 @@ export default function CheckoutPage() {
             </div>
 
             <label className="mt-6 flex items-start gap-3 border-t border-[rgba(26,22,18,0.08)] pt-5">
-              <input type="checkbox" className="checkbox mt-1 checkbox-sm" />
+              <input
+                type="checkbox"
+                className="checkbox mt-1 checkbox-sm"
+                checked={shouldUpdateMemberInfo}
+                onChange={(event) =>
+                  setShouldUpdateMemberInfo(event.target.checked)
+                }
+              />
               <span>
                 <span className="typo-card-title block text-text-primary">
-                  同時更新會員收件資訊
+                  同時更新會員基本資料
                 </span>
                 <span className="typo-card-body text-text-secondary">
-                  將以上收件資料儲存為會員預設收件地址，下次結帳時自動帶入
+                  將本次填寫的姓名、手機與地址同步更新到會員中心，下次結帳時自動帶入
                 </span>
               </span>
             </label>
