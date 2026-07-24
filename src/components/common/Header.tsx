@@ -9,6 +9,7 @@ import {
   LuCheck,
   LuHeart,
   LuLogOut,
+  LuMenu,
   LuPackage,
   LuShoppingCart,
   LuTrash2,
@@ -328,16 +329,55 @@ export default function Header() {
     <>
       <header className="sticky top-0 z-20 h-20 bg-card-primary/95">
         <div className="navbar mx-auto flex h-full max-w-[1620px] items-center justify-between px-5 md:px-16">
-          <Link href="/" className="navbar-start">
-            <Image
-              src="/images/logo/mofu-logo-final.svg"
-              alt=""
-              width={135}
-              height={64}
-              className="object-contain"
-            />
-          </Link>
-          <div className="navbar-center gap-1">
+          <div className="navbar-start flex items-center gap-2">
+            <details className="dropdown lg:hidden">
+              <summary
+                aria-label="開啟主選單"
+                className="btn btn-circle border-none btn-ghost p-1 text-text-secondary hover:bg-button-secondary-hover hover:shadow-none"
+              >
+                <LuMenu className="size-6" />
+              </summary>
+              <ul className="dropdown-content menu z-30 mt-3 w-72 max-w-[calc(100vw-40px)] rounded-xl border border-border bg-card-primary p-3 shadow-xl">
+                {productMegaMenuCards.map((card) => (
+                  <li key={card.id}>
+                    {card.href ? (
+                      <Link href={card.href} className="font-bold">
+                        {card.title}
+                      </Link>
+                    ) : (
+                      <span className="font-bold">{card.title}</span>
+                    )}
+                    <ul>
+                      {card.items.map((item) => (
+                        <li key={item.id}>
+                          <Link href={item.href}>{item.title}</Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+                <li>
+                  <Link href="/event">所有活動</Link>
+                </li>
+                <li>
+                  <Link href="/">AI 顧問</Link>
+                </li>
+                <li>
+                  <Link href="/">寵物百科</Link>
+                </li>
+              </ul>
+            </details>
+            <Link href="/">
+              <Image
+                src="/images/logo/mofu-logo-final.svg"
+                alt=""
+                width={135}
+                height={64}
+                className="object-contain"
+              />
+            </Link>
+          </div>
+          <div className="navbar-center hidden gap-1 lg:flex">
             <div className="megamenu gap-1" id="my-megamenu-4" popover="auto">
               <span className="megamenu-active"></span>
               <button
@@ -412,7 +452,7 @@ export default function Header() {
               </li>
             </ul>
           </div>
-          <div className="relative navbar-end gap-4">
+          <div className="relative navbar-end gap-2 md:gap-4">
             <Link
               href="/member/favorites"
               className="btn btn-circle border-none btn-ghost p-1 align-middle text-text-secondary hover:bg-button-secondary-hover hover:shadow-none"
@@ -438,10 +478,10 @@ export default function Header() {
                 <section
                   ref={cartPanelRef}
                   id="cart-panel"
-                  className="absolute top-12 -right-13 w-[470px] max-w-[calc(100vw-40px)] rounded-2xl border border-secondary bg-white p-3 shadow-xl"
+                  className="fixed inset-x-5 top-20 z-30 w-auto rounded-2xl border border-secondary bg-white p-3 shadow-xl sm:absolute sm:top-12 sm:-right-13 sm:w-[470px] sm:max-w-[calc(100vw-40px)]"
                   aria-label="購物車"
                 >
-                  <span className="absolute -top-[10px] right-[61px] size-5 rotate-45 border-t border-l border-secondary bg-white" />
+                  <span className="absolute -top-[10px] right-[61px] hidden size-5 rotate-45 border-t border-l border-secondary bg-white sm:block" />
 
                   <div className="flex max-h-87.25 flex-col overflow-y-auto rounded-xl bg-white">
                     <div className="flex items-center gap-2 border-b border-card-secondary px-2 py-3 text-text-primary">

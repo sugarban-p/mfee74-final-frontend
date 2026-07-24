@@ -466,9 +466,12 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   }[];
 
   return (
-    <div className="flex flex-row items-start gap-24">
-      <aside className="w-[250px] shrink-0">
-        <form className="flex flex-col gap-12" onSubmit={handleSearchSubmit}>
+    <div className="flex flex-col items-start gap-8 lg:flex-row lg:gap-24">
+      <aside className="w-full lg:w-[250px] lg:shrink-0">
+        <form
+          className="flex w-full flex-col gap-6 lg:gap-12"
+          onSubmit={handleSearchSubmit}
+        >
           <input type="hidden" name="category" value={selectedCategory} />
           {selectedTags.length > 0 && (
             <input type="hidden" name="tags" value={selectedTags.join(',')} />
@@ -623,7 +626,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
           </ul>
         </div>
 
-        <div className="flex justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex flex-wrap items-end gap-2.5">
             <h2 className="typo-h2 text-text-primary">
               {selectedCategoryName}
@@ -634,7 +637,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
             </p>
           </div>
 
-          <label className="typo-tab flex items-center gap-2 text-text-primary">
+          <label className="typo-tab flex flex-wrap items-center gap-2 text-text-primary">
             <LuArrowDownWideNarrow className="size-4" />
             排序方式:
             <select
@@ -656,7 +659,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
           </p>
         )}
 
-        <div className="grid grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {displayedProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

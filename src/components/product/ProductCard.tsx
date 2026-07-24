@@ -159,10 +159,10 @@ export function ProductCard({
 
   return (
     <>
-      <article className="w-[250px] justify-self-center overflow-hidden rounded-lg border border-secondary/50 bg-card-primary transition hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary">
+      <article className="w-full justify-self-center overflow-hidden rounded-lg border border-secondary/50 bg-card-primary transition hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary">
         <div
           className={[
-            'h-[150px] w-full bg-button-disabled',
+            'aspect-[5/3] w-full bg-button-disabled',
             avatar ? 'bg-cover bg-center' : '',
           ].join(' ')}
           style={avatar ? { backgroundImage: `url(${avatar})` } : undefined}
