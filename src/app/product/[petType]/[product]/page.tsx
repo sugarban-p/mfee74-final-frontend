@@ -258,7 +258,8 @@ function ProductPageContent({
   const descriptionImages = productDetail?.descriptionImages ?? [];
   const productResolveError =
     petType && productSlug ? loadingError : loadErrorText;
-  const sectionMaxWidthClass = 'mx-auto w-full max-w-[1280px]';
+  const maxWidth = 1280;
+  const sectionMaxWidthClass = `mx-auto w-full max-w-[${maxWidth}px]`;
 
   return (
     <div className="flex flex-col gap-12">
@@ -306,7 +307,7 @@ function ProductPageContent({
           <div
             className={[
               'relative overflow-hidden',
-              showAllDescriptions ? '' : 'max-h-[844px]',
+              showAllDescriptions ? '' : 'max-h-[600px]',
             ].join(' ')}
           >
             {descriptionImages.map((src, index) => (
@@ -314,9 +315,9 @@ function ProductPageContent({
                 key={src}
                 src={src}
                 alt={`${productName} ${labels.description} ${index + 1}`}
-                width={1520}
-                height={1520}
-                sizes="1520px"
+                width={maxWidth}
+                height={maxWidth}
+                sizes={`${maxWidth}px`}
                 className="h-auto w-full"
               />
             ))}
