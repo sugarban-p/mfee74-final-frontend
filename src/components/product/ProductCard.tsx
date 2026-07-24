@@ -159,7 +159,7 @@ export function ProductCard({
 
   return (
     <>
-      <article className="w-full justify-self-center overflow-hidden rounded-lg border border-secondary/50 bg-card-primary transition hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary">
+      <article className="w-[270px] max-w-full justify-self-center overflow-hidden rounded-lg border border-secondary/50 bg-card-primary transition hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary">
         <div
           className={[
             'aspect-[5/3] w-full bg-button-disabled',

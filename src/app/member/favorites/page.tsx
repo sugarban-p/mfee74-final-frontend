@@ -145,7 +145,7 @@ export default function MemberFavoritesPage() {
         <p className="typo-body text-text-secondary">{labels.empty}</p>
       )}
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,260px))] gap-x-8 gap-y-6">
+      <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-[repeat(auto-fit,270px)]">
         {favoriteProducts.map((product) => (
           <ProductCard
             key={product.id}
