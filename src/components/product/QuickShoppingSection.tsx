@@ -466,35 +466,33 @@ export function QuickShoppingSection({
           )}
         </div>
 
-        {productGallery.length > 1 && (
-          <div className="flex gap-4 overflow-x-auto pb-2 sm:gap-8">
-            {productGallery.map((src, index) => (
-              <button
-                key={src}
-                type="button"
-                aria-label={`${labels.selectImage} ${index + 1}`}
-                aria-pressed={selectedImageIndex === index}
-                onClick={() => setSelectedImageIndex(index)}
-                className={[
-                  'relative size-24 shrink-0 overflow-hidden rounded-lg border-2 bg-card-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text-primary sm:size-32',
-                  selectedImageIndex === index
-                    ? 'border-text-primary'
-                    : 'border-transparent',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              >
-                <Image
-                  src={src}
-                  alt=""
-                  fill
-                  sizes="128px"
-                  className="object-cover"
-                />
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex gap-4 overflow-x-auto pb-2 sm:gap-8">
+          {productGallery.map((src, index) => (
+            <button
+              key={src}
+              type="button"
+              aria-label={`${labels.selectImage} ${index + 1}`}
+              aria-pressed={selectedImageIndex === index}
+              onClick={() => setSelectedImageIndex(index)}
+              className={[
+                'relative size-24 shrink-0 overflow-hidden rounded-lg border-2 bg-card-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text-primary sm:size-32',
+                selectedImageIndex === index
+                  ? 'border-text-primary'
+                  : 'border-transparent',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              <Image
+                src={src}
+                alt=""
+                fill
+                sizes="128px"
+                className="object-cover"
+              />
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col gap-6">
