@@ -172,6 +172,7 @@ export function ProductCard({
           <div className="flex items-center justify-between gap-3">
             <Link
               href={productHref}
+              onNavigate={() => window.scrollTo({ top: 0 })}
               className="w-[85%] cursor-pointer hover:underline"
             >
               <h2 className="typo-card-title truncate">{product.name}</h2>

@@ -28,8 +28,8 @@ const labels = {
   recommendedTag: '推薦',
 } as const;
 
-const loadingText = '商品資料載入中...';
 const loadErrorText = '商品資料載入失敗';
+const MIN_PRODUCT_DETAIL_LOADING_MS = 300;
 
 export default function ProductPage() {
   const params = useParams<{ petType?: string; product?: string }>();
@@ -144,6 +144,9 @@ function ProductPageContent({
   const [resolvedProductIds, setResolvedProductIds] =
     useState<ResolvedProductIds | null>(null);
   const [loadingError, setLoadingError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRecommendationsLoading, setIsRecommendationsLoading] =
+    useState(true);
   const [showAllDescriptions, setShowAllDescriptions] = useState(false);
   const [productDetail, setProductDetail] =
     useState<QuickShoppingDetail | null>(null);
@@ -155,11 +158,20 @@ function ProductPageContent({
     if (!petType || !productSlug) return;
 
     const controller = new AbortController();
+    let loadingStartedAt = 0;
 
-    void fetch(
-      `/api/products/resolve/${encodeURIComponent(petType)}/${encodeURIComponent(productSlug)}`,
-      { signal: controller.signal }
-    )
+    void Promise.resolve()
+      .then(() => {
+        if (!controller.signal.aborted) {
+          loadingStartedAt = Date.now();
+          setIsLoading(true);
+        }
+
+        return fetch(
+          `/api/products/resolve/${encodeURIComponent(petType)}/${encodeURIComponent(productSlug)}`,
+          { signal: controller.signal }
+        );
+      })
       .then((response) => {
         if (!response.ok) throw new Error(loadErrorText);
 
@@ -181,6 +193,8 @@ function ProductPageContent({
           productId: data.productId,
         };
 
+        setIsRecommendationsLoading(true);
+        setRecommendedProducts([]);
         setResolvedProductIds(nextResolvedProductIds);
 
         return fetch(
@@ -206,6 +220,16 @@ function ProductPageContent({
         }
 
         setLoadingError(error instanceof Error ? error.message : loadErrorText);
+      })
+      .finally(() => {
+        const remainingLoadingMs = Math.max(
+          MIN_PRODUCT_DETAIL_LOADING_MS - (Date.now() - loadingStartedAt),
+          0
+        );
+
+        window.setTimeout(() => {
+          if (!controller.signal.aborted) setIsLoading(false);
+        }, remainingLoadingMs);
       });
 
     return () => controller.abort();
@@ -239,6 +263,11 @@ function ProductPageContent({
         }
 
         setRecommendedProducts([]);
+      })
+      .finally(() => {
+        window.setTimeout(() => {
+          if (!controller.signal.aborted) setIsRecommendationsLoading(false);
+        }, 0);
       });
 
     return () => controller.abort();
@@ -258,6 +287,12 @@ function ProductPageContent({
   const descriptionImages = productDetail?.descriptionImages ?? [];
   const productResolveError =
     petType && productSlug ? loadingError : loadErrorText;
+  const isPageLoading =
+    !productResolveError && (isLoading || isRecommendationsLoading);
+  const productContent =
+    !isPageLoading && resolvedProductIds && productDetail
+      ? { resolvedProductIds, productDetail }
+      : null;
   const maxWidth = 1280;
   const sectionMaxWidthClass = `mx-auto w-full max-w-[${maxWidth}px]`;
 
@@ -284,19 +319,21 @@ function ProductPageContent({
         </p>
       )}
 
-      {!productResolveError && (!resolvedProductIds || !productDetail) && (
-        <p className="typo-body text-text-secondary">{loadingText}</p>
+      {isPageLoading && (
+        <div className="flex min-h-40 items-center justify-center">
+          <span className="loading loading-md loading-spinner text-primary" />
+        </div>
       )}
 
-      {resolvedProductIds && productDetail && (
+      {productContent && (
         <QuickShoppingSection
-          petTypeId={resolvedProductIds.petTypeId}
-          productId={resolvedProductIds.productId}
-          detail={productDetail}
+          petTypeId={productContent.resolvedProductIds.petTypeId}
+          productId={productContent.resolvedProductIds.productId}
+          detail={productContent.productDetail}
         />
       )}
 
-      {descriptionImages.length > 0 && (
+      {productContent && descriptionImages.length > 0 && (
         <section
           id="product-description"
           className={`${sectionMaxWidthClass} flex flex-col gap-5`}
@@ -341,25 +378,27 @@ function ProductPageContent({
         </section>
       )}
 
-      <section className={`${sectionMaxWidthClass} flex flex-col gap-6`}>
-        <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
-          {labels.recommendedProduct}
-        </h2>
-        {recommendedProducts.length > 0 ? (
-          <div className="flex flex-wrap gap-8">
-            {recommendedProducts.map((recommendedProduct) => (
-              <ProductCard
-                key={recommendedProduct.id}
-                product={recommendedProduct}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="typo-body py-8 text-center text-text-secondary">
-            {labels.noSimilarProduct}
-          </p>
-        )}
-      </section>
+      {productContent && (
+        <section className={`${sectionMaxWidthClass} flex flex-col gap-6`}>
+          <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
+            {labels.recommendedProduct}
+          </h2>
+          {recommendedProducts.length > 0 ? (
+            <div className="flex flex-wrap gap-8">
+              {recommendedProducts.map((recommendedProduct) => (
+                <ProductCard
+                  key={recommendedProduct.id}
+                  product={recommendedProduct}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="typo-body py-8 text-center text-text-secondary">
+              {labels.noSimilarProduct}
+            </p>
+          )}
+        </section>
+      )}
     </div>
   );
 }
