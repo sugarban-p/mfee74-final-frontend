@@ -436,7 +436,7 @@ export function QuickShoppingSection({
 
   if (!productDetail || !currentProduct) {
     return (
-      <section className="grid justify-center gap-16.5 lg:grid-cols-[510px_505px]">
+      <section className="grid gap-8 lg:grid-cols-[510px_505px] lg:justify-center lg:gap-16.5">
         <p
           className={[
             'typo-body',
@@ -451,7 +451,7 @@ export function QuickShoppingSection({
   }
 
   return (
-    <section className="grid justify-center gap-16.5 lg:grid-cols-[510px_505px]">
+    <section className="grid gap-8 lg:grid-cols-[510px_505px] lg:justify-center lg:gap-16.5">
       <div className="flex flex-col gap-8">
         <div className="relative aspect-square overflow-hidden rounded-lg bg-card-primary">
           {selectedImage && (
@@ -460,14 +460,14 @@ export function QuickShoppingSection({
               alt={currentProduct.name}
               fill
               priority
-              sizes="510px"
+              sizes="(min-width: 1024px) 510px, 100vw"
               className="object-cover"
             />
           )}
         </div>
 
         {productGallery.length > 1 && (
-          <div className="flex gap-8 overflow-x-auto pb-2">
+          <div className="flex gap-4 overflow-x-auto pb-2 sm:gap-8">
             {productGallery.map((src, index) => (
               <button
                 key={src}
@@ -476,7 +476,7 @@ export function QuickShoppingSection({
                 aria-pressed={selectedImageIndex === index}
                 onClick={() => setSelectedImageIndex(index)}
                 className={[
-                  'relative size-32 shrink-0 overflow-hidden rounded-lg border-2 bg-card-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text-primary',
+                  'relative size-24 shrink-0 overflow-hidden rounded-lg border-2 bg-card-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text-primary sm:size-32',
                   selectedImageIndex === index
                     ? 'border-text-primary'
                     : 'border-transparent',
@@ -504,16 +504,16 @@ export function QuickShoppingSection({
           </p>
         )}
 
-        <div className="flex items-start justify-between gap-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div>
             <h1 className="typo-h3 text-text-primary">
               {currentProduct.name}
-              <span className="typo-body-medium ml-2 text-text-secondary">
+              <span className="typo-body-medium mt-1 block text-text-secondary sm:mt-0 sm:ml-2 sm:inline">
                 {currentProduct.price}
               </span>
             </h1>
             {tags.length > 0 && (
-              <div className="mt-1 flex gap-1">
+              <div className="mt-1 flex flex-wrap gap-1">
                 {tags.map((tag) => (
                   <span
                     key={tag}
@@ -531,7 +531,7 @@ export function QuickShoppingSection({
             aria-pressed={isFavorite}
             aria-label={isFavorite ? labels.removeFavorite : labels.addFavorite}
             className={[
-              'group typo-tab flex h-10 w-30 cursor-pointer items-center justify-center gap-2 rounded-lg border border-secondary px-3 text-text-primary hover:scale-[1.02] hover:bg-button-secondary-hover',
+              'group typo-tab flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-secondary px-3 text-text-primary hover:scale-[1.02] hover:bg-button-secondary-hover sm:w-30',
               isFavorite
                 ? 'bg-card-secondary text-primary'
                 : 'text-text-primary hover:bg-button-secondary-hover',
@@ -615,14 +615,14 @@ export function QuickShoppingSection({
 
           <ProductQuantitySelector quantity={quantity} onChange={setQuantity} />
 
-          <div className="flex items-center justify-between border-t border-secondary pt-5">
+          <div className="flex flex-col gap-4 border-t border-secondary pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p className="typo-body-medium text-text-secondary">
               {labels.subtotal}: {subtotal}
             </p>
             <button
               type="button"
               disabled={!canAddCart || isAddingCart}
-              className="next-button typo-tab flex w-50 items-center justify-center gap-2 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="next-button typo-tab flex w-full items-center justify-center gap-2 py-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-50"
               onClick={handleAddCartClick}
             >
               <LuShoppingCart className="size-4" />
