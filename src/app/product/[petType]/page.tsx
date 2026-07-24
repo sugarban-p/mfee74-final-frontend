@@ -6,6 +6,7 @@ import {
   type KeyboardEvent,
   type SyntheticEvent,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -184,6 +185,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   const [keywordInput, setKeywordInput] = useState('');
   const [minPriceInput, setMinPriceInput] = useState('');
   const [maxPriceInput, setMaxPriceInput] = useState('');
+  const pendingScrollY = useRef<number | null>(null);
   const productMenuCard = getProductMegaMenuCard(productMegaMenuCards, petType);
   const petTypeId = productMenuCard?.id ?? Number(petType);
   const hasValidPetTypeId = Number.isInteger(petTypeId) && petTypeId > 0;
@@ -316,6 +318,24 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     ? loadingError
     : '商品資料載入失敗';
   const effectiveIsLoading = hasValidPetTypeId && isLoading;
+
+  useEffect(() => {
+    if (effectiveIsLoading || pendingScrollY.current === null) return;
+
+    const scrollY = pendingScrollY.current;
+    pendingScrollY.current = null;
+    const frame = window.requestAnimationFrame(() => {
+      const maxScrollY = Math.max(
+        0,
+        document.documentElement.scrollHeight - window.innerHeight
+      );
+
+      window.scrollTo({ top: Math.min(scrollY, maxScrollY) });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [effectiveIsLoading]);
+
   const categoriesFromApi = activeProductData.facets.categories.map(
     (category) => ({
       category: category.tag_ch,
@@ -394,9 +414,13 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
 
     return `?${nextParams.toString()}`;
   };
+  const preserveScrollPosition = () => {
+    pendingScrollY.current = window.scrollY;
+  };
   const pushHref = (href: string) => {
+    preserveScrollPosition();
     setParams(paramsFromUrlSearchParams(new URLSearchParams(href.slice(1))));
-    router.push(href);
+    router.push(href, { scroll: false });
   };
   const createCategoryHref = (category: string) => {
     return createHref({ category, tagSlugs: [] });
@@ -545,6 +569,8 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
                   <FilterButton
                     key={slug}
                     href={createCategoryHref(slug)}
+                    scroll={false}
+                    onNavigate={preserveScrollPosition}
                     active={active}
                     className="flex items-center justify-between"
                   >
@@ -569,6 +595,8 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
                   <FilterButton
                     key={slug}
                     href={createTagHref(slug)}
+                    scroll={false}
+                    onNavigate={preserveScrollPosition}
                     active={active}
                     aria-pressed={active}
                   >
@@ -642,7 +670,11 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
               <Link href="/">首頁</Link>
             </li>
             <li>
-              <Link href={createCategoryHref(categories[0].slug)}>
+              <Link
+                href={createCategoryHref(categories[0].slug)}
+                scroll={false}
+                onNavigate={preserveScrollPosition}
+              >
                 {breadcrumbTitle}
               </Link>
             </li>
@@ -723,6 +755,8 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
                 <Link
                   key={page}
                   href={createHref({ page })}
+                  scroll={false}
+                  onNavigate={preserveScrollPosition}
                   className="text-primary"
                 >
                   {page}
