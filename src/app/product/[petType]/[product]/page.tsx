@@ -59,10 +59,14 @@ interface ResolvedProductIds {
   productId: number;
 }
 
-interface ProductResolveResponse {
-  success: boolean;
-  petTypeId?: number;
-  productId?: number;
+interface ProductDetailWithIdsResponse extends ProductDetailResponse {
+  success?: boolean;
+  petTypeId?: number | string;
+  productId?: number | string;
+  params?: {
+    petTypeId?: number | string;
+    productId?: number | string;
+  };
   message?: string;
 }
 
@@ -136,6 +140,25 @@ const mapRecommendedProducts = (
   }));
 };
 
+const toPositiveInteger = (value: number | string | undefined) => {
+  const number = Number(value);
+
+  return Number.isInteger(number) && number > 0 ? number : 0;
+};
+
+const getResolvedProductIds = (
+  data: ProductDetailWithIdsResponse
+): ResolvedProductIds | null => {
+  const petTypeId = toPositiveInteger(data.petTypeId ?? data.params?.petTypeId);
+  const productId = toPositiveInteger(
+    data.productId ?? data.params?.productId ?? data.product?.id
+  );
+
+  if (!petTypeId || !productId) return null;
+
+  return { petTypeId, productId };
+};
+
 function ProductPageContent({
   petType,
   productSlug,
@@ -168,51 +191,31 @@ function ProductPageContent({
         }
 
         return fetch(
-          `/api/products/resolve/${encodeURIComponent(petType)}/${encodeURIComponent(productSlug)}`,
+          `/api/products/${encodeURIComponent(petType)}/${encodeURIComponent(productSlug)}/detail`,
           { signal: controller.signal }
         );
       })
       .then((response) => {
         if (!response.ok) throw new Error(loadErrorText);
 
-        return response.json() as Promise<ProductResolveResponse>;
+        return response.json() as Promise<ProductDetailWithIdsResponse>;
       })
       .then((data) => {
+        const nextResolvedProductIds = getResolvedProductIds(data);
+
         if (
-          !data.success ||
-          !Number.isInteger(data.petTypeId) ||
-          !Number.isInteger(data.productId) ||
-          !data.petTypeId ||
-          !data.productId
+          data.success === false ||
+          !data.product ||
+          !nextResolvedProductIds
         ) {
           throw new Error(data.message || loadErrorText);
         }
 
-        const nextResolvedProductIds = {
-          petTypeId: data.petTypeId,
-          productId: data.productId,
-        };
-
         setIsRecommendationsLoading(true);
         setRecommendedProducts([]);
         setResolvedProductIds(nextResolvedProductIds);
-
-        return fetch(
-          `/api/products/${encodeURIComponent(String(nextResolvedProductIds.petTypeId))}/${encodeURIComponent(String(nextResolvedProductIds.productId))}/detail`,
-          { signal: controller.signal }
-        );
-      })
-      .then((response) => {
-        if (!response.ok) throw new Error(loadErrorText);
-
-        return response.json() as Promise<ProductDetailResponse>;
-      })
-      .then((data) => {
-        if (!data.product) {
-          throw new Error(loadErrorText);
-        }
-
         setProductDetail(mapProductDetail(data));
+        setLoadingError('');
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === 'AbortError') {

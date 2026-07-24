@@ -189,6 +189,11 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   const productMenuCard = getProductMegaMenuCard(productMegaMenuCards, petType);
   const petTypeId = productMenuCard?.id ?? Number(petType);
   const hasValidPetTypeId = Number.isInteger(petTypeId) && petTypeId > 0;
+  const selectedCategoryParam = params.category ?? ALL_PRODUCTS_CATEGORY.slug;
+  const categoryId =
+    selectedCategoryParam === ALL_PRODUCTS_CATEGORY.slug
+      ? 0
+      : getProductCategoryId(productMenuCard, selectedCategoryParam);
 
   useEffect(() => {
     let ignore = false;
@@ -244,11 +249,6 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     const controller = new AbortController();
     let loadingStartedAt = 0;
     const nextParams = new URLSearchParams();
-    const category = params.category ?? ALL_PRODUCTS_CATEGORY.slug;
-    const categoryId =
-      category === ALL_PRODUCTS_CATEGORY.slug
-        ? 0
-        : getProductCategoryId(productMenuCard, category);
 
     if (categoryId) {
       nextParams.set('categoryId', String(categoryId));
@@ -305,13 +305,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
       });
 
     return () => controller.abort();
-  }, [
-    hasValidPetTypeId,
-    params,
-    petTypeId,
-    productMenuCard,
-    searchParamsReady,
-  ]);
+  }, [categoryId, hasValidPetTypeId, params, petTypeId, searchParamsReady]);
 
   const activeProductData = hasValidPetTypeId ? productData : emptyProductData;
   const effectiveLoadingError = hasValidPetTypeId
@@ -357,7 +351,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     tag: tag.tag_ch,
     slug: String(tag.id),
   }));
-  const selectedCategory = params.category ?? categories[0].slug;
+  const selectedCategory = selectedCategoryParam;
   const selectedTags = params.tags?.split(',').filter(Boolean) ?? [];
   const search = params.search ?? '';
   const minPrice = params['min-value'] ?? '';
