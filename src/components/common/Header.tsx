@@ -498,13 +498,13 @@ export default function Header() {
                 <section
                   ref={cartPanelRef}
                   id="cart-panel"
-                  className="fixed inset-x-5 top-20 z-30 w-auto rounded-2xl border border-secondary bg-white p-3 shadow-xl sm:absolute sm:top-12 sm:-right-13 sm:w-[470px] sm:max-w-[calc(100vw-40px)]"
+                  className="fixed inset-x-5 top-20 z-30 flex max-h-[calc(100dvh-6rem)] w-auto flex-col rounded-2xl border border-secondary bg-white p-3 shadow-xl sm:absolute sm:top-12 sm:-right-30 sm:left-auto sm:w-[470px] sm:max-w-[calc(100vw-40px)]"
                   aria-label="購物車"
                 >
-                  <span className="absolute -top-[10px] right-[61px] hidden size-5 rotate-45 border-t border-l border-secondary bg-white sm:block" />
+                  <span className="absolute -top-[10px] right-32 hidden size-5 rotate-45 border-t border-l border-secondary bg-white sm:block" />
 
-                  <div className="flex max-h-87.25 flex-col overflow-y-auto rounded-xl bg-white">
-                    <div className="flex items-center gap-2 border-b border-card-secondary px-2 py-3 text-text-primary">
+                  <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-xl bg-white">
+                    <div className="flex items-center gap-2 border-b border-card-secondary px-2 pb-3 text-text-primary">
                       <LuPackage className="size-5 text-primary" />
                       <h2 className="typo-body-medium">購物車</h2>
                     </div>
@@ -526,11 +526,11 @@ export default function Header() {
                           <article
                             key={cartItem.cart_id}
                             className={[
-                              'flex justify-between gap-4 border-b border-card-secondary px-2 py-5',
+                              'flex justify-between border-b border-card-secondary px-2 py-5',
                               isRemoving ? 'bg-warning' : '',
                             ].join(' ')}
                           >
-                            <div className="flex min-w-0 gap-1">
+                            <div className="flex max-w-[60%] min-w-50 gap-1">
                               {cartItem.avatar ? (
                                 <Image
                                   src={toPublicImagePath(cartItem.avatar)}
@@ -542,65 +542,65 @@ export default function Header() {
                               ) : (
                                 <div className="size-14 rounded-xl bg-card-secondary" />
                               )}
-                              <div className="min-w-0">
+                              <div className="flex min-w-0 flex-col justify-center">
                                 <h3 className="typo-tab truncate text-text-primary">
                                   {cartItem.prod_name}
                                 </h3>
-                                <p className="mt-1 text-sm text-text-secondary">
+                                <p className="text-sm text-text-secondary">
                                   {cartItem.item_name}
                                 </p>
                               </div>
                             </div>
-                            <div className="flex min-w-0 items-center justify-between gap-1">
-                              {isRemoving ? (
-                                <div className="flex items-center gap-3">
-                                  <p className="typo-tab whitespace-nowrap text-text-primary">
-                                    確定要移除商品嗎?
-                                  </p>
+                            {isRemoving ? (
+                              <div className="flex max-w-[35%] min-w-35 flex-col items-center gap-3">
+                                <p className="typo-tab whitespace-nowrap text-text-primary">
+                                  確定要移除商品嗎?
+                                </p>
+                                <div className="flex w-full justify-around">
                                   <button
                                     type="button"
                                     aria-label="確認移除商品"
-                                    className="grid size-8 place-items-center rounded-lg text-green-600 hover:bg-white/70"
+                                    className="cursor-pointer place-items-center rounded-lg text-green-600 hover:bg-white/70"
                                     onClick={() =>
                                       void handleConfirmRemoveCartItem(cartItem)
                                     }
                                   >
-                                    <LuCheck className="size-5" />
+                                    確認
                                   </button>
                                   <button
                                     type="button"
                                     aria-label="取消移除商品"
-                                    className="grid size-8 place-items-center rounded-lg text-red-600 hover:bg-white/70"
+                                    className="cursor-pointer place-items-center rounded-lg text-red-600 hover:bg-white/70"
                                     onClick={() => setRemovingCartItemId(null)}
                                   >
-                                    <LuX className="size-5" />
+                                    取消
                                   </button>
                                 </div>
-                              ) : (
-                                <>
-                                  <ProductQuantitySelector
-                                    usage="Header"
-                                    quantity={cartItem.quantity}
-                                    onChange={(quantity) =>
-                                      handleCartQuantityChange(
-                                        cartItem.item_id,
-                                        quantity
-                                      )
-                                    }
-                                  />
-                                  <button
-                                    type="button"
-                                    aria-label="移除商品"
-                                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-secondary hover:bg-button-secondary-hover"
-                                    onClick={() =>
-                                      setRemovingCartItemId(cartItem.item_id)
-                                    }
-                                  >
-                                    <LuTrash2 className="size-4" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
+                              </div>
+                            ) : (
+                              <div className="flex max-w-[35%] min-w-35 items-center justify-between gap-1">
+                                <ProductQuantitySelector
+                                  usage="Header"
+                                  quantity={cartItem.quantity}
+                                  onChange={(quantity) =>
+                                    handleCartQuantityChange(
+                                      cartItem.item_id,
+                                      quantity
+                                    )
+                                  }
+                                />
+                                <button
+                                  type="button"
+                                  aria-label="移除商品"
+                                  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-secondary hover:bg-button-secondary-hover"
+                                  onClick={() =>
+                                    setRemovingCartItemId(cartItem.item_id)
+                                  }
+                                >
+                                  <LuTrash2 className="size-4" />
+                                </button>
+                              </div>
+                            )}
                           </article>
                         );
                       })
@@ -608,14 +608,16 @@ export default function Header() {
                   </div>
 
                   {!isCartLoginRequired && (
-                    <Link
-                      href="/cart"
-                      type="button"
-                      className="next-button typo-tab mt-4 flex w-1/2 items-center justify-center py-3"
-                      onClick={() => setIsCartOpen(false)}
-                    >
-                      查看完整購物車
-                    </Link>
+                    <div className="flex justify-end p-3 pb-0">
+                      <Link
+                        href="/cart"
+                        type="button"
+                        className="next-button typo-tab flex w-1/2 items-center justify-center py-3"
+                        onClick={() => setIsCartOpen(false)}
+                      >
+                        查看完整購物車
+                      </Link>
+                    </div>
                   )}
                 </section>
               )}
