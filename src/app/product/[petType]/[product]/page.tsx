@@ -30,16 +30,6 @@ const labels = {
 const loadingText = '商品資料載入中...';
 const loadErrorText = '商品資料載入失敗';
 
-const recommendationProducts = Array.from({ length: 4 }, () => ({
-  avatar: '',
-  tags: [labels.recommendedTag],
-  name: labels.recommendedProduct,
-  description: labels.recommendedDescription,
-  price: 'NT$999',
-  isFavorite: false,
-  slug: 'prod_x',
-}));
-
 export default function ProductPage() {
   const params = useParams<{ petType?: string; product?: string }>();
   const searchParams = useSearchParams();
@@ -75,6 +65,76 @@ interface ProductResolveResponse {
   message?: string;
 }
 
+interface ApiTag {
+  id: number;
+  tag_ch: string;
+  tag_slug?: string;
+}
+
+interface ApiAvatar {
+  src?: string;
+  thumbnail?: string;
+}
+
+interface ApiIntro {
+  slogan?: string;
+}
+
+interface ApiPetType {
+  id?: number;
+  tag_slug?: string;
+  tag_page?: string;
+}
+
+interface ApiRecommendedProduct {
+  id: number;
+  prod_name: string;
+  price: number | string;
+  slug?: string;
+  total_stock?: number | string;
+  tags?: ApiTag[];
+  intro?: ApiIntro;
+  avatar?: ApiAvatar | null;
+  petType?: ApiPetType | null;
+  isFavorite?: boolean;
+}
+
+interface RecommendationsResponse {
+  success: boolean;
+  recommendations?: ApiRecommendedProduct[];
+  message?: string;
+}
+
+interface CardProduct {
+  id: number;
+  avatar?: ApiAvatar | null;
+  tags?: ApiTag[];
+  name: string;
+  intro?: ApiIntro;
+  price: string;
+  slug: string;
+  petType?: ApiPetType | null;
+  isFavorite: boolean;
+  soldOut: boolean;
+}
+
+const mapRecommendedProducts = (
+  products: ApiRecommendedProduct[]
+): CardProduct[] => {
+  return products.map((product) => ({
+    id: product.id,
+    avatar: product.avatar,
+    tags: product.tags,
+    name: product.prod_name,
+    intro: product.intro,
+    price: `NT$${Number(product.price).toLocaleString('zh-TW')}`,
+    slug: product.slug ?? '',
+    petType: product.petType,
+    isFavorite: product.isFavorite ?? false,
+    soldOut: Number(product.total_stock ?? 0) <= 0,
+  }));
+};
+
 function ProductPageContent({
   petType,
   productSlug,
@@ -86,6 +146,9 @@ function ProductPageContent({
   const [showAllDescriptions, setShowAllDescriptions] = useState(false);
   const [productDetail, setProductDetail] =
     useState<QuickShoppingDetail | null>(null);
+  const [recommendedProducts, setRecommendedProducts] = useState<CardProduct[]>(
+    []
+  );
 
   useEffect(() => {
     if (!petType || !productSlug) return;
@@ -146,6 +209,39 @@ function ProductPageContent({
 
     return () => controller.abort();
   }, [petType, productSlug]);
+
+  useEffect(() => {
+    if (!resolvedProductIds) return;
+
+    const controller = new AbortController();
+    const { petTypeId, productId } = resolvedProductIds;
+
+    void fetch(
+      `/api/products/${encodeURIComponent(String(petTypeId))}/${encodeURIComponent(String(productId))}/recommendations`,
+      { signal: controller.signal }
+    )
+      .then((response) => {
+        if (!response.ok) throw new Error(loadErrorText);
+
+        return response.json() as Promise<RecommendationsResponse>;
+      })
+      .then((data) => {
+        if (!data.success || !Array.isArray(data.recommendations)) {
+          throw new Error(data.message || loadErrorText);
+        }
+
+        setRecommendedProducts(mapRecommendedProducts(data.recommendations));
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+
+        setRecommendedProducts([]);
+      });
+
+    return () => controller.abort();
+  }, [resolvedProductIds]);
 
   const fromAllProducts = categoryParam === 'all-products';
   const productName = productDetail?.product.name || labels.product;
@@ -239,32 +335,21 @@ function ProductPageContent({
         </section>
       )}
 
-      <section className="flex flex-col gap-6">
-        <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
-          {labels.recommendedProduct}
-        </h2>
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
-          {recommendationProducts.map((recommendedProduct, index) => (
-            <ProductCard
-              key={index}
-              product={{
-                avatar: null,
-                tags: [
-                  {
-                    id: index,
-                    tag_ch: recommendedProduct.tags[0] ?? labels.recommendedTag,
-                  },
-                ],
-                name: recommendedProduct.name,
-                intro: { slogan: recommendedProduct.description },
-                price: recommendedProduct.price,
-                slug: recommendedProduct.slug,
-                petType: petType ? { tag_slug: petType } : null,
-              }}
-            />
-          ))}
-        </div>
-      </section>
+      {recommendedProducts.length > 0 && (
+        <section className="flex flex-col gap-6">
+          <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
+            {labels.recommendedProduct}
+          </h2>
+          <div className="flex flex-wrap gap-8">
+            {recommendedProducts.map((recommendedProduct) => (
+              <ProductCard
+                key={recommendedProduct.id}
+                product={recommendedProduct}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
