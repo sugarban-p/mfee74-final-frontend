@@ -379,7 +379,6 @@ export default function Header() {
           </div>
           <div className="navbar-center hidden gap-1 lg:flex">
             <div className="megamenu gap-1" id="my-megamenu-4" popover="auto">
-              <span className="megamenu-active"></span>
               <button
                 className="typo-body rounded-lg text-text-primary hover:bg-button-secondary-hover [&:has(+_[popover]:popover-open)]:rounded-b-none [&:has(+_[popover]:popover-open)]:bg-button-secondary-hover"
                 popoverTarget="products"
