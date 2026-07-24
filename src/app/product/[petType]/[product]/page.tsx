@@ -24,6 +24,7 @@ const labels = {
   product: '商品',
   recommendedDescription: '精選商品',
   recommendedProduct: '推薦商品',
+  noSimilarProduct: '尚無相似商品',
   recommendedTag: '推薦',
 } as const;
 
@@ -339,11 +340,11 @@ function ProductPageContent({
         </section>
       )}
 
-      {recommendedProducts.length > 0 && (
-        <section className={`${sectionMaxWidthClass} flex flex-col gap-6`}>
-          <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
-            {labels.recommendedProduct}
-          </h2>
+      <section className={`${sectionMaxWidthClass} flex flex-col gap-6`}>
+        <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
+          {labels.recommendedProduct}
+        </h2>
+        {recommendedProducts.length > 0 ? (
           <div className="flex flex-wrap gap-8">
             {recommendedProducts.map((recommendedProduct) => (
               <ProductCard
@@ -352,8 +353,12 @@ function ProductPageContent({
               />
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <p className="typo-body py-8 text-center text-text-secondary">
+            {labels.noSimilarProduct}
+          </p>
+        )}
+      </section>
     </div>
   );
 }
