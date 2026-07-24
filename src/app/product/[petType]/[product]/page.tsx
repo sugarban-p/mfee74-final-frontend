@@ -257,12 +257,13 @@ function ProductPageContent({
   const descriptionImages = productDetail?.descriptionImages ?? [];
   const productResolveError =
     petType && productSlug ? loadingError : loadErrorText;
+  const sectionMaxWidthClass = 'mx-auto w-full max-w-[1280px]';
 
   return (
     <div className="flex flex-col gap-12">
       <nav
         aria-label="Breadcrumb"
-        className="typo-body-medium breadcrumbs text-sm"
+        className={`${sectionMaxWidthClass} typo-body-medium breadcrumbs text-sm`}
       >
         <ul className="text-primary">
           <li>
@@ -294,7 +295,10 @@ function ProductPageContent({
       )}
 
       {descriptionImages.length > 0 && (
-        <section id="product-description" className="flex flex-col gap-5">
+        <section
+          id="product-description"
+          className={`${sectionMaxWidthClass} flex flex-col gap-5`}
+        >
           <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
             {labels.description}
           </h2>
@@ -336,7 +340,7 @@ function ProductPageContent({
       )}
 
       {recommendedProducts.length > 0 && (
-        <section className="flex flex-col gap-6">
+        <section className={`${sectionMaxWidthClass} flex flex-col gap-6`}>
           <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
             {labels.recommendedProduct}
           </h2>
