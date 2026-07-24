@@ -710,17 +710,24 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
           className="typo-body-medium flex items-center justify-center gap-8"
         >
           {Array.from({ length: pageCount }, (_, index) => index + 1).map(
-            (page) => (
-              <Link
-                key={page}
-                href={createHref({ page })}
-                className={
-                  page === currentPage ? 'text-text-primary' : 'text-primary'
-                }
-              >
-                {page}
-              </Link>
-            )
+            (page) =>
+              page === currentPage ? (
+                <span
+                  key={page}
+                  aria-current="page"
+                  className="text-text-primary"
+                >
+                  {page}
+                </span>
+              ) : (
+                <Link
+                  key={page}
+                  href={createHref({ page })}
+                  className="text-primary"
+                >
+                  {page}
+                </Link>
+              )
           )}
         </nav>
       </section>
