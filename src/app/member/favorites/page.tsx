@@ -64,6 +64,8 @@ const labels = {
   title: '收藏清單',
 } as const;
 
+const MIN_FAVORITES_LOADING_MS = 300;
+
 const mapFavoriteProducts = (
   products: ApiFavoriteProduct[]
 ): FavoriteProduct[] => {
@@ -98,6 +100,7 @@ export default function MemberFavoritesPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    const loadingStartedAt = Date.now();
 
     void fetch('/api/products/getFavorite', { signal: controller.signal })
       .then((response) => {
@@ -121,7 +124,14 @@ export default function MemberFavoritesPage() {
         );
       })
       .finally(() => {
-        if (!controller.signal.aborted) setIsLoading(false);
+        const remainingLoadingMs = Math.max(
+          MIN_FAVORITES_LOADING_MS - (Date.now() - loadingStartedAt),
+          0
+        );
+
+        window.setTimeout(() => {
+          if (!controller.signal.aborted) setIsLoading(false);
+        }, remainingLoadingMs);
       });
 
     return () => controller.abort();
@@ -131,28 +141,32 @@ export default function MemberFavoritesPage() {
     <section className="flex flex-col gap-5 lg:-mt-12 lg:-mb-16">
       <h1 className="text-xl font-bold text-text-primary">{labels.title}</h1>
 
-      {loadingError && (
-        <p className="typo-body text-error" role="alert">
-          {loadingError}
-        </p>
-      )}
-
-      {isLoading && (
-        <p className="typo-body text-text-secondary">{labels.loading}</p>
-      )}
-
-      {!isLoading && !loadingError && favoriteProducts.length === 0 && (
-        <p className="typo-body text-text-secondary">{labels.empty}</p>
-      )}
-
-      <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-[repeat(auto-fit,270px)]">
-        {favoriteProducts.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onFavoriteChange={handleFavoriteChange}
-          />
-        ))}
+      <div
+        className="min-h-40"
+        aria-busy={isLoading}
+        aria-label={isLoading ? labels.loading : undefined}
+      >
+        {isLoading ? (
+          <div className="flex min-h-40 items-center justify-center">
+            <span className="loading loading-md loading-spinner text-primary" />
+          </div>
+        ) : loadingError ? (
+          <p className="typo-body text-error" role="alert">
+            {loadingError}
+          </p>
+        ) : favoriteProducts.length === 0 ? (
+          <p className="typo-body text-text-secondary">{labels.empty}</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-[repeat(auto-fit,270px)]">
+            {favoriteProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onFavoriteChange={handleFavoriteChange}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

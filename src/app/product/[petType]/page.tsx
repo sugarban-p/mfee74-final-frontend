@@ -118,6 +118,8 @@ interface CardProduct {
 
 type PriceParam = 'min-value' | 'max-value';
 
+const MIN_PRODUCT_LIST_LOADING_MS = 300;
+
 const emptyProductData: ProductListResponse = {
   success: true,
   facets: {
@@ -238,6 +240,7 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     if (!searchParamsReady || !hasValidPetTypeId) return;
 
     const controller = new AbortController();
+    let loadingStartedAt = 0;
     const nextParams = new URLSearchParams();
     const category = params.category ?? ALL_PRODUCTS_CATEGORY.slug;
     const categoryId =
@@ -258,7 +261,15 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
     const queryString = nextParams.toString();
     const url = `/api/products/${encodeURIComponent(String(petTypeId))}${queryString ? `?${queryString}` : ''}`;
 
-    void fetch(url, { signal: controller.signal })
+    void Promise.resolve()
+      .then(() => {
+        if (!controller.signal.aborted) {
+          loadingStartedAt = Date.now();
+          setIsLoading(true);
+        }
+
+        return fetch(url, { signal: controller.signal });
+      })
       .then((response) => {
         if (!response.ok) {
           throw new Error('商品資料載入失敗');
@@ -281,7 +292,14 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
         );
       })
       .finally(() => {
-        if (!controller.signal.aborted) setIsLoading(false);
+        const remainingLoadingMs = Math.max(
+          MIN_PRODUCT_LIST_LOADING_MS - (Date.now() - loadingStartedAt),
+          0
+        );
+
+        window.setTimeout(() => {
+          if (!controller.signal.aborted) setIsLoading(false);
+        }, remainingLoadingMs);
       });
 
     return () => controller.abort();
@@ -403,6 +421,8 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   };
   const handleSearchClear = () => {
     setKeywordInput('');
+    if (!search) return;
+
     pushHref(createHref({ nextSearch: '' }));
   };
   const handleSortChange = (event: SyntheticEvent<HTMLSelectElement>) => {
@@ -425,11 +445,15 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
   const handlePriceClear = (param: PriceParam) => {
     if (param === 'min-value') {
       setMinPriceInput('');
+      if (!minPrice) return;
+
       pushHref(createHref({ minPriceValue: '' }));
       return;
     }
 
     setMaxPriceInput('');
+    if (!maxPrice) return;
+
     pushHref(createHref({ maxPriceValue: '' }));
   };
   const handlePriceKeyDown = (
@@ -659,10 +683,18 @@ export default function PetTypePage({ searchParams }: PetTypePageProps) {
           </p>
         )}
 
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          {displayedProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+        <div className="min-h-40" aria-busy={effectiveIsLoading}>
+          {effectiveIsLoading ? (
+            <div className="flex min-h-40 items-center justify-center">
+              <span className="loading loading-md loading-spinner text-primary" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {displayedProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
         </div>
 
         {!effectiveIsLoading &&
