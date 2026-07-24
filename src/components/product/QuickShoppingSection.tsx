@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { LuShoppingCart } from 'react-icons/lu';
@@ -126,8 +126,8 @@ const labels = {
   addCart: '加入購物車',
   addCartError: '加入購物車失敗，請稍後再試',
   addedCart: '已加入購物車',
-  addFavorite: '加入收藏',
-  addedFavorite: '已加入收藏',
+  addFavorite: '收藏',
+  addedFavorite: '已收藏',
   favoriteError: '請先登入',
   features: '商品特色',
   loading: '商品資料載入中...',
@@ -216,6 +216,7 @@ export function QuickShoppingSection({
 }: QuickShoppingSectionProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const addCartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [fetchedDetail, setFetchedDetail] =
     useState<FetchedQuickShoppingDetail | null>(null);
@@ -273,6 +274,8 @@ export function QuickShoppingSection({
   const productGallery = productDetail?.gallery ?? [];
   const selectedImage = productGallery[selectedImageIndex];
   const canAddCart = Boolean(selectedItem);
+  const search = searchParams.toString();
+  const loginNextPath = search ? `${pathname}?${search}` : pathname;
 
   useEffect(() => {
     if (detail || !petTypeId || !productId) {
@@ -381,7 +384,9 @@ export function QuickShoppingSection({
           const cartResponse = await fetch('/api/products/getCart');
 
           if (cartResponse.status === 401) {
-            router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
+            router.push(
+              `/auth/login?next=${encodeURIComponent(loginNextPath)}`
+            );
             return;
           }
 
@@ -408,7 +413,9 @@ export function QuickShoppingSection({
           );
 
           if (response.status === 401) {
-            router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
+            router.push(
+              `/auth/login?next=${encodeURIComponent(loginNextPath)}`
+            );
             return;
           }
 
