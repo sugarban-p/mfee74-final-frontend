@@ -30,6 +30,7 @@ const labels = {
 
 const loadErrorText = '商品資料載入失敗';
 const MIN_PRODUCT_DETAIL_LOADING_MS = 300;
+const DESCRIPTION_PREVIEW_COUNT = 2;
 
 export default function ProductPage() {
   const params = useParams<{ petType?: string; product?: string }>();
@@ -288,6 +289,11 @@ function ProductPageContent({
       ? `/product/${petType}?category=${encodeURIComponent(categorySlug)}`
       : `/product/${petType}`;
   const descriptionImages = productDetail?.descriptionImages ?? [];
+  const visibleDescriptionImages = showAllDescriptions
+    ? descriptionImages
+    : descriptionImages.slice(0, DESCRIPTION_PREVIEW_COUNT);
+  const canToggleDescriptions =
+    descriptionImages.length > DESCRIPTION_PREVIEW_COUNT;
   const productResolveError =
     petType && productSlug ? loadingError : loadErrorText;
   const isPageLoading =
@@ -297,13 +303,15 @@ function ProductPageContent({
       ? { resolvedProductIds, productDetail }
       : null;
   const maxWidth = 1280;
-  const sectionMaxWidthClass = `mx-auto w-full max-w-[${maxWidth}px]`;
 
   return (
-    <div className="flex flex-col gap-12">
+    <div
+      className="flex flex-col gap-12 justify-self-center"
+      style={{ maxWidth }}
+    >
       <nav
         aria-label="Breadcrumb"
-        className={`${sectionMaxWidthClass} typo-body-medium breadcrumbs text-sm`}
+        className="typo-body-medium breadcrumbs w-full text-sm"
       >
         <ul className="text-primary">
           <li>
@@ -339,7 +347,7 @@ function ProductPageContent({
       {productContent && descriptionImages.length > 0 && (
         <section
           id="product-description"
-          className={`${sectionMaxWidthClass} flex flex-col gap-5`}
+          className="mx-auto flex w-full flex-col gap-5"
         >
           <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
             {labels.description}
@@ -350,7 +358,7 @@ function ProductPageContent({
               showAllDescriptions ? '' : 'max-h-[600px]',
             ].join(' ')}
           >
-            {descriptionImages.map((src, index) => (
+            {visibleDescriptionImages.map((src, index) => (
               <Image
                 key={src}
                 src={src}
@@ -361,33 +369,35 @@ function ProductPageContent({
                 className="h-auto w-full"
               />
             ))}
-            <button
-              type="button"
-              className={`group absolute inset-x-0 bottom-0 flex h-24 cursor-pointer items-center justify-center gap-2 bg-linear-to-t from-black/85 to-transparent pt-7 transition-transform hover:scale-[1.05] ${
-                showAllDescriptions ? 'pb-7' : 'pt-7'
-              }`}
-              onClick={() => setShowAllDescriptions((prev) => !prev)}
-            >
-              <span className="typo-tab text-text-button group-hover:underline">
-                {showAllDescriptions
-                  ? labels.collapseDescription
-                  : labels.expandDescription}
-              </span>
-              <LuChevronRight
-                className={`size-6 text-text-button ${showAllDescriptions ? '-rotate-90' : 'rotate-90'}`}
-              />
-            </button>
+            {canToggleDescriptions && (
+              <button
+                type="button"
+                className={`group absolute inset-x-0 bottom-0 flex h-24 cursor-pointer items-center justify-center gap-2 bg-linear-to-t from-black/85 to-transparent pt-7 transition-transform hover:scale-[1.05] ${
+                  showAllDescriptions ? 'pb-7' : 'pt-7'
+                }`}
+                onClick={() => setShowAllDescriptions((prev) => !prev)}
+              >
+                <span className="typo-tab text-text-button group-hover:underline">
+                  {showAllDescriptions
+                    ? labels.collapseDescription
+                    : labels.expandDescription}
+                </span>
+                <LuChevronRight
+                  className={`size-6 text-text-button ${showAllDescriptions ? '-rotate-90' : 'rotate-90'}`}
+                />
+              </button>
+            )}
           </div>
         </section>
       )}
 
       {productContent && (
-        <section className={`${sectionMaxWidthClass} flex flex-col gap-6`}>
+        <section className="mx-auto flex w-full flex-col gap-6">
           <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
             {labels.recommendedProduct}
           </h2>
           {recommendedProducts.length > 0 ? (
-            <div className="flex flex-wrap gap-8">
+            <div className="flex justify-around gap-8">
               {recommendedProducts.map((recommendedProduct) => (
                 <ProductCard
                   key={recommendedProduct.id}

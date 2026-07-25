@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
@@ -160,13 +161,17 @@ export function ProductCard({
   return (
     <>
       <article className="w-[270px] max-w-full justify-self-center overflow-hidden rounded-lg border border-secondary/50 bg-card-primary transition hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary">
-        <div
-          className={[
-            'aspect-[5/3] w-full bg-button-disabled',
-            avatar ? 'bg-cover bg-center' : '',
-          ].join(' ')}
-          style={avatar ? { backgroundImage: `url(${avatar})` } : undefined}
-        />
+        <div className="relative aspect-[5/3] w-full overflow-hidden bg-button-disabled">
+          {avatar && (
+            <Image
+              src={avatar}
+              alt={product.name}
+              fill
+              sizes="270px"
+              className="object-cover"
+            />
+          )}
+        </div>
 
         <div className="flex flex-col gap-4 p-4">
           <div className="flex items-center justify-between gap-3">
