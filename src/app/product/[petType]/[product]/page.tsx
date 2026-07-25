@@ -111,6 +111,11 @@ interface RecommendationsResponse {
   message?: string;
 }
 
+interface FavoriteIdsResponse {
+  success: boolean;
+  favorites?: number[];
+}
+
 interface CardProduct {
   id: number;
   avatar?: ApiAvatar | null;
@@ -139,6 +144,25 @@ const mapRecommendedProducts = (
     isFavorite: product.isFavorite ?? false,
     soldOut: Number(product.total_stock ?? 0) <= 0,
   }));
+};
+
+const fetchFavoriteIds = async (productIds: number[], signal: AbortSignal) => {
+  if (!productIds.length) return [];
+
+  try {
+    const response = await fetch(
+      `/api/products/favorites?ids=${productIds.join(',')}`,
+      { signal }
+    );
+
+    if (!response.ok) return [];
+
+    const data = (await response.json()) as FavoriteIdsResponse;
+
+    return data.success ? (data.favorites ?? []) : [];
+  } catch {
+    return [];
+  }
 };
 
 const toPositiveInteger = (value: number | string | undefined) => {
@@ -201,7 +225,7 @@ function ProductPageContent({
 
         return response.json() as Promise<ProductDetailWithIdsResponse>;
       })
-      .then((data) => {
+      .then(async (data) => {
         const nextResolvedProductIds = getResolvedProductIds(data);
 
         if (
@@ -212,10 +236,24 @@ function ProductPageContent({
           throw new Error(data.message || loadErrorText);
         }
 
+        const favoriteIds = await fetchFavoriteIds(
+          [nextResolvedProductIds.productId],
+          controller.signal
+        );
+        const nextProductDetail = mapProductDetail(data);
+
+        if (controller.signal.aborted) return;
+
         setIsRecommendationsLoading(true);
         setRecommendedProducts([]);
         setResolvedProductIds(nextResolvedProductIds);
-        setProductDetail(mapProductDetail(data));
+        setProductDetail({
+          ...nextProductDetail,
+          product: {
+            ...nextProductDetail.product,
+            isFavorite: favoriteIds.includes(nextResolvedProductIds.productId),
+          },
+        });
         setLoadingError('');
       })
       .catch((error: unknown) => {
@@ -254,12 +292,28 @@ function ProductPageContent({
 
         return response.json() as Promise<RecommendationsResponse>;
       })
-      .then((data) => {
+      .then(async (data) => {
         if (!data.success || !Array.isArray(data.recommendations)) {
           throw new Error(data.message || loadErrorText);
         }
 
-        setRecommendedProducts(mapRecommendedProducts(data.recommendations));
+        const nextRecommendedProducts = mapRecommendedProducts(
+          data.recommendations
+        );
+        const favoriteIds = await fetchFavoriteIds(
+          nextRecommendedProducts.map((product) => product.id),
+          controller.signal
+        );
+        const favoriteIdSet = new Set(favoriteIds);
+
+        if (controller.signal.aborted) return;
+
+        setRecommendedProducts(
+          nextRecommendedProducts.map((product) => ({
+            ...product,
+            isFavorite: favoriteIdSet.has(product.id),
+          }))
+        );
       })
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === 'AbortError') {
