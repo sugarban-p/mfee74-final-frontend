@@ -142,6 +142,7 @@ export function ProductListClient({
   loadingError,
 }: ProductListClientProps) {
   const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
   const [keywordInput, setKeywordInput] = useState(params.search ?? '');
   const [minPriceInput, setMinPriceInput] = useState(params['min-value'] ?? '');
   const [maxPriceInput, setMaxPriceInput] = useState(params['max-value'] ?? '');
@@ -222,7 +223,11 @@ export function ProductListClient({
     return `?${nextParams.toString()}`;
   };
   const pushHref = (href: string) => {
+    setIsNavigating(true);
     router.push(href, { scroll: false });
+  };
+  const handleNavigate = () => {
+    setIsNavigating(true);
   };
   const createCategoryHref = (category: string) => {
     return createHref({ category, tagSlugs: [] });
@@ -372,6 +377,7 @@ export function ProductListClient({
                     key={slug}
                     href={createCategoryHref(slug)}
                     scroll={false}
+                    onNavigate={active ? undefined : handleNavigate}
                     active={active}
                     className="flex items-center justify-between"
                   >
@@ -397,6 +403,7 @@ export function ProductListClient({
                     key={slug}
                     href={createTagHref(slug)}
                     scroll={false}
+                    onNavigate={handleNavigate}
                     active={active}
                     aria-pressed={active}
                   >
@@ -473,6 +480,11 @@ export function ProductListClient({
               <Link
                 href={createCategoryHref(categories[0].slug)}
                 scroll={false}
+                onNavigate={
+                  selectedCategory === categories[0].slug
+                    ? undefined
+                    : handleNavigate
+                }
               >
                 {breadcrumbTitle}
               </Link>
@@ -514,19 +526,32 @@ export function ProductListClient({
           </p>
         )}
 
-        <div className="min-h-40">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="min-h-40" aria-busy={isNavigating}>
+          {isNavigating && (
+            <div className="flex min-h-40 items-center justify-center">
+              <span className="loading loading-md loading-spinner text-primary" />
+            </div>
+          )}
+          <div
+            className={
+              isNavigating
+                ? 'hidden'
+                : 'grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'
+            }
+          >
             {displayedProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </div>
 
-        {!effectiveLoadingError && displayedProducts.length === 0 && (
-          <p className="typo-body text-text-secondary">
-            目前沒有符合條件的商品
-          </p>
-        )}
+        {!isNavigating &&
+          !effectiveLoadingError &&
+          displayedProducts.length === 0 && (
+            <p className="typo-body text-text-secondary">
+              目前沒有符合條件的商品
+            </p>
+          )}
         <nav
           aria-label="Pagination"
           className="typo-body-medium flex items-center justify-center gap-8"
@@ -546,6 +571,7 @@ export function ProductListClient({
                   key={page}
                   href={createHref({ page })}
                   scroll={false}
+                  onNavigate={handleNavigate}
                   className="text-primary"
                 >
                   {page}
