@@ -385,10 +385,26 @@ export default function Header() {
                   imageAlt="所有活動"
                   title="所有活動"
                   items={[
-                    { id: 1, title: '會員優惠', href: '/event' },
-                    { id: 2, title: '新品活動', href: '/event' },
-                    { id: 3, title: '購物滿額折扣', href: '/event' },
-                    { id: 4, title: '寵物講座', href: '/event' },
+                    {
+                      id: 1,
+                      title: '滿額 $1500 免運',
+                      href: '/activity/free-shipping-1500',
+                    },
+                    {
+                      id: 2,
+                      title: '新品嚐鮮季',
+                      href: '/activity/new-arrival-season',
+                    },
+                    {
+                      id: 3,
+                      title: '滿千折百',
+                      href: '/activity/pet-festival-1000-off-100',
+                    },
+                    {
+                      id: 4,
+                      title: '會員首購 9 折',
+                      href: '/activity/new-member-first-order-10off',
+                    },
                   ]}
                 />
               </div>
