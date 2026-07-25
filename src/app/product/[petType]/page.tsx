@@ -18,6 +18,7 @@ const ALL_PRODUCTS_CATEGORY_SLUG = 'all-products';
 const backendApiOrigin =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const loadErrorText = '商品資料載入失敗';
+const productCacheRevalidateSeconds = 300;
 
 interface PetTypePageProps {
   params?: Promise<{
@@ -52,11 +53,54 @@ const normalizeSearchParams = (params: ProductSearchParams) => {
   };
 };
 
-const fetchMegaMenu = async (headers: HeadersInit) => {
+interface FavoriteIdsResponse {
+  success: boolean;
+  favorites?: number[];
+}
+
+const withFavoriteOverlay = (
+  productData: ProductListResponse,
+  favoriteIds: number[]
+): ProductListResponse => {
+  if (!favoriteIds.length) return productData;
+
+  const favoriteIdSet = new Set(favoriteIds);
+
+  return {
+    ...productData,
+    products: productData.products.map((product) => ({
+      ...product,
+      isFavorite: favoriteIdSet.has(product.id),
+    })),
+  };
+};
+
+const fetchFavoriteIds = async (productIds: number[], headers: HeadersInit) => {
+  if (!productIds.length) return [];
+
+  try {
+    const response = await fetch(
+      apiUrl(`/api/products/favorites?ids=${productIds.join(',')}`),
+      {
+        headers,
+        cache: 'no-store',
+      }
+    );
+
+    if (!response.ok) return [];
+
+    const data = (await response.json()) as FavoriteIdsResponse;
+
+    return data.success ? (data.favorites ?? []) : [];
+  } catch {
+    return [];
+  }
+};
+
+const fetchMegaMenu = async () => {
   try {
     const response = await fetch(apiUrl('/api/products/mega-menu'), {
-      headers,
-      cache: 'no-store',
+      next: { revalidate: productCacheRevalidateSeconds },
     });
 
     if (!response.ok) throw new Error();
@@ -74,8 +118,7 @@ const fetchMegaMenu = async (headers: HeadersInit) => {
 const fetchProductData = async (
   petType: string,
   params: ProductSearchParams,
-  cards: ProductMegaMenuCard[],
-  headers: HeadersInit
+  cards: ProductMegaMenuCard[]
 ) => {
   const productMenuCard = getProductMegaMenuCard(cards, petType);
   const petTypeId = productMenuCard?.id ?? Number(petType);
@@ -108,8 +151,7 @@ const fetchProductData = async (
         }`
       ),
       {
-        headers,
-        cache: 'no-store',
+        next: { revalidate: productCacheRevalidateSeconds },
       }
     );
 
@@ -136,12 +178,21 @@ export default async function PetTypePage({
   const productParams = normalizeSearchParams(
     searchParams ? await searchParams : {}
   );
-  const productMegaMenuCards = await fetchMegaMenu(forwardedHeaders);
+  const productMegaMenuCards = await fetchMegaMenu();
   const { productData, loadingError } = await fetchProductData(
     petType,
     productParams,
-    productMegaMenuCards,
-    forwardedHeaders
+    productMegaMenuCards
+  );
+  const favoriteIds = cookie
+    ? await fetchFavoriteIds(
+        productData.products.map((product) => product.id),
+        forwardedHeaders
+      )
+    : [];
+  const productDataWithFavorites = withFavoriteOverlay(
+    productData,
+    favoriteIds
   );
 
   return (
@@ -149,7 +200,7 @@ export default async function PetTypePage({
       key={`${petType}:${JSON.stringify(productParams)}`}
       petType={petType}
       params={productParams}
-      productData={productData}
+      productData={productDataWithFavorites}
       productMegaMenuCards={productMegaMenuCards}
       loadingError={loadingError}
     />

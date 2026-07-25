@@ -302,7 +302,17 @@ export function QuickShoppingSection({
 
         const nextDetail = mapProductDetail(data);
 
-        setFetchedDetail({ petTypeId, productId, detail: nextDetail });
+        setFetchedDetail({
+          petTypeId,
+          productId,
+          detail: {
+            ...nextDetail,
+            product: {
+              ...nextDetail.product,
+              isFavorite: product?.isFavorite ?? nextDetail.product.isFavorite,
+            },
+          },
+        });
         setLoadingErrorState(null);
       })
       .catch((error: unknown) => {
@@ -318,7 +328,7 @@ export function QuickShoppingSection({
       });
 
     return () => controller.abort();
-  }, [detail, petTypeId, productId]);
+  }, [detail, petTypeId, product?.isFavorite, productId]);
 
   useEffect(() => {
     return () => {
