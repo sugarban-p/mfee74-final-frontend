@@ -362,13 +362,19 @@ export default function Header() {
                   </li>
                 ))}
                 <li>
-                  <Link href="/event">所有活動</Link>
+                  <Link href="/event" className="font-bold">
+                    所有活動
+                  </Link>
                 </li>
                 <li>
-                  <Link href="/">AI 顧問</Link>
+                  <Link href="/" className="font-bold">
+                    AI 顧問
+                  </Link>
                 </li>
                 <li>
-                  <Link href="/">寵物百科</Link>
+                  <Link href="/" className="font-bold">
+                    寵物百科
+                  </Link>
                 </li>
               </ul>
             </details>
@@ -378,7 +384,7 @@ export default function Header() {
                 alt=""
                 width={135}
                 height={64}
-                className="object-contain"
+                className="h-12 w-auto object-contain lg:h-16"
               />
             </Link>
           </div>
