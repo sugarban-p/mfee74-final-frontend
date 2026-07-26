@@ -360,7 +360,7 @@ function ProductPageContent({
 
   return (
     <div
-      className="flex flex-col gap-12 justify-self-center"
+      className="flex flex-col gap-4 justify-self-center p-2 sm:gap-12 sm:p-0"
       style={{ maxWidth }}
     >
       <nav
@@ -409,7 +409,7 @@ function ProductPageContent({
           <div
             className={[
               'relative overflow-hidden',
-              showAllDescriptions ? '' : 'max-h-[600px]',
+              showAllDescriptions ? '' : 'max-h-[300px] sm:max-h-[600px]',
             ].join(' ')}
           >
             {visibleDescriptionImages.map((src, index) => (
@@ -451,7 +451,7 @@ function ProductPageContent({
             {labels.recommendedProduct}
           </h2>
           {recommendedProducts.length > 0 ? (
-            <div className="flex justify-around gap-8">
+            <div className="grid grid-cols-2 gap-x-0 gap-y-6 sm:gap-8 xl:grid-cols-3 2xl:grid-cols-4">
               {recommendedProducts.map((recommendedProduct) => (
                 <ProductCard
                   key={recommendedProduct.id}

@@ -321,7 +321,7 @@ export function ProductListClient({
   }[];
 
   return (
-    <div className="flex flex-col items-center gap-8 lg:flex-row lg:items-start lg:gap-24">
+    <div className="flex flex-col items-center gap-8 px-3 lg:flex-row lg:items-start lg:gap-24 lg:px-0">
       <aside className="w-full lg:w-[250px] lg:shrink-0">
         <form
           className="flex w-full flex-col gap-6 lg:gap-12"
@@ -467,7 +467,7 @@ export function ProductListClient({
         </form>
       </aside>
 
-      <section className="flex min-w-0 flex-col gap-12">
+      <section className="flex min-w-0 flex-col gap-4 sm:gap-12">
         <div
           aria-label="Breadcrumb"
           className="typo-body-medium breadcrumbs text-sm"
@@ -536,7 +536,7 @@ export function ProductListClient({
             className={
               isNavigating
                 ? 'hidden'
-                : 'grid grid-cols-2 gap-x-0 gap-y-6 sm:gap-8 xl:grid-cols-3 2xl:grid-cols-4'
+                : 'grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8 xl:grid-cols-3 2xl:grid-cols-4'
             }
           >
             {displayedProducts.map((product) => (

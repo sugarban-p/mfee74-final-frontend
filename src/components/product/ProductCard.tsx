@@ -1,8 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { LuShoppingCart } from 'react-icons/lu';
@@ -86,7 +85,9 @@ export function ProductCard({
     isFavorite: boolean;
   } | null>(null);
   const [isQuickShoppingOpen, setIsQuickShoppingOpen] = useState(false);
+  const [isCardPressed, setIsCardPressed] = useState(false);
   const params = useParams<{ petType?: string }>();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const petTypeId = product.petType?.id;
   const petTypeSlug = product.petType?.tag_slug ?? params.petType;
@@ -158,9 +159,33 @@ export function ProductCard({
     }
   };
 
+  const resetCardPressed = () => setIsCardPressed(false);
+  const openProductPage = () => {
+    resetCardPressed();
+    if (productHref === '#') return;
+
+    window.scrollTo({ top: 0 });
+    router.push(productHref);
+  };
+
   return (
     <>
-      <article className="w-[190px] max-w-full justify-self-center overflow-hidden rounded-lg border border-secondary/50 bg-card-primary transition hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary sm:w-[270px]">
+      <article className="group/card relative isolate w-[190px] max-w-full justify-self-center overflow-hidden rounded-lg border border-secondary/50 bg-card-primary transition hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary sm:w-[270px]">
+        <button
+          type="button"
+          aria-label={product.name}
+          className={[
+            'absolute inset-0 z-10 cursor-pointer touch-manipulation transition-colors select-none [-webkit-touch-callout:none] focus-visible:outline-none',
+            isCardPressed ? 'bg-primary/5' : '',
+          ].join(' ')}
+          onPointerDown={() => setIsCardPressed(true)}
+          onPointerUp={resetCardPressed}
+          onPointerCancel={resetCardPressed}
+          onPointerLeave={resetCardPressed}
+          onBlur={resetCardPressed}
+          onContextMenu={(event) => event.preventDefault()}
+          onClick={openProductPage}
+        />
         <div className="relative aspect-[5/3] w-full overflow-hidden bg-button-disabled">
           {avatar && (
             <Image
@@ -176,13 +201,9 @@ export function ProductCard({
 
         <div className="flex flex-col gap-4 p-4">
           <div className="flex items-center justify-between gap-3">
-            <Link
-              href={productHref}
-              onNavigate={() => window.scrollTo({ top: 0 })}
-              className="min-w-0 flex-1 cursor-pointer hover:underline"
-            >
-              <h2 className="typo-card-title truncate">{product.name}</h2>
-            </Link>
+            <h2 className="typo-card-title min-w-0 flex-1 truncate group-hover/card:underline">
+              {product.name}
+            </h2>
             <button
               type="button"
               aria-pressed={isFavorite}
@@ -190,7 +211,7 @@ export function ProductCard({
                 isFavorite ? labels.removeFavorite : labels.addFavorite
               }
               className={[
-                'group flex size-6 shrink-0 cursor-pointer items-center justify-center',
+                'group relative z-20 flex size-6 shrink-0 cursor-pointer items-center justify-center',
                 isFavorite
                   ? 'text-primary'
                   : 'text-secondary hover:text-primary',
@@ -228,7 +249,7 @@ export function ProductCard({
           <button
             type="button"
             disabled={product.soldOut || !petTypeId || !product.id}
-            className="next-button typo-tab flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="next-button typo-tab relative z-20 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => setIsQuickShoppingOpen(true)}
           >
             {product.soldOut ? (
@@ -252,7 +273,7 @@ export function ProductCard({
             role="dialog"
             aria-modal="true"
             aria-label={`${product.name} ${labels.dialogSuffix}`}
-            className="relative max-h-[calc(100vh-32px)] w-full max-w-[1160px] overflow-y-auto rounded-lg bg-white p-6 shadow-xl"
+            className="relative max-h-[calc(100dvh-256px)] min-h-[600px] w-[calc(100vw-48px)] max-w-[1160px] overflow-y-auto rounded-lg bg-white p-4 shadow-xl sm:max-h-[calc(100vh-64px)] sm:w-full sm:p-6"
             onClick={(event) => event.stopPropagation()}
           >
             <QuickShoppingSection

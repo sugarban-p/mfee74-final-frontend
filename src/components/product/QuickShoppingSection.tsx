@@ -446,7 +446,7 @@ export function QuickShoppingSection({
 
   if (!productDetail || !currentProduct) {
     return (
-      <section className="grid gap-8 lg:grid-cols-[510px_505px] lg:justify-center lg:gap-16.5">
+      <section className="grid max-w-full min-w-0 gap-8 lg:grid-cols-[510px_505px] lg:justify-center lg:gap-16.5">
         <p
           className={[
             'typo-body',
@@ -461,8 +461,8 @@ export function QuickShoppingSection({
   }
 
   return (
-    <section className="grid gap-8 lg:grid-cols-[510px_505px] lg:justify-center lg:gap-16.5">
-      <div className="flex flex-col gap-8">
+    <section className="grid max-w-full min-w-0 gap-8 lg:grid-cols-[510px_505px] lg:justify-center lg:gap-16.5">
+      <div className="flex min-w-0 flex-col gap-8">
         <div className="relative aspect-square overflow-hidden rounded-lg bg-card-primary">
           {selectedImage && (
             <Image
@@ -505,16 +505,16 @@ export function QuickShoppingSection({
         </div>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex min-w-0 flex-col gap-6">
         {loadingError && (
           <p className="typo-body text-error" role="alert">
             {loadingError}
           </p>
         )}
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-          <div>
-            <h1 className="typo-h3 text-text-primary">
+        <div className="flex items-start justify-between gap-2 sm:gap-6">
+          <div className="min-w-0">
+            <h1 className="typo-h3 break-words text-text-primary">
               {currentProduct.name}
               <span className="typo-body-medium mt-1 block text-text-secondary sm:mt-0 sm:ml-2 sm:inline">
                 {currentProduct.price}
@@ -539,7 +539,7 @@ export function QuickShoppingSection({
             aria-pressed={isFavorite}
             aria-label={isFavorite ? labels.removeFavorite : labels.addFavorite}
             className={[
-              'group typo-tab flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-secondary px-3 text-text-primary hover:scale-[1.02] hover:bg-button-secondary-hover sm:w-30',
+              'group typo-tab flex h-10 w-30 cursor-pointer items-center justify-center gap-2 rounded-lg border border-secondary px-3 text-text-primary hover:scale-[1.02] hover:bg-button-secondary-hover',
               isFavorite
                 ? 'bg-card-secondary text-primary'
                 : 'text-text-primary hover:bg-button-secondary-hover',
@@ -565,7 +565,7 @@ export function QuickShoppingSection({
           <h2 className="typo-body-medium mb-4 text-text-primary">
             {labels.features}
           </h2>
-          <div className="typo-tab rounded-lg border border-primary bg-button-secondary-hover p-5 text-text-primary">
+          <div className="typo-tab max-w-full rounded-lg border border-primary bg-button-secondary-hover p-5 break-words text-text-primary">
             <div className="space-y-2">
               {productDetail.features.map((feature, index) => (
                 <p
@@ -580,7 +580,7 @@ export function QuickShoppingSection({
         </section>
 
         <form className="flex flex-col gap-5 border-t border-secondary pt-5">
-          <fieldset>
+          <fieldset className="min-w-0">
             <legend className="typo-body-medium mb-3 text-text-primary">
               {labels.spec}
             </legend>
@@ -593,7 +593,7 @@ export function QuickShoppingSection({
                 return (
                   <label
                     key={item.id}
-                    className="typo-tab cursor-pointer rounded-lg border border-secondary bg-white px-4 py-2 text-text-primary has-checked:bg-card-secondary"
+                    className="typo-tab max-w-full cursor-pointer rounded-lg border border-secondary bg-white px-4 py-2 break-words text-text-primary has-checked:bg-card-secondary"
                   >
                     <input
                       type="radio"
