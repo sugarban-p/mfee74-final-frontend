@@ -160,15 +160,16 @@ export function ProductCard({
 
   return (
     <>
-      <article className="w-[270px] max-w-full justify-self-center overflow-hidden rounded-lg border border-secondary/50 bg-card-primary transition hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary">
+      <article className="w-[190px] max-w-full justify-self-center overflow-hidden rounded-lg border border-secondary/50 bg-card-primary transition hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary sm:w-[270px]">
         <div className="relative aspect-[5/3] w-full overflow-hidden bg-button-disabled">
           {avatar && (
             <Image
               src={avatar}
               alt={product.name}
-              fill
-              sizes="270px"
-              className="object-cover"
+              width={270}
+              height={162}
+              sizes="(min-width: 640px) 270px, 190px"
+              className="h-full w-full object-cover"
             />
           )}
         </div>
@@ -178,7 +179,7 @@ export function ProductCard({
             <Link
               href={productHref}
               onNavigate={() => window.scrollTo({ top: 0 })}
-              className="w-[85%] cursor-pointer hover:underline"
+              className="min-w-0 flex-1 cursor-pointer hover:underline"
             >
               <h2 className="typo-card-title truncate">{product.name}</h2>
             </Link>
@@ -189,7 +190,7 @@ export function ProductCard({
                 isFavorite ? labels.removeFavorite : labels.addFavorite
               }
               className={[
-                'group flex size-6 cursor-pointer items-center justify-center',
+                'group flex size-6 shrink-0 cursor-pointer items-center justify-center',
                 isFavorite
                   ? 'text-primary'
                   : 'text-secondary hover:text-primary',
@@ -208,7 +209,9 @@ export function ProductCard({
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="typo-card-body truncate">{description}</p>
+            <p className="typo-card-body hidden truncate sm:block">
+              {description}
+            </p>
             <div className="flex h-[18px] gap-1 overflow-hidden">
               {tags.map((tag) => (
                 <span
