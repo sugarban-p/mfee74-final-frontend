@@ -321,7 +321,7 @@ export function ProductListClient({
   }[];
 
   return (
-    <div className="flex flex-col items-center gap-8 px-3 lg:flex-row lg:items-start lg:gap-24 lg:px-0">
+    <div className="flex flex-col items-center gap-4 px-3 lg:flex-row lg:items-start lg:gap-24 lg:px-0">
       <aside className="w-full lg:w-[250px] lg:shrink-0">
         <form
           className="flex w-full flex-col gap-6 lg:gap-12"
@@ -395,22 +395,26 @@ export function ProductListClient({
               <span className="typo-tab"> (可複選)</span>
             </h4>
             <div className="flex flex-wrap gap-2">
-              {tags.map(({ tag, slug }) => {
-                const active = selectedTagSet.has(slug);
+              {tags.length === 0 ? (
+                <p className="typo-tab text-text-secondary">無標籤</p>
+              ) : (
+                tags.map(({ tag, slug }) => {
+                  const active = selectedTagSet.has(slug);
 
-                return (
-                  <FilterButton
-                    key={slug}
-                    href={createTagHref(slug)}
-                    scroll={false}
-                    onNavigate={handleNavigate}
-                    active={active}
-                    aria-pressed={active}
-                  >
-                    {tag}
-                  </FilterButton>
-                );
-              })}
+                  return (
+                    <FilterButton
+                      key={slug}
+                      href={createTagHref(slug)}
+                      scroll={false}
+                      onNavigate={handleNavigate}
+                      active={active}
+                      aria-pressed={active}
+                    >
+                      {tag}
+                    </FilterButton>
+                  );
+                })
+              )}
             </div>
           </section>
 
@@ -494,7 +498,7 @@ export function ProductListClient({
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex flex-wrap items-end gap-2.5">
+          <div className="flex flex-col flex-wrap items-center gap-2.5 sm:flex-row sm:items-end">
             <h2 className="typo-h2 text-text-primary">
               {selectedCategoryName}
             </h2>
@@ -504,7 +508,7 @@ export function ProductListClient({
             </p>
           </div>
 
-          <label className="typo-tab flex flex-wrap items-center gap-2 text-text-primary">
+          <label className="typo-tab flex flex-wrap items-center justify-center gap-2 text-text-primary">
             <LuArrowDownWideNarrow className="size-4" />
             排序方式:
             <select
