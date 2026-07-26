@@ -509,7 +509,7 @@ export default function Header() {
                               isRemoving ? 'bg-warning' : '',
                             ].join(' ')}
                           >
-                            <div className="flex max-w-[60%] min-w-50 gap-1">
+                            <div className="flex w-[60%] min-w-50 gap-1">
                               {cartItem.avatar ? (
                                 <Image
                                   src={toPublicImagePath(cartItem.avatar)}
@@ -557,7 +557,7 @@ export default function Header() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex max-w-[35%] min-w-35 items-center justify-between gap-1">
+                              <div className="flex max-w-[35%] min-w-35 items-center justify-between">
                                 <ProductQuantitySelector
                                   usage="Header"
                                   quantity={cartItem.quantity}
