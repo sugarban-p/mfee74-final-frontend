@@ -308,6 +308,10 @@ export default function Header() {
     };
   }, [refreshAuthState]);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
   const handleMemberClick = () => {
     if (isAuthLoading) {
       return;
@@ -791,6 +795,40 @@ export default function Header() {
             )}
           </div>
         </div>
+
+        {isMobileMenuOpen && (
+          <div
+            id="mobile-main-menu"
+            className="border-t border-border bg-card-primary px-4 py-3 lg:hidden"
+          >
+            <nav className="grid gap-2" aria-label="主導覽">
+              <Link
+                href="/product"
+                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
+              >
+                所有商品
+              </Link>
+              <Link
+                href="/event"
+                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
+              >
+                所有活動
+              </Link>
+              <Link
+                href="/support/chat"
+                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
+              >
+                AI 顧問
+              </Link>
+              <Link
+                href="/member/dashboard"
+                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
+              >
+                會員中心
+              </Link>
+            </nav>
+          </div>
+        )}
       </header>
     </>
   );
