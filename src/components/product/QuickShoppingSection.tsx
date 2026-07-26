@@ -539,7 +539,7 @@ export function QuickShoppingSection({
             aria-pressed={isFavorite}
             aria-label={isFavorite ? labels.removeFavorite : labels.addFavorite}
             className={[
-              'group typo-tab flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-secondary px-3 text-text-primary hover:scale-[1.02] hover:bg-button-secondary-hover sm:w-30',
+              'group typo-tab flex h-10 w-30 cursor-pointer items-center justify-center gap-2 rounded-lg border border-secondary px-3 text-text-primary hover:scale-[1.02] hover:bg-button-secondary-hover',
               isFavorite
                 ? 'bg-card-secondary text-primary'
                 : 'text-text-primary hover:bg-button-secondary-hover',
