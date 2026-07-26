@@ -2,11 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
-  LuCheck,
   LuHeart,
   LuLogOut,
   LuMenu,
@@ -14,6 +13,7 @@ import {
   LuShoppingCart,
   LuTrash2,
   LuUser,
+  LuPlus,
   LuX,
 } from 'react-icons/lu';
 
@@ -55,6 +55,7 @@ const toPublicImagePath = (path?: string) => {
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartLoginRequired, setIsCartLoginRequired] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -68,6 +69,10 @@ export default function Header() {
   >(PRODUCT_MEGA_MENU_FALLBACK);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [openMobileProductCardId, setOpenMobileProductCardId] = useState<
+    number | null
+  >(null);
   const cartPanelRef = useRef<HTMLElement>(null);
   const cartButtonRef = useRef<HTMLButtonElement>(null);
   const updateCartTimeoutsRef = useRef<
@@ -325,54 +330,160 @@ export default function Header() {
     }
   };
 
+  const activeCategory = searchParams.get('category') ?? 'all-products';
+  const isActiveProductLink = (href: string) => {
+    const url = new URL(href, 'http://localhost');
+
+    return (
+      pathname === url.pathname &&
+      (url.searchParams.get('category') ?? 'all-products') === activeCategory
+    );
+  };
+  const activeProductCardId =
+    productMegaMenuCards.find((card) => pathname === card.href)?.id ?? null;
+  const mobileProductLinkClassName = (isActive: boolean) =>
+    isActive
+      ? 'block rounded-lg bg-primary px-4 py-1 text-text-button'
+      : 'block rounded-lg px-4 py-1 text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover';
+
   return (
     <>
       <header className="sticky top-0 z-20 h-20 bg-card-primary/95">
         <div className="navbar mx-auto flex h-full max-w-[1620px] items-center justify-between px-5 md:px-16">
           <div className="navbar-start flex items-center gap-2">
-            <details className="dropdown lg:hidden">
-              <summary
-                aria-label="開啟主選單"
-                className="btn btn-circle border-none btn-ghost p-1 text-text-secondary hover:bg-button-secondary-hover hover:shadow-none"
-              >
-                <LuMenu className="size-6" />
-              </summary>
-              <ul className="dropdown-content menu z-30 mt-3 w-72 max-w-[calc(100vw-40px)] rounded-xl border border-border bg-card-primary p-3 shadow-xl">
+            <button
+              type="button"
+              aria-label="開啟主選單"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-nav-panel"
+              className="btn btn-circle border-none btn-ghost p-1 text-text-secondary hover:bg-button-secondary-hover hover:shadow-none lg:hidden"
+              onClick={() => {
+                setIsMobileMenuOpen(true);
+                setIsCartOpen(false);
+                setOpenMobileProductCardId(activeProductCardId);
+              }}
+            >
+              <LuMenu className="size-6" />
+            </button>
+            <div
+              className={[
+                'fixed inset-0 z-40 bg-black/30 transition-opacity duration-200 lg:hidden',
+                isMobileMenuOpen
+                  ? 'opacity-100'
+                  : 'pointer-events-none opacity-0',
+              ].join(' ')}
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <aside
+              id="mobile-nav-panel"
+              className={[
+                'fixed top-0 left-0 z-50 h-dvh w-80 max-w-[85vw] overflow-y-auto border-r border-border bg-card-primary p-4 shadow-xl transition-transform duration-200 lg:hidden',
+                isMobileMenuOpen
+                  ? 'translate-x-0'
+                  : 'pointer-events-none -translate-x-full',
+              ].join(' ')}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Image
+                    src="/images/logo/mofu-logo-final.svg"
+                    alt=""
+                    width={112}
+                    height={53}
+                    className="h-11 w-auto object-contain"
+                  />
+                </Link>
+                <button
+                  type="button"
+                  aria-label="關閉主選單"
+                  className="btn btn-circle border-none btn-ghost p-1 text-text-secondary hover:bg-button-secondary-hover hover:shadow-none"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <LuX className="size-6" />
+                </button>
+              </div>
+              <ul className="space-y-1">
                 {productMegaMenuCards.map((card) => (
                   <li key={card.id}>
-                    {card.href ? (
-                      <Link href={card.href} className="font-bold">
-                        {card.title}
-                      </Link>
-                    ) : (
-                      <span className="font-bold">{card.title}</span>
-                    )}
-                    <ul>
-                      {card.items.map((item) => (
-                        <li key={item.id}>
-                          <Link href={item.href}>{item.title}</Link>
+                    <button
+                      type="button"
+                      className="flex w-full cursor-pointer items-center justify-between rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary select-none"
+                      aria-expanded={openMobileProductCardId === card.id}
+                      onClick={() =>
+                        setOpenMobileProductCardId((currentId) =>
+                          currentId === card.id ? null : card.id
+                        )
+                      }
+                    >
+                      <span>{card.title}</span>
+                      <LuPlus
+                        className={[
+                          'size-5 transition-transform',
+                          openMobileProductCardId === card.id
+                            ? 'rotate-45'
+                            : '',
+                        ].join(' ')}
+                      />
+                    </button>
+                    {openMobileProductCardId === card.id && (
+                      <ul className="mt-1 pl-3">
+                        <li>
+                          <Link
+                            href={card.href}
+                            className={mobileProductLinkClassName(
+                              isActiveProductLink(card.href)
+                            )}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            所有商品
+                          </Link>
                         </li>
-                      ))}
-                    </ul>
+                        {card.items.map((item) => (
+                          <li key={item.id}>
+                            <Link
+                              href={item.href}
+                              className={mobileProductLinkClassName(
+                                isActiveProductLink(item.href)
+                              )}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                              {item.title}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </li>
                 ))}
                 <li>
-                  <Link href="/event" className="font-bold">
+                  <Link
+                    href="/event"
+                    className="block rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
                     所有活動
                   </Link>
                 </li>
                 <li>
-                  <Link href="/" className="font-bold">
+                  <Link
+                    href="/"
+                    className="block rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
                     AI 顧問
                   </Link>
                 </li>
                 <li>
-                  <Link href="/" className="font-bold">
+                  <Link
+                    href="/"
+                    className="block rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
                     寵物百科
                   </Link>
                 </li>
               </ul>
-            </details>
+            </aside>
             <Link href="/">
               <Image
                 src="/images/logo/mofu-logo-final.svg"
