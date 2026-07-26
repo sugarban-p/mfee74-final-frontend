@@ -384,15 +384,7 @@ export default function Header() {
               ].join(' ')}
             >
               <div className="mb-4 flex items-center justify-between">
-                <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Image
-                    src="/images/logo/mofu-logo-final.svg"
-                    alt=""
-                    width={112}
-                    height={53}
-                    className="h-11 w-auto object-contain"
-                  />
-                </Link>
+                <div className="typo-h3 text-text-primary">主選單</div>
                 <button
                   type="button"
                   aria-label="關閉主選單"
