@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { LuShoppingCart } from 'react-icons/lu';
@@ -13,6 +13,19 @@ export interface QuickShoppingItem {
   id: number;
   item_name: string;
   stock?: number;
+}
+
+/**
+ * 寵物 AI 導購可以選擇性傳入的過敏提醒。
+ *
+ * 一般商品頁沒有傳入時，快速選購維持原本的顯示方式。
+ */
+export interface QuickShoppingAllergyWarning {
+  petName: string;
+  items: {
+    itemId: number;
+    allergyLabels: string[];
+  }[];
 }
 
 export interface QuickShoppingProduct {
@@ -105,6 +118,7 @@ interface QuickShoppingSectionProps {
   productId?: number;
   detail?: QuickShoppingDetail | null;
   description?: string;
+  allergyWarning?: QuickShoppingAllergyWarning;
   onFavoriteChange?: (isFavorite: boolean) => void;
 }
 
@@ -112,9 +126,9 @@ const labels = {
   addCart: '加入購物車',
   addCartError: '加入購物車失敗，請稍後再試',
   addedCart: '已加入購物車',
-  addFavorite: '加入收藏',
-  addedFavorite: '已加入收藏',
-  favoriteError: '更新收藏失敗，請稍後再試',
+  addFavorite: '收藏',
+  addedFavorite: '已收藏',
+  favoriteError: '請先登入',
   features: '商品特色',
   loading: '商品資料載入中...',
   loadError: '商品資料載入失敗',
@@ -197,10 +211,12 @@ export function QuickShoppingSection({
   productId,
   detail,
   description,
+  allergyWarning,
   onFavoriteChange,
 }: QuickShoppingSectionProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const addCartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [fetchedDetail, setFetchedDetail] =
     useState<FetchedQuickShoppingDetail | null>(null);
@@ -258,6 +274,8 @@ export function QuickShoppingSection({
   const productGallery = productDetail?.gallery ?? [];
   const selectedImage = productGallery[selectedImageIndex];
   const canAddCart = Boolean(selectedItem);
+  const search = searchParams.toString();
+  const loginNextPath = search ? `${pathname}?${search}` : pathname;
 
   useEffect(() => {
     if (detail || !petTypeId || !productId) {
@@ -284,7 +302,17 @@ export function QuickShoppingSection({
 
         const nextDetail = mapProductDetail(data);
 
-        setFetchedDetail({ petTypeId, productId, detail: nextDetail });
+        setFetchedDetail({
+          petTypeId,
+          productId,
+          detail: {
+            ...nextDetail,
+            product: {
+              ...nextDetail.product,
+              isFavorite: product?.isFavorite ?? nextDetail.product.isFavorite,
+            },
+          },
+        });
         setLoadingErrorState(null);
       })
       .catch((error: unknown) => {
@@ -300,7 +328,7 @@ export function QuickShoppingSection({
       });
 
     return () => controller.abort();
-  }, [detail, petTypeId, productId]);
+  }, [detail, petTypeId, product?.isFavorite, productId]);
 
   useEffect(() => {
     return () => {
@@ -366,7 +394,9 @@ export function QuickShoppingSection({
           const cartResponse = await fetch('/api/products/getCart');
 
           if (cartResponse.status === 401) {
-            router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
+            router.push(
+              `/auth/login?next=${encodeURIComponent(loginNextPath)}`
+            );
             return;
           }
 
@@ -393,7 +423,9 @@ export function QuickShoppingSection({
           );
 
           if (response.status === 401) {
-            router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
+            router.push(
+              `/auth/login?next=${encodeURIComponent(loginNextPath)}`
+            );
             return;
           }
 
@@ -414,7 +446,7 @@ export function QuickShoppingSection({
 
   if (!productDetail || !currentProduct) {
     return (
-      <section className="grid justify-center gap-16.5 lg:grid-cols-[510px_505px]">
+      <section className="grid max-w-full min-w-0 gap-8 lg:grid-cols-[510px_505px] lg:justify-center lg:gap-16.5">
         <p
           className={[
             'typo-body',
@@ -429,8 +461,8 @@ export function QuickShoppingSection({
   }
 
   return (
-    <section className="grid justify-center gap-16.5 lg:grid-cols-[510px_505px]">
-      <div className="flex flex-col gap-8">
+    <section className="grid max-w-full min-w-0 gap-8 lg:grid-cols-[510px_505px] lg:justify-center lg:gap-16.5">
+      <div className="flex min-w-0 flex-col gap-8">
         <div className="relative aspect-square overflow-hidden rounded-lg bg-card-primary">
           {selectedImage && (
             <Image
@@ -438,60 +470,58 @@ export function QuickShoppingSection({
               alt={currentProduct.name}
               fill
               priority
-              sizes="510px"
+              sizes="(min-width: 1024px) 510px, 100vw"
               className="object-cover"
             />
           )}
         </div>
 
-        {productGallery.length > 1 && (
-          <div className="flex gap-8 overflow-x-auto pb-2">
-            {productGallery.map((src, index) => (
-              <button
-                key={src}
-                type="button"
-                aria-label={`${labels.selectImage} ${index + 1}`}
-                aria-pressed={selectedImageIndex === index}
-                onClick={() => setSelectedImageIndex(index)}
-                className={[
-                  'relative size-32 shrink-0 overflow-hidden rounded-lg border-2 bg-card-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text-primary',
-                  selectedImageIndex === index
-                    ? 'border-text-primary'
-                    : 'border-transparent',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              >
-                <Image
-                  src={src}
-                  alt=""
-                  fill
-                  sizes="128px"
-                  className="object-cover"
-                />
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex gap-4 overflow-x-auto pb-2 sm:gap-8">
+          {productGallery.map((src, index) => (
+            <button
+              key={src}
+              type="button"
+              aria-label={`${labels.selectImage} ${index + 1}`}
+              aria-pressed={selectedImageIndex === index}
+              onClick={() => setSelectedImageIndex(index)}
+              className={[
+                'relative size-24 shrink-0 overflow-hidden rounded-lg border-2 bg-card-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-text-primary sm:size-32',
+                selectedImageIndex === index
+                  ? 'border-text-primary'
+                  : 'border-transparent',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              <Image
+                src={src}
+                alt=""
+                fill
+                sizes="128px"
+                className="object-cover"
+              />
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex min-w-0 flex-col gap-6">
         {loadingError && (
           <p className="typo-body text-error" role="alert">
             {loadingError}
           </p>
         )}
 
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <h1 className="typo-h3 text-text-primary">
+        <div className="flex items-start justify-between gap-2 sm:gap-6">
+          <div className="min-w-0">
+            <h1 className="typo-h3 break-words text-text-primary">
               {currentProduct.name}
-              <span className="typo-body-medium ml-2 text-text-secondary">
+              <span className="typo-body-medium mt-1 block text-text-secondary sm:mt-0 sm:ml-2 sm:inline">
                 {currentProduct.price}
               </span>
             </h1>
             {tags.length > 0 && (
-              <div className="mt-1 flex gap-1">
+              <div className="mt-1 flex flex-wrap gap-1">
                 {tags.map((tag) => (
                   <span
                     key={tag}
@@ -535,7 +565,7 @@ export function QuickShoppingSection({
           <h2 className="typo-body-medium mb-4 text-text-primary">
             {labels.features}
           </h2>
-          <div className="typo-tab rounded-lg border border-primary bg-button-secondary-hover p-5 text-text-primary">
+          <div className="typo-tab max-w-full rounded-lg border border-primary bg-button-secondary-hover p-5 break-words text-text-primary">
             <div className="space-y-2">
               {productDetail.features.map((feature, index) => (
                 <p
@@ -550,27 +580,41 @@ export function QuickShoppingSection({
         </section>
 
         <form className="flex flex-col gap-5 border-t border-secondary pt-5">
-          <fieldset>
+          <fieldset className="min-w-0">
             <legend className="typo-body-medium mb-3 text-text-primary">
               {labels.spec}
             </legend>
             <div className="flex flex-wrap gap-4">
-              {items.map((item) => (
-                <label
-                  key={item.id}
-                  className="typo-tab cursor-pointer rounded-lg border border-secondary bg-white px-4 py-2 text-text-primary has-checked:bg-card-secondary"
-                >
-                  <input
-                    type="radio"
-                    name="item"
-                    value={item.id}
-                    checked={selectedItem?.id === item.id}
-                    onChange={() => setCheckedItemId(item.id)}
-                    className="sr-only"
-                  />
-                  {item.item_name}
-                </label>
-              ))}
+              {items.map((item) => {
+                const allergyRisk = allergyWarning?.items.find(
+                  (riskItem) => riskItem.itemId === item.id
+                );
+
+                return (
+                  <label
+                    key={item.id}
+                    className="typo-tab max-w-full cursor-pointer rounded-lg border border-secondary bg-white px-4 py-2 break-words text-text-primary has-checked:bg-card-secondary"
+                  >
+                    <input
+                      type="radio"
+                      name="item"
+                      value={item.id}
+                      checked={selectedItem?.id === item.id}
+                      onChange={() => setCheckedItemId(item.id)}
+                      className="sr-only"
+                    />
+
+                    <span className="block">{item.item_name}</span>
+
+                    {allergyRisk && (
+                      <span className="mt-1 block text-xs leading-5 text-red-700">
+                        {allergyWarning?.petName} 已註記對
+                        {allergyRisk.allergyLabels.join('、')}過敏
+                      </span>
+                    )}
+                  </label>
+                );
+              })}
               {!items.length && (
                 <p className="typo-tab text-text-secondary">{labels.noItems}</p>
               )}
@@ -579,14 +623,14 @@ export function QuickShoppingSection({
 
           <ProductQuantitySelector quantity={quantity} onChange={setQuantity} />
 
-          <div className="flex items-center justify-between border-t border-secondary pt-5">
+          <div className="flex flex-col gap-4 border-t border-secondary pt-5 sm:flex-row sm:items-center sm:justify-between">
             <p className="typo-body-medium text-text-secondary">
               {labels.subtotal}: {subtotal}
             </p>
             <button
               type="button"
               disabled={!canAddCart || isAddingCart}
-              className="next-button typo-tab flex w-50 items-center justify-center gap-2 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="next-button typo-tab flex w-full items-center justify-center gap-2 py-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-50"
               onClick={handleAddCartClick}
             >
               <LuShoppingCart className="size-4" />

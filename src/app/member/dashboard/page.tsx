@@ -233,7 +233,7 @@ function OverviewTab({
       hint: '最近 30 天',
       tags: [
         {
-          l: '待付款',
+          l: '處理中',
           v: stats.orders.pending,
           c: 'text-cyan-600',
           bg: 'bg-sky-100',

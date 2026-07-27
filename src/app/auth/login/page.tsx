@@ -19,14 +19,15 @@ const AUTH_TEXT: React.CSSProperties = {
   fontWeight: 500,
 };
 
+const isSafeReturnPath = (path: string) =>
+  path.startsWith('/') && !path.startsWith('//') && !path.includes('\\');
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get('next');
-  const canReturnToPurchaseFlow = Boolean(
-    nextPath &&
-    (nextPath.startsWith('/cart') || nextPath.startsWith('/checkout'))
-  );
+  const returnPath =
+    nextPath && isSafeReturnPath(nextPath) ? nextPath : '/member/dashboard';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
@@ -64,9 +65,7 @@ export default function LoginPage() {
         return;
       }
       window.dispatchEvent(new Event('auth-state-changed'));
-      router.push(
-        canReturnToPurchaseFlow && nextPath ? nextPath : '/member/dashboard'
-      );
+      router.push(returnPath);
     } catch {
       setError('網路錯誤，請稍後再試。');
     } finally {
@@ -79,8 +78,8 @@ export default function LoginPage() {
       'http://localhost:3001/api/oauth/google/login'
     );
 
-    if (canReturnToPurchaseFlow && nextPath) {
-      googleLoginUrl.searchParams.set('next', nextPath);
+    if (returnPath !== '/member/dashboard') {
+      googleLoginUrl.searchParams.set('next', returnPath);
     }
 
     window.location.href = googleLoginUrl.toString();

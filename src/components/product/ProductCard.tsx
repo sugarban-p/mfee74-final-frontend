@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { useParams, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { LuShoppingCart } from 'react-icons/lu';
@@ -9,6 +9,7 @@ import { RiHeartFill, RiHeartLine } from 'react-icons/ri';
 
 import {
   QuickShoppingSection,
+  type QuickShoppingAllergyWarning,
   type QuickShoppingProduct,
 } from '@/src/components/product/QuickShoppingSection';
 
@@ -38,6 +39,7 @@ interface ProductCardProps {
     isFavorite?: boolean;
     soldOut?: boolean;
   };
+  allergyWarning?: QuickShoppingAllergyWarning;
   onFavoriteChange?: (productId: number, isFavorite: boolean) => void;
 }
 
@@ -73,13 +75,19 @@ const toPublicImagePath = (path?: string) => {
   return `/${path.replace(/^\/+/, '')}`;
 };
 
-export function ProductCard({ product, onFavoriteChange }: ProductCardProps) {
+export function ProductCard({
+  product,
+  allergyWarning,
+  onFavoriteChange,
+}: ProductCardProps) {
   const [favoriteOverride, setFavoriteOverride] = useState<{
     productId?: number;
     isFavorite: boolean;
   } | null>(null);
   const [isQuickShoppingOpen, setIsQuickShoppingOpen] = useState(false);
+  const [isCardPressed, setIsCardPressed] = useState(false);
   const params = useParams<{ petType?: string }>();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const petTypeId = product.petType?.id;
   const petTypeSlug = product.petType?.tag_slug ?? params.petType;
@@ -151,25 +159,51 @@ export function ProductCard({ product, onFavoriteChange }: ProductCardProps) {
     }
   };
 
+  const resetCardPressed = () => setIsCardPressed(false);
+  const openProductPage = () => {
+    resetCardPressed();
+    if (productHref === '#') return;
+
+    window.scrollTo({ top: 0 });
+    router.push(productHref);
+  };
+
   return (
     <>
-      <article className="w-[250px] overflow-hidden rounded-lg border border-secondary/50 bg-card-primary transition hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary">
-        <div
+      <article className="group/card relative isolate w-[190px] max-w-full justify-self-center overflow-hidden rounded-lg border border-secondary/50 bg-card-primary transition hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary sm:w-[270px]">
+        <button
+          type="button"
+          aria-label={product.name}
           className={[
-            'h-[150px] w-full bg-button-disabled',
-            avatar ? 'bg-cover bg-center' : '',
+            'absolute inset-0 z-10 cursor-pointer touch-manipulation transition-colors select-none [-webkit-touch-callout:none] focus-visible:outline-none',
+            isCardPressed ? 'bg-primary/5' : '',
           ].join(' ')}
-          style={avatar ? { backgroundImage: `url(${avatar})` } : undefined}
+          onPointerDown={() => setIsCardPressed(true)}
+          onPointerUp={resetCardPressed}
+          onPointerCancel={resetCardPressed}
+          onPointerLeave={resetCardPressed}
+          onBlur={resetCardPressed}
+          onContextMenu={(event) => event.preventDefault()}
+          onClick={openProductPage}
         />
+        <div className="relative aspect-[5/3] w-full overflow-hidden bg-button-disabled">
+          {avatar && (
+            <Image
+              src={avatar}
+              alt={product.name}
+              width={270}
+              height={162}
+              sizes="(min-width: 640px) 270px, 190px"
+              className="h-full w-full object-cover"
+            />
+          )}
+        </div>
 
         <div className="flex flex-col gap-4 p-4">
           <div className="flex items-center justify-between gap-3">
-            <Link
-              href={productHref}
-              className="w-[85%] cursor-pointer hover:underline"
-            >
-              <h2 className="typo-card-title truncate">{product.name}</h2>
-            </Link>
+            <h2 className="typo-card-title min-w-0 flex-1 truncate group-hover/card:underline">
+              {product.name}
+            </h2>
             <button
               type="button"
               aria-pressed={isFavorite}
@@ -177,7 +211,7 @@ export function ProductCard({ product, onFavoriteChange }: ProductCardProps) {
                 isFavorite ? labels.removeFavorite : labels.addFavorite
               }
               className={[
-                'group flex size-6 cursor-pointer items-center justify-center',
+                'group relative z-20 flex size-6 shrink-0 cursor-pointer items-center justify-center',
                 isFavorite
                   ? 'text-primary'
                   : 'text-secondary hover:text-primary',
@@ -196,7 +230,9 @@ export function ProductCard({ product, onFavoriteChange }: ProductCardProps) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="typo-card-body truncate">{description}</p>
+            <p className="typo-card-body hidden truncate sm:block">
+              {description}
+            </p>
             <div className="flex h-[18px] gap-1 overflow-hidden">
               {tags.map((tag) => (
                 <span
@@ -213,7 +249,7 @@ export function ProductCard({ product, onFavoriteChange }: ProductCardProps) {
           <button
             type="button"
             disabled={product.soldOut || !petTypeId || !product.id}
-            className="next-button typo-tab flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="next-button typo-tab relative z-20 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => setIsQuickShoppingOpen(true)}
           >
             {product.soldOut ? (
@@ -237,13 +273,14 @@ export function ProductCard({ product, onFavoriteChange }: ProductCardProps) {
             role="dialog"
             aria-modal="true"
             aria-label={`${product.name} ${labels.dialogSuffix}`}
-            className="relative max-h-[calc(100vh-32px)] w-full max-w-[1160px] overflow-y-auto rounded-lg bg-white p-6 shadow-xl"
+            className="relative max-h-[calc(100dvh-256px)] min-h-[600px] w-[calc(100vw-48px)] max-w-[1160px] overflow-y-auto rounded-lg bg-white p-4 shadow-xl sm:max-h-[calc(100vh-64px)] sm:w-full sm:p-6"
             onClick={(event) => event.stopPropagation()}
           >
             <QuickShoppingSection
               product={quickShoppingProduct}
               petTypeId={petTypeId}
               productId={product.id}
+              allergyWarning={allergyWarning}
               onFavoriteChange={(nextIsFavorite) =>
                 setFavoriteOverride({
                   productId: product.id,

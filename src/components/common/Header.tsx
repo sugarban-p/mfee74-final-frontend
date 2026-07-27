@@ -2,17 +2,18 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
-  LuCheck,
   LuHeart,
   LuLogOut,
+  LuMenu,
   LuPackage,
   LuShoppingCart,
   LuTrash2,
   LuUser,
+  LuPlus,
   LuX,
 } from 'react-icons/lu';
 
@@ -44,6 +45,29 @@ interface ProfileResponse {
   avatar?: string | null;
 }
 
+const ACTIVITY_MENU_ITEMS = [
+  {
+    id: 1,
+    title: '滿額 $1500 免運',
+    href: '/activity/free-shipping-1500',
+  },
+  {
+    id: 2,
+    title: '新品嚐鮮季',
+    href: '/activity/new-arrival-season',
+  },
+  {
+    id: 3,
+    title: '滿千折百',
+    href: '/activity/pet-festival-1000-off-100',
+  },
+  {
+    id: 4,
+    title: '會員首購 9 折',
+    href: '/activity/new-member-first-order-10off',
+  },
+];
+
 const toPublicImagePath = (path?: string) => {
   if (!path) return '';
   if (/^https?:\/\//.test(path)) return path;
@@ -54,6 +78,7 @@ const toPublicImagePath = (path?: string) => {
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartLoginRequired, setIsCartLoginRequired] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -67,6 +92,12 @@ export default function Header() {
   >(PRODUCT_MEGA_MENU_FALLBACK);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [openMobileProductCardId, setOpenMobileProductCardId] = useState<
+    number | null
+  >(null);
+  const [isMobileActivityMenuOpen, setIsMobileActivityMenuOpen] =
+    useState(false);
   const cartPanelRef = useRef<HTMLElement>(null);
   const cartButtonRef = useRef<HTMLButtonElement>(null);
   const updateCartTimeoutsRef = useRef<
@@ -168,10 +199,10 @@ export default function Header() {
   }, [isCartOpen]);
 
   useEffect(() => {
+    const updateCartTimeouts = updateCartTimeoutsRef.current;
+
     return () => {
-      updateCartTimeoutsRef.current.forEach((timeoutId) =>
-        clearTimeout(timeoutId)
-      );
+      updateCartTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
     };
   }, []);
 
@@ -324,22 +355,193 @@ export default function Header() {
     }
   };
 
+  const activeCategory = searchParams.get('category') ?? 'all-products';
+  const isActiveProductLink = (href: string) => {
+    const url = new URL(href, 'http://localhost');
+
+    return (
+      pathname === url.pathname &&
+      (url.searchParams.get('category') ?? 'all-products') === activeCategory
+    );
+  };
+  const activeProductCardId =
+    productMegaMenuCards.find((card) => pathname === card.href)?.id ?? null;
+  const mobileSubmenuLinkClassName = (isActive: boolean) =>
+    isActive
+      ? 'block rounded-lg bg-primary px-4 py-1 text-text-button'
+      : 'block rounded-lg px-4 py-1 text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover';
+
   return (
     <>
       <header className="sticky top-0 z-20 h-20 bg-card-primary/95">
         <div className="navbar mx-auto flex h-full max-w-[1620px] items-center justify-between px-5 md:px-16">
-          <Link href="/" className="navbar-start">
-            <Image
-              src="/images/logo/mofu-logo-final.svg"
-              alt=""
-              width={135}
-              height={64}
-              className="object-contain"
+          <div className="navbar-start flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="開啟主選單"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-nav-panel"
+              className="btn btn-circle border-none btn-ghost p-1 text-text-secondary hover:bg-button-secondary-hover hover:shadow-none lg:hidden"
+              onClick={() => {
+                setIsMobileMenuOpen(true);
+                setIsCartOpen(false);
+                setOpenMobileProductCardId(activeProductCardId);
+                setIsMobileActivityMenuOpen(pathname.startsWith('/activity/'));
+              }}
+            >
+              <LuMenu className="size-6" />
+            </button>
+            <div
+              className={[
+                'fixed inset-0 z-40 bg-black/30 transition-opacity duration-200 lg:hidden',
+                isMobileMenuOpen
+                  ? 'opacity-100'
+                  : 'pointer-events-none opacity-0',
+              ].join(' ')}
+              onClick={() => setIsMobileMenuOpen(false)}
             />
-          </Link>
-          <div className="navbar-center gap-1">
+            <aside
+              id="mobile-nav-panel"
+              className={[
+                'fixed top-0 left-0 z-50 h-dvh w-80 max-w-[85vw] overflow-y-auto border-r border-border bg-card-primary p-4 shadow-xl transition-transform duration-200 lg:hidden',
+                isMobileMenuOpen
+                  ? 'translate-x-0'
+                  : 'pointer-events-none -translate-x-full',
+              ].join(' ')}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <div className="typo-h3 text-text-primary">主選單</div>
+                <button
+                  type="button"
+                  aria-label="關閉主選單"
+                  className="btn btn-circle border-none btn-ghost p-1 text-text-secondary hover:bg-button-secondary-hover hover:shadow-none"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <LuX className="size-6" />
+                </button>
+              </div>
+              <ul className="space-y-1">
+                {productMegaMenuCards.map((card) => (
+                  <li key={card.id}>
+                    <button
+                      type="button"
+                      className="flex w-full cursor-pointer items-center justify-between rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary select-none"
+                      aria-expanded={openMobileProductCardId === card.id}
+                      onClick={() => {
+                        setIsMobileActivityMenuOpen(false);
+                        setOpenMobileProductCardId((currentId) =>
+                          currentId === card.id ? null : card.id
+                        );
+                      }}
+                    >
+                      <span>{card.title}</span>
+                      <LuPlus
+                        className={[
+                          'size-5 transition-transform',
+                          openMobileProductCardId === card.id
+                            ? 'rotate-45'
+                            : '',
+                        ].join(' ')}
+                      />
+                    </button>
+                    {openMobileProductCardId === card.id && (
+                      <ul className="mt-1 pl-3">
+                        <li>
+                          <Link
+                            href={card.href}
+                            className={mobileSubmenuLinkClassName(
+                              isActiveProductLink(card.href)
+                            )}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            所有商品
+                          </Link>
+                        </li>
+                        {card.items.map((item) => (
+                          <li key={item.id}>
+                            <Link
+                              href={item.href}
+                              className={mobileSubmenuLinkClassName(
+                                isActiveProductLink(item.href)
+                              )}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                              {item.title}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+                <li>
+                  <button
+                    type="button"
+                    className="flex w-full cursor-pointer items-center justify-between rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary select-none"
+                    aria-expanded={isMobileActivityMenuOpen}
+                    onClick={() => {
+                      setOpenMobileProductCardId(null);
+                      setIsMobileActivityMenuOpen((isOpen) => !isOpen);
+                    }}
+                  >
+                    <span>所有活動</span>
+                    <LuPlus
+                      className={[
+                        'size-5 transition-transform',
+                        isMobileActivityMenuOpen ? 'rotate-45' : '',
+                      ].join(' ')}
+                    />
+                  </button>
+                  {isMobileActivityMenuOpen && (
+                    <ul className="mt-1 pl-3">
+                      {ACTIVITY_MENU_ITEMS.map((item) => (
+                        <li key={item.id}>
+                          <Link
+                            href={item.href}
+                            className={mobileSubmenuLinkClassName(
+                              pathname === item.href
+                            )}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            {item.title}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+                <li>
+                  <Link
+                    href="/"
+                    className="block rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    AI 顧問
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/"
+                    className="block rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    寵物百科
+                  </Link>
+                </li>
+              </ul>
+            </aside>
+            <Link href="/">
+              <Image
+                src="/images/logo/mofu-logo-final.svg"
+                alt=""
+                width={135}
+                height={64}
+                className="h-12 w-auto object-contain lg:h-16"
+              />
+            </Link>
+          </div>
+          <div className="navbar-center hidden gap-1 lg:flex">
             <div className="megamenu gap-1" id="my-megamenu-4" popover="auto">
-              <span className="megamenu-active"></span>
               <button
                 className="typo-body rounded-lg text-text-primary hover:bg-button-secondary-hover [&:has(+_[popover]:popover-open)]:rounded-b-none [&:has(+_[popover]:popover-open)]:bg-button-secondary-hover"
                 popoverTarget="products"
@@ -384,12 +586,7 @@ export default function Header() {
                   image="/events.png"
                   imageAlt="所有活動"
                   title="所有活動"
-                  items={[
-                    { id: 1, title: '會員優惠', href: '/event' },
-                    { id: 2, title: '新品活動', href: '/event' },
-                    { id: 3, title: '購物滿額折扣', href: '/event' },
-                    { id: 4, title: '寵物講座', href: '/event' },
-                  ]}
+                  items={ACTIVITY_MENU_ITEMS}
                 />
               </div>
             </div>
@@ -412,12 +609,12 @@ export default function Header() {
               </li>
             </ul>
           </div>
-          <div className="relative navbar-end gap-4">
+          <div className="relative navbar-end gap-2 md:gap-4">
             <Link
               href="/member/favorites"
               className="btn btn-circle border-none btn-ghost p-1 align-middle text-text-secondary hover:bg-button-secondary-hover hover:shadow-none"
             >
-              <LuHeart className="size-6" />
+              <LuHeart className="size-5 sm:size-6" />
             </Link>
             <div className="relative">
               <button
@@ -432,19 +629,19 @@ export default function Header() {
                   setRemovingCartItemId(null);
                 }}
               >
-                <LuShoppingCart className="size-6" />
+                <LuShoppingCart className="size-5 sm:size-6" />
               </button>
               {isCartOpen && (
                 <section
                   ref={cartPanelRef}
                   id="cart-panel"
-                  className="absolute top-12 -right-13 w-[470px] max-w-[calc(100vw-40px)] rounded-2xl border border-secondary bg-white p-3 shadow-xl"
+                  className="fixed inset-x-5 top-20 z-30 flex max-h-[calc(100dvh-6rem)] w-auto flex-col rounded-2xl border border-secondary bg-white p-3 shadow-xl sm:absolute sm:top-12 sm:-right-30 sm:left-auto sm:w-[470px] sm:max-w-[calc(100vw-40px)]"
                   aria-label="購物車"
                 >
-                  <span className="absolute -top-[10px] right-[61px] size-5 rotate-45 border-t border-l border-secondary bg-white" />
+                  <span className="absolute -top-[10px] right-32 hidden size-5 rotate-45 border-t border-l border-secondary bg-white sm:block" />
 
-                  <div className="flex max-h-87.25 flex-col overflow-y-auto rounded-xl bg-white">
-                    <div className="flex items-center gap-2 border-b border-card-secondary px-2 py-3 text-text-primary">
+                  <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-xl bg-white">
+                    <div className="flex items-center gap-2 border-b border-card-secondary px-2 pb-3 text-text-primary">
                       <LuPackage className="size-5 text-primary" />
                       <h2 className="typo-body-medium">購物車</h2>
                     </div>
@@ -466,11 +663,11 @@ export default function Header() {
                           <article
                             key={cartItem.cart_id}
                             className={[
-                              'flex justify-between gap-4 border-b border-card-secondary px-2 py-5',
+                              'flex justify-between border-b border-card-secondary px-2 py-5',
                               isRemoving ? 'bg-warning' : '',
                             ].join(' ')}
                           >
-                            <div className="flex min-w-0 gap-1">
+                            <div className="flex w-[60%] min-w-50 gap-1">
                               {cartItem.avatar ? (
                                 <Image
                                   src={toPublicImagePath(cartItem.avatar)}
@@ -482,65 +679,65 @@ export default function Header() {
                               ) : (
                                 <div className="size-14 rounded-xl bg-card-secondary" />
                               )}
-                              <div className="min-w-0">
+                              <div className="flex min-w-0 flex-col justify-center">
                                 <h3 className="typo-tab truncate text-text-primary">
                                   {cartItem.prod_name}
                                 </h3>
-                                <p className="mt-1 text-sm text-text-secondary">
+                                <p className="text-sm text-text-secondary">
                                   {cartItem.item_name}
                                 </p>
                               </div>
                             </div>
-                            <div className="flex min-w-0 items-center justify-between gap-1">
-                              {isRemoving ? (
-                                <div className="flex items-center gap-3">
-                                  <p className="typo-tab whitespace-nowrap text-text-primary">
-                                    確定要移除商品嗎?
-                                  </p>
+                            {isRemoving ? (
+                              <div className="flex max-w-[35%] min-w-35 flex-col items-center gap-3">
+                                <p className="typo-tab whitespace-nowrap text-text-primary">
+                                  確定要移除商品嗎?
+                                </p>
+                                <div className="flex w-full justify-around">
                                   <button
                                     type="button"
                                     aria-label="確認移除商品"
-                                    className="grid size-8 place-items-center rounded-lg text-green-600 hover:bg-white/70"
+                                    className="cursor-pointer place-items-center rounded-lg text-green-600 hover:bg-white/70"
                                     onClick={() =>
                                       void handleConfirmRemoveCartItem(cartItem)
                                     }
                                   >
-                                    <LuCheck className="size-5" />
+                                    確認
                                   </button>
                                   <button
                                     type="button"
                                     aria-label="取消移除商品"
-                                    className="grid size-8 place-items-center rounded-lg text-red-600 hover:bg-white/70"
+                                    className="cursor-pointer place-items-center rounded-lg text-red-600 hover:bg-white/70"
                                     onClick={() => setRemovingCartItemId(null)}
                                   >
-                                    <LuX className="size-5" />
+                                    取消
                                   </button>
                                 </div>
-                              ) : (
-                                <>
-                                  <ProductQuantitySelector
-                                    usage="Header"
-                                    quantity={cartItem.quantity}
-                                    onChange={(quantity) =>
-                                      handleCartQuantityChange(
-                                        cartItem.item_id,
-                                        quantity
-                                      )
-                                    }
-                                  />
-                                  <button
-                                    type="button"
-                                    aria-label="移除商品"
-                                    className="flex size-8 shrink-0 items-center justify-center rounded-lg text-secondary hover:bg-button-secondary-hover"
-                                    onClick={() =>
-                                      setRemovingCartItemId(cartItem.item_id)
-                                    }
-                                  >
-                                    <LuTrash2 className="size-4" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
+                              </div>
+                            ) : (
+                              <div className="flex max-w-[35%] min-w-35 items-center justify-between">
+                                <ProductQuantitySelector
+                                  usage="Header"
+                                  quantity={cartItem.quantity}
+                                  onChange={(quantity) =>
+                                    handleCartQuantityChange(
+                                      cartItem.item_id,
+                                      quantity
+                                    )
+                                  }
+                                />
+                                <button
+                                  type="button"
+                                  aria-label="移除商品"
+                                  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-secondary hover:bg-button-secondary-hover"
+                                  onClick={() =>
+                                    setRemovingCartItemId(cartItem.item_id)
+                                  }
+                                >
+                                  <LuTrash2 className="size-4" />
+                                </button>
+                              </div>
+                            )}
                           </article>
                         );
                       })
@@ -548,14 +745,16 @@ export default function Header() {
                   </div>
 
                   {!isCartLoginRequired && (
-                    <Link
-                      href="/cart"
-                      type="button"
-                      className="next-button typo-tab mt-4 flex w-1/2 items-center justify-center py-3"
-                      onClick={() => setIsCartOpen(false)}
-                    >
-                      查看完整購物車
-                    </Link>
+                    <div className="flex justify-end p-3 pb-0">
+                      <Link
+                        href="/cart"
+                        type="button"
+                        className="next-button typo-tab flex w-1/2 items-center justify-center py-3"
+                        onClick={() => setIsCartOpen(false)}
+                      >
+                        查看完整購物車
+                      </Link>
+                    </div>
                   )}
                 </section>
               )}
@@ -575,7 +774,7 @@ export default function Header() {
                   className="size-8 rounded-full object-cover"
                 />
               ) : (
-                <LuUser className="size-6" />
+                <LuUser className="size-5 sm:size-6" />
               )}
             </button>
 
@@ -587,7 +786,7 @@ export default function Header() {
                 disabled={isLoggingOut}
                 className="btn btn-circle border-none btn-ghost p-1 align-middle text-text-secondary hover:bg-button-secondary-hover hover:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <LuLogOut className="size-6" />
+                <LuLogOut className="size-5 sm:size-6" />
               </button>
             )}
           </div>

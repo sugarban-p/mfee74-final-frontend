@@ -588,21 +588,21 @@ export default function ChatClient() {
       if (caseId) {
         joinCaseRoom(caseId);
       }
-      void refreshSupportPresenceSnapshot();
-      requestSupportPresence();
-
-      if (isSupportRef.current) {
-        setSupportPresenceOnlineCount((prev) => (prev > 0 ? prev : 1));
-      }
-
       const shouldEnter =
         typeof document === 'undefined' ||
         document.visibilityState === 'visible';
-      socket.emit(
-        shouldEnter
-          ? 'presence:support-page:enter'
-          : 'presence:support-page:leave'
-      );
+
+      if (isSupportRef.current) {
+        socket.emit(
+          shouldEnter
+            ? 'presence:support-page:enter'
+            : 'presence:support-page:leave'
+        );
+        setSupportPresenceOnlineCount((prev) => (prev > 0 ? prev : 1));
+      }
+
+      void refreshSupportPresenceSnapshot();
+      requestSupportPresence();
     });
 
     socket.on('disconnect', () => {
@@ -712,11 +712,13 @@ export default function ChatClient() {
         socket.connect();
       }
 
-      socket.emit(
-        isVisible
-          ? 'presence:support-page:enter'
-          : 'presence:support-page:leave'
-      );
+      if (isSupportRef.current) {
+        socket.emit(
+          isVisible
+            ? 'presence:support-page:enter'
+            : 'presence:support-page:leave'
+        );
+      }
 
       if (isVisible) {
         void refreshSupportPresenceSnapshot();
@@ -732,9 +734,17 @@ export default function ChatClient() {
       socket.emit('chat:support-presence:request');
     };
 
+    const emitSupportLeave = () => {
+      if (!isSupportRef.current) return;
+      if (!socket.connected) return;
+      socket.emit('presence:support-page:leave');
+    };
+
     emitPresenceByVisibility();
     document.addEventListener('visibilitychange', emitPresenceByVisibility);
     window.addEventListener('focus', requestPresenceOnFocus);
+    window.addEventListener('pagehide', emitSupportLeave);
+    window.addEventListener('beforeunload', emitSupportLeave);
 
     return () => {
       document.removeEventListener(
@@ -742,7 +752,9 @@ export default function ChatClient() {
         emitPresenceByVisibility
       );
       window.removeEventListener('focus', requestPresenceOnFocus);
-      if (socket.connected) {
+      window.removeEventListener('pagehide', emitSupportLeave);
+      window.removeEventListener('beforeunload', emitSupportLeave);
+      if (socket.connected && isSupportRef.current) {
         socket.emit('presence:support-page:leave');
       }
     };

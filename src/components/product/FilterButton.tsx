@@ -6,6 +6,8 @@ interface FilterButtonProps {
   active: boolean;
   children: ReactNode;
   className?: string;
+  scroll?: ComponentProps<typeof Link>['scroll'];
+  onNavigate?: ComponentProps<typeof Link>['onNavigate'];
   'aria-pressed'?: boolean;
 }
 
@@ -21,11 +23,15 @@ export function FilterButton({
   active,
   children,
   className,
+  scroll,
+  onNavigate,
   'aria-pressed': ariaPressed,
 }: FilterButtonProps) {
   return (
     <Link
       href={href}
+      scroll={scroll}
+      onNavigate={onNavigate}
       role="button"
       aria-pressed={ariaPressed}
       className={[
