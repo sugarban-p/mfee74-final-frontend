@@ -9,6 +9,7 @@ import {
   LuCheck,
   LuHeart,
   LuLogOut,
+  LuMenu,
   LuPackage,
   LuShoppingCart,
   LuTrash2,
@@ -54,6 +55,7 @@ const toPublicImagePath = (path?: string) => {
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartLoginRequired, setIsCartLoginRequired] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -277,6 +279,10 @@ export default function Header() {
     };
   }, [refreshAuthState]);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
   const handleMemberClick = () => {
     if (isAuthLoading) {
       return;
@@ -326,18 +332,36 @@ export default function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-20 h-20 bg-card-primary/95">
-        <div className="navbar mx-auto flex h-full max-w-[1620px] items-center justify-between px-5 md:px-16">
-          <Link href="/" className="navbar-start">
-            <Image
-              src="/images/logo/mofu-logo-final.svg"
-              alt=""
-              width={135}
-              height={64}
-              className="object-contain"
-            />
-          </Link>
-          <div className="navbar-center gap-1">
+      <header className="sticky top-0 z-20 bg-card-primary/95">
+        <div className="navbar mx-auto flex h-20 max-w-[1620px] items-center justify-between px-4 sm:px-5 md:px-8 lg:px-16">
+          <div className="navbar-start flex items-center gap-2">
+            <button
+              type="button"
+              aria-label={isMobileMenuOpen ? '關閉主選單' : '開啟主選單'}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-main-menu"
+              className="btn btn-circle border-none btn-ghost p-1 text-text-secondary hover:bg-button-secondary-hover hover:shadow-none lg:hidden"
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            >
+              {isMobileMenuOpen ? (
+                <LuX className="size-6" />
+              ) : (
+                <LuMenu className="size-6" />
+              )}
+            </button>
+
+            <Link href="/" className="inline-flex items-center">
+              <Image
+                src="/images/logo/mofu-logo-final.svg"
+                alt=""
+                width={135}
+                height={64}
+                className="h-11 w-auto object-contain sm:h-12 md:h-14"
+              />
+            </Link>
+          </div>
+
+          <div className="navbar-center hidden gap-1 lg:flex">
             <div className="megamenu gap-1" id="my-megamenu-4" popover="auto">
               <span className="megamenu-active"></span>
               <button
@@ -385,10 +409,26 @@ export default function Header() {
                   imageAlt="所有活動"
                   title="所有活動"
                   items={[
-                    { id: 1, title: '會員優惠', href: '/event' },
-                    { id: 2, title: '新品活動', href: '/event' },
-                    { id: 3, title: '購物滿額折扣', href: '/event' },
-                    { id: 4, title: '寵物講座', href: '/event' },
+                    {
+                      id: 1,
+                      title: '滿額 $1500 免運',
+                      href: '/activity/free-shipping-1500',
+                    },
+                    {
+                      id: 2,
+                      title: '新品嚐鮮季',
+                      href: '/activity/new-arrival-season',
+                    },
+                    {
+                      id: 3,
+                      title: '滿千折百',
+                      href: '/activity/pet-festival-1000-off-100',
+                    },
+                    {
+                      id: 4,
+                      title: '會員首購 9 折',
+                      href: '/activity/new-member-first-order-10off',
+                    },
                   ]}
                 />
               </div>
@@ -412,12 +452,13 @@ export default function Header() {
               </li>
             </ul>
           </div>
-          <div className="relative navbar-end gap-4">
+
+          <div className="relative navbar-end gap-1 sm:gap-2 lg:gap-4">
             <Link
               href="/member/favorites"
               className="btn btn-circle border-none btn-ghost p-1 align-middle text-text-secondary hover:bg-button-secondary-hover hover:shadow-none"
             >
-              <LuHeart className="size-6" />
+              <LuHeart className="size-5 sm:size-6" />
             </Link>
             <div className="relative">
               <button
@@ -432,16 +473,16 @@ export default function Header() {
                   setRemovingCartItemId(null);
                 }}
               >
-                <LuShoppingCart className="size-6" />
+                <LuShoppingCart className="size-5 sm:size-6" />
               </button>
               {isCartOpen && (
                 <section
                   ref={cartPanelRef}
                   id="cart-panel"
-                  className="absolute top-12 -right-13 w-[470px] max-w-[calc(100vw-40px)] rounded-2xl border border-secondary bg-white p-3 shadow-xl"
+                  className="absolute top-12 right-0 w-[min(30rem,calc(100vw-1rem))] rounded-2xl border border-secondary bg-white p-3 shadow-xl sm:-right-4"
                   aria-label="購物車"
                 >
-                  <span className="absolute -top-[10px] right-[61px] size-5 rotate-45 border-t border-l border-secondary bg-white" />
+                  <span className="absolute -top-2.5 right-4 size-5 rotate-45 border-t border-l border-secondary bg-white sm:right-10" />
 
                   <div className="flex max-h-87.25 flex-col overflow-y-auto rounded-xl bg-white">
                     <div className="flex items-center gap-2 border-b border-card-secondary px-2 py-3 text-text-primary">
@@ -575,7 +616,7 @@ export default function Header() {
                   className="size-8 rounded-full object-cover"
                 />
               ) : (
-                <LuUser className="size-6" />
+                <LuUser className="size-5 sm:size-6" />
               )}
             </button>
 
@@ -587,11 +628,45 @@ export default function Header() {
                 disabled={isLoggingOut}
                 className="btn btn-circle border-none btn-ghost p-1 align-middle text-text-secondary hover:bg-button-secondary-hover hover:shadow-none disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <LuLogOut className="size-6" />
+                <LuLogOut className="size-5 sm:size-6" />
               </button>
             )}
           </div>
         </div>
+
+        {isMobileMenuOpen && (
+          <div
+            id="mobile-main-menu"
+            className="border-t border-border bg-card-primary px-4 py-3 lg:hidden"
+          >
+            <nav className="grid gap-2" aria-label="主導覽">
+              <Link
+                href="/product"
+                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
+              >
+                所有商品
+              </Link>
+              <Link
+                href="/event"
+                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
+              >
+                所有活動
+              </Link>
+              <Link
+                href="/support/chat"
+                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
+              >
+                AI 顧問
+              </Link>
+              <Link
+                href="/member/dashboard"
+                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
+              >
+                會員中心
+              </Link>
+            </nav>
+          </div>
+        )}
       </header>
     </>
   );
