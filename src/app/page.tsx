@@ -18,37 +18,40 @@ import {
 /**
  * 首頁活動輪播資料。
  *
- * 目前先使用 public 裡已經存在的圖片製作版型，
- * 等活動內容正式確認後，只需要替換這裡的文字與圖片路徑。
+ * 每筆資料對應一個活動詳情頁，輪播按鈕會讀取各自的 href。
  */
 const heroSlides = [
   {
-    eyebrow: 'MOFU 本月活動',
-    title: '毛孩店長見面日',
-    description: '帶毛孩一起來玩，留下專屬於你們的週末回憶。',
-    image: '/events.png',
+    eyebrow: 'MOFU 滿額免運',
+    title: '滿 $1500 免運，補貨更輕鬆',
+    description: '毛孩日常好物一次補齊，單筆訂單滿 $1500 即享免運優惠。',
+    image: '/images/activity/滿額1500免運.png',
     imagePosition: 'center',
+    href: '/activity/free-shipping-1500',
   },
   {
-    eyebrow: '貓咪夏日企劃',
-    title: '日常補水，從每一餐開始',
-    description: '精選主食罐與餐包，陪貓咪輕鬆補充每日所需水分。',
-    image: '/cat-category.png',
+    eyebrow: 'MOFU 新品企劃',
+    title: '新品嚐鮮季，發現毛孩新日常',
+    description: '精選值得關注的新好物，用限時優惠輕鬆嚐鮮。',
+    image: '/images/activity/新品嚐鮮季.png',
     imagePosition: 'center',
+    href: '/activity/new-arrival-season',
   },
   {
-    eyebrow: '狗狗活力企劃',
-    title: '陪牠吃好，也陪牠玩得更久',
-    description: '從日常主食到營養補充，找到適合狗狗的安心選擇。',
-    image: '/dog-category.png',
+    eyebrow: 'MOFU 毛孩好物節',
+    title: '滿 $1000 現折 $100',
+    description: '日常該買的趁現在一次補齊，滿額即享直接折扣。',
+    image: '/images/activity/滿千折百.png',
     imagePosition: 'center',
+    href: '/activity/pet-festival-1000-off-100',
   },
   {
-    eyebrow: '會員限定優惠',
-    title: '人氣主食系列限時禮遇',
-    description: '登入會員探索本月精選，為毛孩補齊喜歡的日常。',
-    image: '/images/products/avatars/cat/main-food/prod_0010_01_src.jpg',
+    eyebrow: 'MOFU 新會員限定',
+    title: '會員首購 9 折，金額沒有上限',
+    description: '給新毛友的第一份禮物，首次購物用更輕鬆的價格補齊所需。',
+    image: '/images/activity/會員首購9折.png',
     imagePosition: 'center',
+    href: '/activity/new-member-first-order-10off',
   },
 ];
 
@@ -305,7 +308,7 @@ export default function HomePage() {
                 </p>
 
                 <Link
-                  href="/event"
+                  href={slide.href}
                   className="next-button typo-tab mt-6 inline-flex items-center gap-2 px-6 py-3 md:mt-8"
                 >
                   查看活動
