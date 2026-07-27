@@ -396,7 +396,7 @@ export default function PetAiChatPage() {
               {recommendation.products.map((product) => (
                 <div
                   key={product.productId}
-                  className="flex w-[250px] shrink-0 flex-col"
+                  className="flex w-[270px] shrink-0 flex-col"
                 >
                   <ProductCard
                     product={{

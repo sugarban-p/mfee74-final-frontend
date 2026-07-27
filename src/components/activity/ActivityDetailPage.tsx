@@ -90,7 +90,7 @@ export default function ActivityDetailPage({
 
         <div className="mt-12">
           <Link
-            href="/event"
+            href="/"
             className="back-button typo-tab inline-flex items-center px-6 py-2 tracking-[0.06em]"
           >
             {'< 返回首頁'}
