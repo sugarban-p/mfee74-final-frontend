@@ -45,6 +45,29 @@ interface ProfileResponse {
   avatar?: string | null;
 }
 
+const ACTIVITY_MENU_ITEMS = [
+  {
+    id: 1,
+    title: '滿額 $1500 免運',
+    href: '/activity/free-shipping-1500',
+  },
+  {
+    id: 2,
+    title: '新品嚐鮮季',
+    href: '/activity/new-arrival-season',
+  },
+  {
+    id: 3,
+    title: '滿千折百',
+    href: '/activity/pet-festival-1000-off-100',
+  },
+  {
+    id: 4,
+    title: '會員首購 9 折',
+    href: '/activity/new-member-first-order-10off',
+  },
+];
+
 const toPublicImagePath = (path?: string) => {
   if (!path) return '';
   if (/^https?:\/\//.test(path)) return path;
@@ -73,6 +96,8 @@ export default function Header() {
   const [openMobileProductCardId, setOpenMobileProductCardId] = useState<
     number | null
   >(null);
+  const [isMobileActivityMenuOpen, setIsMobileActivityMenuOpen] =
+    useState(false);
   const cartPanelRef = useRef<HTMLElement>(null);
   const cartButtonRef = useRef<HTMLButtonElement>(null);
   const updateCartTimeoutsRef = useRef<
@@ -174,10 +199,10 @@ export default function Header() {
   }, [isCartOpen]);
 
   useEffect(() => {
+    const updateCartTimeouts = updateCartTimeoutsRef.current;
+
     return () => {
-      updateCartTimeoutsRef.current.forEach((timeoutId) =>
-        clearTimeout(timeoutId)
-      );
+      updateCartTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
     };
   }, []);
 
@@ -283,10 +308,6 @@ export default function Header() {
     };
   }, [refreshAuthState]);
 
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [pathname]);
-
   const handleMemberClick = () => {
     if (isAuthLoading) {
       return;
@@ -345,7 +366,7 @@ export default function Header() {
   };
   const activeProductCardId =
     productMegaMenuCards.find((card) => pathname === card.href)?.id ?? null;
-  const mobileProductLinkClassName = (isActive: boolean) =>
+  const mobileSubmenuLinkClassName = (isActive: boolean) =>
     isActive
       ? 'block rounded-lg bg-primary px-4 py-1 text-text-button'
       : 'block rounded-lg px-4 py-1 text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover';
@@ -365,6 +386,7 @@ export default function Header() {
                 setIsMobileMenuOpen(true);
                 setIsCartOpen(false);
                 setOpenMobileProductCardId(activeProductCardId);
+                setIsMobileActivityMenuOpen(pathname.startsWith('/activity/'));
               }}
             >
               <LuMenu className="size-6" />
@@ -405,11 +427,12 @@ export default function Header() {
                       type="button"
                       className="flex w-full cursor-pointer items-center justify-between rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary select-none"
                       aria-expanded={openMobileProductCardId === card.id}
-                      onClick={() =>
+                      onClick={() => {
+                        setIsMobileActivityMenuOpen(false);
                         setOpenMobileProductCardId((currentId) =>
                           currentId === card.id ? null : card.id
-                        )
-                      }
+                        );
+                      }}
                     >
                       <span>{card.title}</span>
                       <LuPlus
@@ -426,7 +449,7 @@ export default function Header() {
                         <li>
                           <Link
                             href={card.href}
-                            className={mobileProductLinkClassName(
+                            className={mobileSubmenuLinkClassName(
                               isActiveProductLink(card.href)
                             )}
                             onClick={() => setIsMobileMenuOpen(false)}
@@ -438,7 +461,7 @@ export default function Header() {
                           <li key={item.id}>
                             <Link
                               href={item.href}
-                              className={mobileProductLinkClassName(
+                              className={mobileSubmenuLinkClassName(
                                 isActiveProductLink(item.href)
                               )}
                               onClick={() => setIsMobileMenuOpen(false)}
@@ -452,13 +475,40 @@ export default function Header() {
                   </li>
                 ))}
                 <li>
-                  <Link
-                    href="/event"
-                    className="block rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                  <button
+                    type="button"
+                    className="flex w-full cursor-pointer items-center justify-between rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary select-none"
+                    aria-expanded={isMobileActivityMenuOpen}
+                    onClick={() => {
+                      setOpenMobileProductCardId(null);
+                      setIsMobileActivityMenuOpen((isOpen) => !isOpen);
+                    }}
                   >
-                    所有活動
-                  </Link>
+                    <span>所有活動</span>
+                    <LuPlus
+                      className={[
+                        'size-5 transition-transform',
+                        isMobileActivityMenuOpen ? 'rotate-45' : '',
+                      ].join(' ')}
+                    />
+                  </button>
+                  {isMobileActivityMenuOpen && (
+                    <ul className="mt-1 pl-3">
+                      {ACTIVITY_MENU_ITEMS.map((item) => (
+                        <li key={item.id}>
+                          <Link
+                            href={item.href}
+                            className={mobileSubmenuLinkClassName(
+                              pathname === item.href
+                            )}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                          >
+                            {item.title}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
                 <li>
                   <Link
@@ -536,28 +586,7 @@ export default function Header() {
                   image="/events.png"
                   imageAlt="所有活動"
                   title="所有活動"
-                  items={[
-                    {
-                      id: 1,
-                      title: '滿額 $1500 免運',
-                      href: '/activity/free-shipping-1500',
-                    },
-                    {
-                      id: 2,
-                      title: '新品嚐鮮季',
-                      href: '/activity/new-arrival-season',
-                    },
-                    {
-                      id: 3,
-                      title: '滿千折百',
-                      href: '/activity/pet-festival-1000-off-100',
-                    },
-                    {
-                      id: 4,
-                      title: '會員首購 9 折',
-                      href: '/activity/new-member-first-order-10off',
-                    },
-                  ]}
+                  items={ACTIVITY_MENU_ITEMS}
                 />
               </div>
             </div>
@@ -762,40 +791,6 @@ export default function Header() {
             )}
           </div>
         </div>
-
-        {isMobileMenuOpen && (
-          <div
-            id="mobile-main-menu"
-            className="border-t border-border bg-card-primary px-4 py-3 lg:hidden"
-          >
-            <nav className="grid gap-2" aria-label="主導覽">
-              <Link
-                href="/product"
-                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
-              >
-                所有商品
-              </Link>
-              <Link
-                href="/event"
-                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
-              >
-                所有活動
-              </Link>
-              <Link
-                href="/support/chat"
-                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
-              >
-                AI 顧問
-              </Link>
-              <Link
-                href="/member/dashboard"
-                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
-              >
-                會員中心
-              </Link>
-            </nav>
-          </div>
-        )}
       </header>
     </>
   );
