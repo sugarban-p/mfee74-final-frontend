@@ -29,7 +29,7 @@ export function ProductQuantitySelector({
       >
         數量
       </span>
-      <div className="flex h-7 w-[120px] items-center justify-between px-2">
+      <div className="flex h-7 w-25 items-center justify-between px-2">
         <button
           className="flex size-7 cursor-pointer items-center justify-center rounded-lg border border-secondary bg-white text-secondary disabled:cursor-not-allowed disabled:opacity-40"
           type="button"
