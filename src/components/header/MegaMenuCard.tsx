@@ -37,7 +37,11 @@ export default function MegaMenuCard({
   };
 
   return (
-    <div className="card w-75 gap-4 p-5" data-id={id} onClick={handleClick}>
+    <div
+      className="card w-full gap-4 p-5 sm:w-75"
+      data-id={id}
+      onClick={handleClick}
+    >
       {href ? (
         <>
           <Link href={href} className="card-image relative">
@@ -46,7 +50,7 @@ export default function MegaMenuCard({
               alt={imageAlt}
               width={512}
               height={256}
-              className="rounded-xl"
+              className="w-full rounded-xl"
             />
             <h2 className="absolute bottom-3 left-1.5 text-xl font-bold text-text-button">
               {title}
@@ -61,7 +65,7 @@ export default function MegaMenuCard({
               alt={imageAlt}
               width={512}
               height={256}
-              className="rounded-xl"
+              className="w-full rounded-xl"
             />{' '}
             <h2 className="absolute bottom-3 left-1.5 text-xl font-bold text-text-button">
               {title}
