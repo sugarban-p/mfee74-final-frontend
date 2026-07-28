@@ -967,10 +967,10 @@ function SecurityTab({
           </h3>
           <div className="space-y-3">
             {[
-              { label: 'JWT Token 有效期限', value: '1 小時', Icon: Clock },
+              { label: '自動登入時效', value: '1 小時', Icon: Clock },
               { label: '閒置自動登出', value: '30 分鐘', Icon: Activity },
               {
-                label: '登入失敗鎖定規則',
+                label: '登入安全防護',
                 value: '連續 5 次失敗 → 鎖定 30 分鐘',
                 Icon: Shield,
               },

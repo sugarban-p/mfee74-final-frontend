@@ -165,12 +165,12 @@ export default function MemberSupportPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 2xl:gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:gap-3">
         {[
           {
             icon: LuPhone,
             label: '電話客服',
-            value: '0800-XXX-XXX',
+            value: '0800-567-888',
             sub: '週一至週五 09:00–18:00',
             watermarkTone: 'text-green-100',
             chipBg: 'bg-green-100',
@@ -223,7 +223,9 @@ export default function MemberSupportPage() {
                 </div>
 
                 <div className="mb-1">
-                  <span className="typo-card-title text-gray-700">{value}</span>
+                  <span className="typo-card-title break-all text-gray-700">
+                    {value}
+                  </span>
                 </div>
 
                 <div className="typo-card-body text-gray-400 mb-2">{sub}</div>
