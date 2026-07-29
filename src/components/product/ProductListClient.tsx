@@ -321,269 +321,268 @@ export function ProductListClient({
   }[];
 
   return (
-    <div className="flex flex-col items-center gap-4 px-3 lg:flex-row lg:items-start lg:gap-24 lg:px-0">
-      <aside className="w-full lg:w-[250px] lg:shrink-0">
-        <form
-          className="flex w-full flex-col gap-6 lg:gap-12"
-          onSubmit={handleSearchSubmit}
-        >
-          <input type="hidden" name="category" value={selectedCategory} />
-          {selectedTags.length > 0 && (
-            <input type="hidden" name="tags" value={selectedTags.join(',')} />
-          )}
-          <label
-            htmlFor="keyword"
-            className="flex h-8 items-center gap-2 rounded border border-secondary bg-transparent px-2 text-xs text-secondary"
+    <div className="m-auto w-full justify-self-center px-3">
+      <div className="flex flex-col items-start gap-4 lg:flex-row lg:gap-24">
+        <aside className="w-full lg:w-[250px] lg:shrink-0">
+          <form
+            className="flex w-full flex-col gap-6 lg:gap-12"
+            onSubmit={handleSearchSubmit}
           >
-            <LuSearch className="size-4 shrink-0" />
-            <input
-              id="keyword"
-              name="search"
-              inputMode="search"
-              className="typo-card-body min-w-0 grow bg-transparent text-text-primary outline-none placeholder:text-text-secondary"
-              placeholder="想尋找什麼商品呢?"
-              value={keywordInput}
-              onChange={(event) => setKeywordInput(event.currentTarget.value)}
-            />
-            {keywordInput !== '' && (
-              <button
-                type="button"
-                aria-label="清除搜尋"
-                className="group cursor-pointer"
-                onClick={handleSearchClear}
-              >
-                <RiCloseCircleLine className="size-4 shrink-0 group-hover:hidden" />
-                <RiCloseCircleFill className="hidden size-4 shrink-0 group-hover:block" />
-              </button>
+            <input type="hidden" name="category" value={selectedCategory} />
+            {selectedTags.length > 0 && (
+              <input type="hidden" name="tags" value={selectedTags.join(',')} />
             )}
-            <button
-              type="submit"
-              aria-label="搜尋商品"
-              disabled={searchDisabled}
-              className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+            <label
+              htmlFor="keyword"
+              className="flex h-8 items-center gap-2 rounded border border-secondary bg-transparent px-2 text-xs text-secondary"
             >
-              <LuSendHorizontal className="size-4 shrink-0" />
-            </button>
-          </label>
+              <LuSearch className="size-4 shrink-0" />
+              <input
+                id="keyword"
+                name="search"
+                inputMode="search"
+                className="typo-card-body min-w-0 grow bg-transparent text-text-primary outline-none placeholder:text-text-secondary"
+                placeholder="想尋找什麼商品呢?"
+                value={keywordInput}
+                onChange={(event) => setKeywordInput(event.currentTarget.value)}
+              />
+              {keywordInput !== '' && (
+                <button
+                  type="button"
+                  aria-label="清除搜尋"
+                  className="group cursor-pointer"
+                  onClick={handleSearchClear}
+                >
+                  <RiCloseCircleLine className="size-4 shrink-0 group-hover:hidden" />
+                  <RiCloseCircleFill className="hidden size-4 shrink-0 group-hover:block" />
+                </button>
+              )}
+              <button
+                type="submit"
+                aria-label="搜尋商品"
+                disabled={searchDisabled}
+                className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <LuSendHorizontal className="size-4 shrink-0" />
+              </button>
+            </label>
 
-          <section className="flex flex-col gap-3">
-            <h4 className="typo-tab text-text-primary">商品類別</h4>
-            <div className="flex flex-col gap-2">
-              {categories.map(({ category, count, slug }) => {
-                const active = selectedCategory === slug;
-
-                return (
-                  <FilterButton
-                    key={slug}
-                    href={createCategoryHref(slug)}
-                    scroll={false}
-                    onNavigate={active ? undefined : handleNavigate}
-                    active={active}
-                    className="flex items-center justify-between"
-                  >
-                    <span>{category}</span>
-                    <span>{count}</span>
-                  </FilterButton>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="flex flex-col gap-3 border-t border-secondary py-4">
-            <h4 className="typo-body-medium text-text-primary">
-              商品標籤
-              <span className="typo-tab"> (可複選)</span>
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {tags.length === 0 ? (
-                <p className="typo-tab text-text-secondary">無標籤</p>
-              ) : (
-                tags.map(({ tag, slug }) => {
-                  const active = selectedTagSet.has(slug);
+            <section className="flex flex-col gap-3">
+              <h4 className="typo-tab text-text-primary">商品類別</h4>
+              <div className="flex flex-col gap-2">
+                {categories.map(({ category, count, slug }) => {
+                  const active = selectedCategory === slug;
 
                   return (
                     <FilterButton
                       key={slug}
-                      href={createTagHref(slug)}
+                      href={createCategoryHref(slug)}
                       scroll={false}
-                      onNavigate={handleNavigate}
+                      onNavigate={active ? undefined : handleNavigate}
                       active={active}
-                      aria-pressed={active}
+                      className="flex items-center justify-between"
                     >
-                      {tag}
+                      <span>{category}</span>
+                      <span>{count}</span>
                     </FilterButton>
                   );
-                })
-              )}
-            </div>
-          </section>
+                })}
+              </div>
+            </section>
 
-          <section className="flex flex-col gap-3 border-t border-secondary py-4">
-            <h4 className="typo-body-medium text-text-primary">價格區間</h4>
-            {priceFilters.map(
-              ({ label, param, value, onChange, ariaLabel }) => (
-                <label
-                  key={label}
-                  className="typo-tab flex flex-col gap-1 text-[#3d4451]"
-                >
-                  {label}
-                  <span className="flex h-8 items-center gap-2 rounded border border-secondary bg-transparent px-4 text-[#3d4451]">
-                    <input
-                      type="text"
-                      name={param}
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      className="typo-card-body min-w-0 grow bg-transparent outline-none placeholder:text-[#3d4451]"
-                      placeholder="輸入數字"
-                      value={value}
-                      onChange={(event) =>
-                        onChange(event.currentTarget.value.replace(/\D/g, ''))
-                      }
-                      onKeyDown={(event) =>
-                        handlePriceKeyDown(event, param, value)
-                      }
-                    />
-                    {value !== '' && (
+            <section className="flex flex-col gap-3 border-t border-secondary pt-4">
+              <h4 className="typo-body-medium text-text-primary">
+                商品標籤
+                <span className="typo-tab"> (可複選)</span>
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {tags.length === 0 ? (
+                  <p className="typo-tab text-text-secondary">無標籤</p>
+                ) : (
+                  tags.map(({ tag, slug }) => {
+                    const active = selectedTagSet.has(slug);
+
+                    return (
+                      <FilterButton
+                        key={slug}
+                        href={createTagHref(slug)}
+                        scroll={false}
+                        onNavigate={handleNavigate}
+                        active={active}
+                        aria-pressed={active}
+                      >
+                        {tag}
+                      </FilterButton>
+                    );
+                  })
+                )}
+              </div>
+            </section>
+
+            <section className="flex flex-col gap-3 border-t border-secondary py-4">
+              <h4 className="typo-body-medium text-text-primary">價格區間</h4>
+              {priceFilters.map(
+                ({ label, param, value, onChange, ariaLabel }) => (
+                  <label
+                    key={label}
+                    className="typo-tab flex flex-col gap-1 text-[#3d4451]"
+                  >
+                    {label}
+                    <span className="flex h-8 items-center gap-2 rounded border border-secondary bg-transparent px-4 text-[#3d4451]">
+                      <input
+                        type="text"
+                        name={param}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        className="typo-card-body min-w-0 grow bg-transparent outline-none placeholder:text-[#3d4451]"
+                        placeholder="輸入數字"
+                        value={value}
+                        onChange={(event) =>
+                          onChange(event.currentTarget.value.replace(/\D/g, ''))
+                        }
+                        onKeyDown={(event) =>
+                          handlePriceKeyDown(event, param, value)
+                        }
+                      />
+                      {value !== '' && (
+                        <button
+                          type="button"
+                          aria-label={`清除${label}`}
+                          className="group cursor-pointer"
+                          onClick={() => handlePriceClear(param)}
+                        >
+                          <RiCloseCircleLine className="size-4 shrink-0 group-hover:hidden" />
+                          <RiCloseCircleFill className="hidden size-4 shrink-0 group-hover:block" />
+                        </button>
+                      )}
                       <button
                         type="button"
-                        aria-label={`清除${label}`}
-                        className="group cursor-pointer"
-                        onClick={() => handlePriceClear(param)}
+                        aria-label={ariaLabel}
+                        disabled={value === ''}
+                        className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() => handlePriceSubmit(param, value)}
                       >
-                        <RiCloseCircleLine className="size-4 shrink-0 group-hover:hidden" />
-                        <RiCloseCircleFill className="hidden size-4 shrink-0 group-hover:block" />
+                        <LuSendHorizontal className="size-4 shrink-0" />
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      aria-label={ariaLabel}
-                      disabled={value === ''}
-                      className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-                      onClick={() => handlePriceSubmit(param, value)}
-                    >
-                      <LuSendHorizontal className="size-4 shrink-0" />
-                    </button>
-                  </span>
-                </label>
-              )
-            )}
-          </section>
-        </form>
-      </aside>
+                    </span>
+                  </label>
+                )
+              )}
+            </section>
+          </form>
+        </aside>
 
-      <section className="flex min-w-0 flex-col gap-4 sm:gap-12">
-        <div
-          aria-label="Breadcrumb"
-          className="typo-body-medium breadcrumbs text-sm"
-        >
-          <ul className="typo-body-medium text-primary">
-            <li>
-              <Link href="/">首頁</Link>
-            </li>
-            <li>
-              <Link
-                href={createCategoryHref(categories[0].slug)}
-                scroll={false}
-                onNavigate={
-                  selectedCategory === categories[0].slug
-                    ? undefined
-                    : handleNavigate
-                }
-              >
-                {breadcrumbTitle}
-              </Link>
-            </li>
-            <li className="text-text-primary">{selectedCategoryName}</li>
-          </ul>
-        </div>
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex flex-col flex-wrap items-center gap-2.5 sm:flex-row sm:items-end">
-            <h2 className="typo-h2 text-text-primary">
-              {selectedCategoryName}
-            </h2>
-            <p className="typo-body text-text-secondary">
-              (共{totalRows}項，顯示第{String(displayStart).padStart(2, '0')}~
-              {String(displayEnd).padStart(2, '0')}項)
-            </p>
-          </div>
-
-          <label className="typo-tab flex flex-wrap items-center justify-center gap-2 text-text-primary">
-            <LuArrowDownWideNarrow className="size-4" />
-            排序方式:
-            <select
-              value={selectedSort}
-              onChange={handleSortChange}
-              className="h-8 cursor-pointer rounded border border-secondary bg-transparent px-3 text-text-primary outline-none"
-            >
-              <option value="">熱銷</option>
-              <option value="latest">最新</option>
-              <option value="price_asc">價格(低到高)</option>
-              <option value="price_desc">價格(高到低)</option>
-            </select>
-          </label>
-        </div>
-
-        {effectiveLoadingError && (
-          <p className="typo-body text-error" role="alert">
-            {effectiveLoadingError}
-          </p>
-        )}
-
-        <div className="min-h-40" aria-busy={isNavigating}>
-          {isNavigating && (
-            <div className="flex min-h-40 items-center justify-center">
-              <span className="loading loading-md loading-spinner text-primary" />
-            </div>
-          )}
-          <div
-            className={
-              isNavigating
-                ? 'hidden'
-                : 'grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8 xl:grid-cols-3 2xl:grid-cols-4'
-            }
-          >
-            {displayedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-
-        {!isNavigating &&
-          !effectiveLoadingError &&
-          displayedProducts.length === 0 && (
-            <p className="typo-body text-text-secondary">
-              目前沒有符合條件的商品
-            </p>
-          )}
-        <nav
-          aria-label="Pagination"
-          className="typo-body-medium flex items-center justify-center gap-8"
-        >
-          {Array.from({ length: pageCount }, (_, index) => index + 1).map(
-            (page) =>
-              page === currentPage ? (
-                <span
-                  key={page}
-                  aria-current="page"
-                  className="text-text-primary"
-                >
-                  {page}
-                </span>
-              ) : (
+        <section className="flex w-full min-w-0 flex-col gap-4 sm:gap-12">
+          <div aria-label="Breadcrumb" className="breadcrumbs text-sm">
+            <ul className="typo-body-medium text-primary">
+              <li>
+                <Link href="/">首頁</Link>
+              </li>
+              <li>
                 <Link
-                  key={page}
-                  href={createHref({ page })}
+                  href={createCategoryHref(categories[0].slug)}
                   scroll={false}
-                  onNavigate={handleNavigate}
-                  className="text-primary"
+                  onNavigate={
+                    selectedCategory === categories[0].slug
+                      ? undefined
+                      : handleNavigate
+                  }
                 >
-                  {page}
+                  {breadcrumbTitle}
                 </Link>
-              )
+              </li>
+              <li className="text-text-primary">{selectedCategoryName}</li>
+            </ul>
+          </div>
+
+          <div className="m-auto flex flex-col gap-4 sm:w-full sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex flex-col flex-wrap items-center gap-2.5 sm:flex-row sm:items-end">
+              <h2 className="typo-h2 text-text-primary">
+                {selectedCategoryName}
+              </h2>
+              <p className="typo-body text-text-secondary">
+                (共{totalRows}項，顯示第{String(displayStart).padStart(2, '0')}~
+                {String(displayEnd).padStart(2, '0')}項)
+              </p>
+            </div>
+
+            <label className="typo-tab flex flex-wrap items-center justify-center gap-2 text-text-primary">
+              <LuArrowDownWideNarrow className="size-4" />
+              排序方式:
+              <select
+                value={selectedSort}
+                onChange={handleSortChange}
+                className="h-8 cursor-pointer rounded border border-secondary bg-transparent px-3 text-text-primary outline-none"
+              >
+                <option value="">熱銷</option>
+                <option value="latest">最近上架</option>
+                <option value="price_asc">價格(低到高)</option>
+                <option value="price_desc">價格(高到低)</option>
+              </select>
+            </label>
+          </div>
+
+          {effectiveLoadingError && (
+            <p className="typo-body text-error" role="alert">
+              {effectiveLoadingError}
+            </p>
           )}
-        </nav>
-      </section>
+
+          <div className="min-h-40" aria-busy={isNavigating}>
+            {isNavigating && (
+              <div className="flex min-h-40 items-center justify-center">
+                <span className="loading loading-md loading-spinner text-primary" />
+              </div>
+            )}
+            <div
+              className={
+                isNavigating
+                  ? 'hidden'
+                  : 'grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-8 xl:grid-cols-3 2xl:grid-cols-4'
+              }
+            >
+              {displayedProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+
+          {!isNavigating &&
+            !effectiveLoadingError &&
+            displayedProducts.length === 0 && (
+              <p className="typo-body text-text-secondary">
+                目前沒有符合條件的商品
+              </p>
+            )}
+          <nav
+            aria-label="Pagination"
+            className="typo-body-medium flex items-center justify-center gap-8"
+          >
+            {Array.from({ length: pageCount }, (_, index) => index + 1).map(
+              (page) =>
+                page === currentPage ? (
+                  <span
+                    key={page}
+                    aria-current="page"
+                    className="text-text-primary"
+                  >
+                    {page}
+                  </span>
+                ) : (
+                  <Link
+                    key={page}
+                    href={createHref({ page })}
+                    scroll={false}
+                    onNavigate={handleNavigate}
+                    className="text-primary"
+                  >
+                    {page}
+                  </Link>
+                )
+            )}
+          </nav>
+        </section>
+      </div>
     </div>
   );
 }

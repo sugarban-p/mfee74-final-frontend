@@ -3,12 +3,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   LuChevronRight,
   LuClock,
   LuPackage,
   LuRotateCcw,
+  LuX,
 } from 'react-icons/lu';
 
 const filters = [
@@ -48,6 +49,7 @@ interface OrderItem {
 }
 
 const formatPrice = (price: number) => `NT$${price.toLocaleString('zh-TW')}`;
+const pendingPaymentKey = 'mofu-pending-payment';
 
 const getPaymentHref = (order: OrderItem) => {
   const provider = order.paymentMethod === 'linepay' ? 'linepay' : 'ecpay';
@@ -66,9 +68,13 @@ export default function MemberOrdersPage() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [rebuyingOrderId, setRebuyingOrderId] = useState('');
+  const [cancelingOrderId, setCancelingOrderId] = useState('');
 
-  useEffect(() => {
-    fetch('/api/orders/list', { credentials: 'include' })
+  const loadOrders = useCallback(() => {
+    sessionStorage.removeItem(pendingPaymentKey);
+    setIsLoading(true);
+
+    fetch('/api/orders/list', { credentials: 'include', cache: 'no-store' })
       .then((response) => {
         if (response.status === 401) {
           router.push('/auth/login?next=/member/orders');
@@ -78,8 +84,18 @@ export default function MemberOrdersPage() {
         return response.json();
       })
       .then((data) => setOrders(data?.orders ?? []))
+      .catch(() => setOrders([]))
       .finally(() => setIsLoading(false));
   }, [router]);
+
+  useEffect(() => {
+    loadOrders();
+    window.addEventListener('pageshow', loadOrders);
+
+    return () => {
+      window.removeEventListener('pageshow', loadOrders);
+    };
+  }, [loadOrders]);
 
   const visibleOrders = useMemo(() => {
     if (activeFilter === 'all') return orders;
@@ -112,6 +128,32 @@ export default function MemberOrdersPage() {
       window.alert('加入購物車失敗，請稍後再試。');
     } finally {
       setRebuyingOrderId('');
+    }
+  };
+
+  const cancelOrder = async (orderId: string) => {
+    if (!window.confirm('確定要取消這筆訂單嗎？')) return;
+
+    setCancelingOrderId(orderId);
+
+    try {
+      const response = await fetch(`/api/orders/cancel/${orderId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        router.push('/auth/login?next=/member/orders');
+        return;
+      }
+
+      if (!response.ok) throw new Error();
+
+      loadOrders();
+    } catch {
+      window.alert('取消訂單失敗，請稍後再試。');
+    } finally {
+      setCancelingOrderId('');
     }
   };
 
@@ -165,25 +207,27 @@ export default function MemberOrdersPage() {
               className="overflow-hidden rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white"
             >
               <header className="flex flex-col gap-3 border-b border-[rgba(26,22,18,0.08)] px-5 py-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="typo-tab font-bold text-text-primary">
+                <div className="flex items-start justify-between gap-3 md:items-center">
+                  <span className="min-w-0 truncate text-xs font-bold text-text-primary sm:typo-tab">
                     {order.id}
                   </span>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${
-                      statusStyle[order.status as keyof typeof statusStyle]
-                    }`}
-                  >
-                    {order.statusText}
-                  </span>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${
-                      statusStyle[
-                        order.paymentStatus as keyof typeof statusStyle
-                      ]
-                    }`}
-                  >
-                    {order.paymentText}
+                  <span className="flex shrink-0 flex-wrap justify-end gap-2">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${
+                        statusStyle[order.status as keyof typeof statusStyle]
+                      }`}
+                    >
+                      {order.statusText}
+                    </span>
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-medium ${
+                        statusStyle[
+                          order.paymentStatus as keyof typeof statusStyle
+                        ]
+                      }`}
+                    >
+                      {order.paymentText}
+                    </span>
                   </span>
                 </div>
 
@@ -234,25 +278,40 @@ export default function MemberOrdersPage() {
                   <div className="flex shrink-0 flex-col gap-2">
                     <Link
                       href={`/member/orders/${order.id}`}
-                      className="next-button typo-tab inline-flex items-center justify-center gap-2 px-5"
+                      className="back-button typo-tab inline-flex items-center justify-center gap-2 px-5"
                     >
                       查看明細
                       <LuChevronRight className="size-4" />
                     </Link>
 
-                    {order.paymentStatus === 'pending' ? (
-                      <Link
-                        href={getPaymentHref(order)}
-                        className="back-button typo-tab inline-flex items-center justify-center gap-2 px-5"
-                      >
-                        重新付款
-                        <LuRotateCcw className="size-4" />
-                      </Link>
-                    ) : (
+                    {order.status !== 'canceled' && order.paymentStatus === 'pending' && (
+                      <>
+                        <a
+                          href={getPaymentHref(order)}
+                          className="next-button typo-tab inline-flex items-center justify-center gap-2 px-5"
+                        >
+                          重新付款
+                          <LuRotateCcw className="size-4" />
+                        </a>
+                        <button
+                          type="button"
+                          disabled={cancelingOrderId === order.id}
+                          className="danger-button typo-tab inline-flex items-center justify-center gap-2 px-5 disabled:cursor-not-allowed disabled:opacity-50"
+                          onClick={() => void cancelOrder(order.id)}
+                        >
+                          {cancelingOrderId === order.id
+                            ? '取消中...'
+                            : '取消訂單'}
+                          <LuX className="size-4" />
+                        </button>
+                      </>
+                    )}
+
+                    {order.status !== 'canceled' && order.paymentStatus !== 'pending' && (
                       <button
                         type="button"
                         disabled={rebuyingOrderId === order.id}
-                        className="back-button typo-tab inline-flex items-center justify-center gap-2 px-5 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="next-button typo-tab inline-flex items-center justify-center gap-2 px-5 disabled:cursor-not-allowed disabled:opacity-50"
                         onClick={() => void rebuyOrder(order.id)}
                       >
                         {rebuyingOrderId === order.id

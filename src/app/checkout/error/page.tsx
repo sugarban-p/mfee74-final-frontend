@@ -1,7 +1,16 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { LuCircleAlert } from 'react-icons/lu';
 
+const pendingPaymentKey = 'mofu-pending-payment';
+
 export default function CheckoutErrorPage() {
+  useEffect(() => {
+    sessionStorage.removeItem(pendingPaymentKey);
+  }, []);
+
   return (
     <section className="mx-auto flex w-full max-w-[1520px] justify-center bg-[#faf8f5] px-4 py-16 md:px-10">
       <div className="w-full max-w-[420px] rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white px-8 py-9 text-center shadow-[0_8px_28px_rgba(45,31,14,0.04)]">

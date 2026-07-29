@@ -32,6 +32,7 @@ export interface QuickShoppingProduct {
   id: number;
   name: string;
   price: string;
+  petType?: ApiProductPetType | null;
   category?: string;
   categorySlug?: string;
   image?: string;
@@ -48,6 +49,12 @@ interface ApiProductIntro {
 
 interface ApiProductTag {
   tag_ch: string;
+}
+
+interface ApiProductPetType {
+  id?: number;
+  tag_slug?: string;
+  tag_page?: string;
 }
 
 interface ApiProductAvatar {
@@ -67,6 +74,7 @@ interface ApiProduct {
     tag_ch?: string;
     tag_slug?: string;
   } | null;
+  petType?: ApiProductPetType | null;
   tags?: ApiProductTag[];
   intro?: ApiProductIntro;
   isFavorite?: boolean;
@@ -165,9 +173,15 @@ const toPublicImagePath = (path?: string) => {
 
 const getProductFeatures = (intros?: ApiProductIntro) => {
   return [
-    { text: intros?.slogan, className: 'typo-body-medium' },
-    { text: intros?.content, className: 'typo-body' },
-    { text: intros?.remark, className: 'typo-tab' },
+    { text: intros?.slogan, className: 'typo-card-body whitespace-pre-line' },
+    {
+      text: intros?.content,
+      className: 'typo-card-body whitespace-pre-line',
+    },
+    {
+      text: intros?.remark,
+      className: 'typo-tab text-text-secondary whitespace-pre-line',
+    },
   ]
     .map((feature) => ({ ...feature, text: feature.text?.trim() }))
     .filter((feature): feature is { text: string; className: string } =>
@@ -192,6 +206,7 @@ export const mapProductDetail = (
       id: productData?.id ?? 0,
       name: productData?.prod_name ?? '',
       price: `NT$${Number(productData?.price ?? 0).toLocaleString('zh-TW')}`,
+      petType: productData?.petType,
       category: productData?.category?.tag_ch,
       categorySlug: productData?.category?.tag_slug,
       image: gallery[0],
@@ -230,7 +245,6 @@ export function QuickShoppingSection({
   const [checkedItemId, setCheckedItemId] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isAddingCart, setIsAddingCart] = useState(false);
-
   const fallbackDetail = useMemo<QuickShoppingDetail | null>(() => {
     if (!product) return null;
 
@@ -539,7 +553,7 @@ export function QuickShoppingSection({
             aria-pressed={isFavorite}
             aria-label={isFavorite ? labels.removeFavorite : labels.addFavorite}
             className={[
-              'group typo-tab flex h-10 w-30 cursor-pointer items-center justify-center gap-2 rounded-lg border border-secondary px-3 text-text-primary hover:scale-[1.02] hover:bg-button-secondary-hover',
+              'group typo-tab flex h-10 w-30 min-w-25 cursor-pointer items-center justify-center gap-2 rounded-lg border border-secondary px-3 text-text-primary hover:scale-[1.02] hover:bg-button-secondary-hover',
               isFavorite
                 ? 'bg-card-secondary text-primary'
                 : 'text-text-primary hover:bg-button-secondary-hover',
@@ -570,7 +584,7 @@ export function QuickShoppingSection({
               {productDetail.features.map((feature, index) => (
                 <p
                   key={`${index}-${feature.text}`}
-                  className={`${feature.className} whitespace-pre-line`}
+                  className={feature.className}
                 >
                   {feature.text}
                 </p>
@@ -623,14 +637,14 @@ export function QuickShoppingSection({
 
           <ProductQuantitySelector quantity={quantity} onChange={setQuantity} />
 
-          <div className="flex flex-col gap-4 border-t border-secondary pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-row items-center justify-between gap-4 border-t border-secondary pt-5">
             <p className="typo-body-medium text-text-secondary">
               {labels.subtotal}: {subtotal}
             </p>
             <button
               type="button"
               disabled={!canAddCart || isAddingCart}
-              className="next-button typo-tab flex w-full items-center justify-center gap-2 py-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-50"
+              className="next-button typo-tab flex min-w-40 items-center justify-center gap-2 py-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-50"
               onClick={handleAddCartClick}
             >
               <LuShoppingCart className="size-4" />
