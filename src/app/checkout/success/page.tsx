@@ -13,11 +13,14 @@ interface PaymentSummary {
 }
 
 const formatPrice = (price: number) => `NT$${price.toLocaleString('zh-TW')}`;
+const pendingPaymentKey = 'mofu-pending-payment';
 
 export default function CheckoutSuccessPage() {
   const [payment, setPayment] = useState<PaymentSummary | null>(null);
 
   useEffect(() => {
+    sessionStorage.removeItem(pendingPaymentKey);
+
     const params = new URLSearchParams(window.location.search);
     const orderNo = params.get('orderNo');
     const transactionNo = params.get('transactionNo') ?? '付款平台已完成驗證';
@@ -43,8 +46,8 @@ export default function CheckoutSuccessPage() {
   }, []);
 
   return (
-    <section className="mx-auto flex w-full max-w-[1520px] justify-center bg-[#faf8f5] px-4 py-16 md:px-10">
-      <div className="w-full max-w-[360px] rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white px-8 py-9 text-center shadow-[0_8px_28px_rgba(45,31,14,0.04)]">
+    <section className="mx-auto flex w-full max-w-[1520px] justify-center px-4 py-16 md:px-10">
+      <div className="w-full max-w-[460px] rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white px-8 py-9 text-center shadow-[0_8px_28px_rgba(45,31,14,0.04)]">
         <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-full bg-success">
           <LuCircleCheck className="size-8 text-green-500" />
         </div>
@@ -57,38 +60,40 @@ export default function CheckoutSuccessPage() {
           感謝您的購買，我們將盡快為您備貨出貨
         </p>
 
-        <dl className="typo-card-body mb-5 space-y-3 rounded-2xl bg-card-secondary p-4 text-left">
-          <div className="flex justify-between gap-4">
-            <dt className="text-text-secondary">訂單編號</dt>
-            <dd className="text-right font-bold text-text-primary">
+        <dl className="typo-card-body mb-5 space-y-3 rounded-2xl bg-card-secondary p-5 text-left">
+          <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-4">
+            <dt className="whitespace-nowrap text-text-secondary">訂單編號</dt>
+            <dd className="min-w-0 truncate text-right text-sm font-bold text-text-primary sm:text-base">
               {payment?.orderNo ?? '讀取中'}
             </dd>
           </div>
 
-          <div className="flex justify-between gap-4">
-            <dt className="text-text-secondary">付款方式</dt>
+          <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-4">
+            <dt className="whitespace-nowrap text-text-secondary">付款方式</dt>
             <dd className="text-right text-text-primary">
               {payment?.method ?? '讀取中'}
             </dd>
           </div>
 
-          <div className="flex justify-between gap-4">
-            <dt className="text-text-secondary">付款完成時間</dt>
+          <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-4">
+            <dt className="whitespace-nowrap text-text-secondary">
+              付款完成時間
+            </dt>
             <dd className="text-right text-text-primary">
               {payment?.paidAt ?? '讀取中'}
             </dd>
           </div>
 
-          <div className="flex justify-between gap-4">
-            <dt className="text-text-secondary">交易編號</dt>
-            <dd className="text-right text-text-primary">
+          <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-4">
+            <dt className="whitespace-nowrap text-text-secondary">交易編號</dt>
+            <dd className="min-w-0 truncate text-right text-sm text-text-primary sm:text-base">
               {payment?.transactionNo ?? '讀取中'}
             </dd>
           </div>
 
-          <div className="flex justify-between gap-4 border-t border-[rgba(26,22,18,0.12)] pt-3">
+          <div className="grid grid-cols-[112px_minmax(0,1fr)] gap-4 border-t border-[rgba(26,22,18,0.12)] pt-3">
             <dt className="typo-h4 text-text-primary">應付金額</dt>
-            <dd className="typo-body-medium text-primary">
+            <dd className="typo-body-medium text-right text-primary">
               {payment ? formatPrice(payment.total) : '讀取中'}
             </dd>
           </div>
