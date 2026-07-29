@@ -105,17 +105,17 @@ export default function MemberSupportPage() {
 
                 <div className="typo-card-body text-gray-400 mb-2">{desc}</div>
 
-                <div className="border-t border-gray-100 my-3" />
+                <div className="border-t border-[#F4EEE8] my-3" />
 
                 {badge ? (
-                  <div className="rounded-xl px-2 py-1.5 bg-gray-100 text-center">
-                    <div className="typo-card-body text-gray-400 leading-tight">
+                  <div className="rounded-xl px-2 py-1.5 bg-[#F4EEE8] text-center">
+                    <div className="typo-card-body text-[#968880]  leading-tight">
                       {badge}
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl px-2 py-1.5 bg-gray-100 text-center">
-                    <div className="typo-card-body text-gray-400 leading-tight">
+                  <div className="rounded-xl px-2 py-1.5 bg-[#F4EEE8]  text-center">
+                    <div className="typo-card-body text-[#968880] leading-tight">
                       進入查看詳細內容
                     </div>
                   </div>
@@ -143,7 +143,7 @@ export default function MemberSupportPage() {
                 <Link
                   key={q}
                   href={`/member/support/chat?q=${encodeURIComponent(q)}`}
-                  className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-100/40 px-4 py-3 transition-colors hover:border-primary/30 hover:bg-amber-50/50 group"
+                  className="flex items-center gap-3 rounded-xl border border-gray-100 bg-[#F4EEE8]  px-4 py-3 transition-colors hover:border-primary/30 hover:bg-amber-50/50 group"
                 >
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-amber-500 shadow-sm">
                     <LuMessageCircleMore size={14} strokeWidth={2} />
@@ -230,10 +230,10 @@ export default function MemberSupportPage() {
 
                 <div className="typo-card-body text-gray-400 mb-2">{sub}</div>
 
-                <div className="border-t border-gray-100 my-3" />
+                <div className="border-t border-[#F4EEE8] my-3" />
 
-                <div className="rounded-xl px-2 py-1.5 bg-gray-100 text-center">
-                  <div className="typo-card-body text-gray-400 leading-tight">
+                <div className="rounded-xl px-2 py-1.5  bg-[#F4EEE8] text-center">
+                  <div className="typo-card-body text-[#968880] leading-tight">
                     立即聯繫客服
                   </div>
                 </div>
