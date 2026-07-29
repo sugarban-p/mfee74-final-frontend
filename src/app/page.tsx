@@ -794,7 +794,7 @@ export default function HomePage() {
 
         <div className="relative z-10 mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <p className="typo-card-body text-text-secondary">還沒有找到答案？</p>
-          <Link href="/support" className="next-button typo-tab">
+          <Link href="/member/support" className="next-button typo-tab">
             前往客服中心
           </Link>
         </div>

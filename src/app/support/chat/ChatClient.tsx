@@ -446,16 +446,73 @@ export default function ChatClient() {
       if (!selectedCaseId) {
         setMemberCaseStatus(null);
         const base = [greetingMessage];
-        if (initialQuestion) {
-          base.push({
-            id: `q-${Date.now()}`,
-            sender: 'USER',
-            type: 'TEXT',
-            content: initialQuestion,
-            createdAt: new Date().toISOString(),
-          });
-        }
         setMessages(base);
+
+        if (!initialQuestion) {
+          setIsLoadingMessages(false);
+          return;
+        }
+
+        const seededQuestion: UIMessage = {
+          id: `q-${Date.now()}`,
+          sender: 'USER',
+          type: 'TEXT',
+          content: initialQuestion,
+          createdAt: new Date().toISOString(),
+        };
+        setMessages((prev) => appendUniqueMessage(prev, seededQuestion));
+
+        try {
+          const response = await fetch('/api/chat/send', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: initialQuestion }),
+          });
+
+          if (!response.ok) {
+            setErrorMessage('訊息送出失敗，請稍後再試。');
+            setIsLoadingMessages(false);
+            return;
+          }
+
+          const payload: unknown = await response.json();
+          const parsed = asRecord(payload);
+          const newCaseId =
+            typeof parsed?.caseId === 'string' ? parsed.caseId : null;
+          const newCaseStatus =
+            parsed?.caseStatus === 'OPEN' || parsed?.caseStatus === 'CLOSED'
+              ? parsed.caseStatus
+              : null;
+          const userMessage = normalizeApiMessage(parsed?.userMessage);
+          const botMessage = normalizeApiMessage(parsed?.botMessage);
+
+          if (newCaseId) {
+            setSelectedCaseId(newCaseId);
+          }
+
+          if (newCaseStatus) {
+            setMemberCaseStatus(newCaseStatus);
+          }
+
+          const nextMessages = [userMessage, botMessage].filter(
+            (item): item is UIMessage => item !== null
+          );
+
+          if (nextMessages.length > 0) {
+            setMessages((prev) => {
+              const withoutSeed = prev.filter(
+                (item) => item.id !== seededQuestion.id
+              );
+              return appendUniqueMessages(withoutSeed, nextMessages);
+            });
+          }
+        } catch {
+          setErrorMessage('網路異常，請稍後再試。');
+        }
+
         setIsLoadingMessages(false);
         return;
       }

@@ -232,7 +232,7 @@ export default function CartPage() {
             {items.map((item) => (
               <article
                 key={item.id}
-                className={`grid gap-4 rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white p-5 md:items-center ${cartGridClass}`}
+                className={`grid gap-3 rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white p-4 md:gap-4 md:p-5 md:items-center ${cartGridClass}`}
               >
                 <div className="flex min-w-0 gap-4">
                   <div className="relative size-[72px] shrink-0 overflow-hidden rounded-xl bg-card-primary">
@@ -257,11 +257,13 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <p className="typo-card-body w-full text-right text-text-secondary">
-                  {formatPrice(item.price)}
+                <p className="typo-card-body flex w-full justify-between gap-3 text-text-secondary md:block md:text-right">
+                  <span className="md:hidden">單價</span>
+                  <span>{formatPrice(item.price)}</span>
                 </p>
 
-                <div className="flex w-full items-center justify-center gap-2">
+                <div className="flex w-full items-center justify-between gap-3 text-text-secondary md:justify-center">
+                  <span className="typo-card-body md:hidden">數量</span>
                   <button
                     type="button"
                     aria-label="減少數量"
@@ -270,7 +272,7 @@ export default function CartPage() {
                   >
                     <LuMinus className="size-3" />
                   </button>
-                  <span className="typo-card-title w-8 text-center text-text-primary">
+                  <span className="typo-card-body w-8 text-center text-text-secondary">
                     {item.qty}
                   </span>
                   <button
@@ -283,14 +285,17 @@ export default function CartPage() {
                   </button>
                 </div>
 
-                <p className="typo-card-title w-full text-right text-primary">
-                  {formatPrice(item.price * item.qty)}
+                <p className="typo-card-body flex w-full justify-between gap-3 md:block md:text-right">
+                  <span className="text-text-secondary md:hidden">小計</span>
+                  <span className="typo-card-title text-primary">
+                    {formatPrice(item.price * item.qty)}
+                  </span>
                 </p>
 
                 <button
                   type="button"
                   aria-label="刪除商品"
-                  className="flex size-8 items-center justify-center rounded-lg text-text-secondary hover:bg-card-primary"
+                  className="justify-self-end flex size-8 items-center justify-center rounded-lg text-text-secondary hover:bg-card-primary"
                   onClick={() => removeItem(item.id)}
                 >
                   <LuTrash2 className="size-4" />

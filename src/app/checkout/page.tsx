@@ -3,8 +3,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FaLine, FaRegCreditCard } from 'react-icons/fa6';
+import toast from 'react-hot-toast';
 import {
   LuCheck,
   LuChevronLeft,
@@ -33,7 +34,6 @@ interface Coupon {
 }
 
 interface UserProfile {
-  email: string;
   name: string | null;
   phone: string | null;
   address: string | null;
@@ -42,7 +42,6 @@ interface UserProfile {
 interface ShippingInfo {
   receiverName: string;
   receiverPhone: string;
-  receiverEmail: string;
   receiverAddress: string;
   remark: string;
 }
@@ -51,6 +50,7 @@ const steps = ['確認訂購內容', '填寫收件資訊', '選擇付款方式']
 
 const orderGridClass = 'md:grid-cols-[minmax(0,1fr)_100px_80px_100px]';
 const shippingFee = 60;
+const pendingPaymentKey = 'mofu-pending-payment';
 
 const formatPrice = (price: number) => `NT$${price.toLocaleString('zh-TW')}`;
 
@@ -67,19 +67,32 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [shouldUpdateMemberInfo, setShouldUpdateMemberInfo] = useState(false);
+  const receiverNameRef = useRef<HTMLInputElement>(null);
+  const receiverPhoneRef = useRef<HTMLInputElement>(null);
+  const receiverAddressRef = useRef<HTMLInputElement>(null);
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     receiverName: '',
     receiverPhone: '',
-    receiverEmail: '',
     receiverAddress: '',
     remark: '',
   });
 
   const updateShippingInfo = (field: keyof ShippingInfo, value: string) => {
+    setError('');
     setShippingInfo((current) => ({ ...current, [field]: value }));
   };
 
   useEffect(() => {
+    const redirectPendingPayment = () => {
+      const pendingOrderNo = sessionStorage.getItem(pendingPaymentKey);
+      if (pendingOrderNo) {
+        router.replace('/member/orders');
+      }
+    };
+
+    redirectPendingPayment();
+    window.addEventListener('pageshow', redirectPendingPayment);
+
     const loadCheckout = async () => {
       const [cartResponse, couponResponse, profileResponse] = await Promise.all(
         [
@@ -108,7 +121,6 @@ export default function CheckoutPage() {
         ...current,
         receiverName: profileData.name ?? '',
         receiverPhone: profileData.phone ?? '',
-        receiverEmail: profileData.email ?? '',
         receiverAddress: profileData.address ?? '',
       }));
       setIsLoading(false);
@@ -121,6 +133,10 @@ export default function CheckoutPage() {
 
     const savedCoupon = localStorage.getItem('mofu-cart-coupon');
     if (savedCoupon) setCouponCode(savedCoupon);
+
+    return () => {
+      window.removeEventListener('pageshow', redirectPendingPayment);
+    };
   }, [router]);
 
   useEffect(() => {
@@ -192,8 +208,47 @@ export default function CheckoutPage() {
     );
   }
 
+  const validateShippingInfo = () => {
+    const currentShippingInfo = {
+      receiverName:
+        receiverNameRef.current?.value ?? shippingInfo.receiverName,
+      receiverPhone:
+        receiverPhoneRef.current?.value ?? shippingInfo.receiverPhone,
+      receiverAddress:
+        receiverAddressRef.current?.value ?? shippingInfo.receiverAddress,
+    };
+    const requiredFields = [
+      { label: '收件人姓名', value: currentShippingInfo.receiverName },
+      { label: '聯絡手機', value: currentShippingInfo.receiverPhone },
+      { label: '收件地址', value: currentShippingInfo.receiverAddress },
+    ];
+    const emptyField = requiredFields.find(
+      (field) => !field.value.trim()
+    );
+
+    if (!emptyField) {
+      setError('');
+      setShippingInfo((current) => ({
+        ...current,
+        ...currentShippingInfo,
+      }));
+      return true;
+    }
+
+    toast.error(`請填寫${emptyField.label}`);
+    setError(`請填寫${emptyField.label}`);
+    setCurrentStep(1);
+    return false;
+  };
+
   const goNext = () => {
+    if (currentStep === 1 && !validateShippingInfo()) return;
     setCurrentStep((step) => Math.min(step + 1, steps.length - 1));
+  };
+
+  const goToStep = (targetStep: number) => {
+    if (currentStep === 1 && targetStep > 1 && !validateShippingInfo()) return;
+    setCurrentStep(targetStep);
   };
 
   const goBack = () => {
@@ -201,15 +256,7 @@ export default function CheckoutPage() {
   };
 
   const handlePayment = async () => {
-    if (
-      !shippingInfo.receiverName ||
-      !shippingInfo.receiverPhone ||
-      !shippingInfo.receiverAddress
-    ) {
-      setError('請填寫完整收件資訊。');
-      setCurrentStep(1);
-      return;
-    }
+    if (!validateShippingInfo()) return;
 
     setIsSubmitting(true);
     setError('');
@@ -276,7 +323,14 @@ export default function CheckoutPage() {
         orderNo: checkoutData.orderNo,
       });
 
-      window.location.href = `/api/orders/payments/${provider}?${params.toString()}`;
+      sessionStorage.setItem(pendingPaymentKey, checkoutData.orderNo);
+      const payUrl = `/api/orders/payments/${provider}?${params.toString()}`;
+      const redirectParams = new URLSearchParams({
+        orderNo: checkoutData.orderNo,
+        pay: payUrl,
+        attempt: String(Date.now()),
+      });
+      window.location.href = `/checkout/payment-pending?${redirectParams.toString()}`;
     } catch {
       setError('建立訂單失敗，請稍後再試。');
       setIsSubmitting(false);
@@ -285,7 +339,7 @@ export default function CheckoutPage() {
 
   return (
     <section className="mx-auto w-full max-w-[1520px] px-4 py-8 md:px-10">
-      <ol className="mx-auto mb-10 flex max-w-[520px] items-center justify-center">
+      <ol className="mx-auto mb-8 flex max-w-[640px] items-center justify-center px-1 sm:mb-10">
         {steps.map((step, index) => {
           const isDone = index < currentStep;
           const isActive = index === currentStep;
@@ -297,8 +351,8 @@ export default function CheckoutPage() {
             >
               <button
                 type="button"
-                className="flex shrink-0 items-center gap-2"
-                onClick={() => setCurrentStep(index)}
+                className="flex shrink-0 items-center gap-1 sm:gap-2"
+                onClick={() => goToStep(index)}
               >
                 <span
                   className={`typo-tab flex size-8 items-center justify-center rounded-full ${
@@ -310,7 +364,7 @@ export default function CheckoutPage() {
                   {isDone ? <LuCheck className="size-4" /> : index + 1}
                 </span>
                 <span
-                  className={`typo-tab whitespace-nowrap ${
+                  className={`typo-tab hidden whitespace-nowrap sm:inline ${
                     isDone || isActive
                       ? 'text-text-primary'
                       : 'text-text-secondary'
@@ -322,7 +376,7 @@ export default function CheckoutPage() {
 
               {index < steps.length - 1 && (
                 <span
-                  className={`mx-4 h-px flex-1 ${
+                  className={`mx-2 h-px flex-1 sm:mx-4 ${
                     index < currentStep ? 'bg-primary' : 'bg-border'
                   }`}
                 />
@@ -353,7 +407,7 @@ export default function CheckoutPage() {
               {orderItems.map((item) => (
                 <article
                   key={`${item.name}${item.spec}`}
-                  className={`grid gap-4 py-4 md:items-center ${orderGridClass}`}
+                  className={`grid gap-3 py-4 md:gap-4 md:items-center ${orderGridClass}`}
                 >
                   <div className="flex min-w-0 gap-4">
                     <div className="relative size-[56px] shrink-0 overflow-hidden rounded-xl bg-card-primary">
@@ -378,14 +432,23 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  <p className="typo-card-body w-full text-right text-text-secondary">
-                    {formatPrice(item.price)}
+                  <p className="typo-card-body flex w-full justify-between gap-3 text-text-secondary md:block md:text-right">
+                    <span className="md:hidden">單價</span>
+                    <span>{formatPrice(item.price)}</span>
                   </p>
-                  <p className="typo-card-title w-full text-center text-text-primary">
-                    {item.qty}
+                  <p className="typo-card-body flex w-full justify-between gap-3 text-text-secondary md:block md:text-center">
+                    <span className="md:hidden">數量</span>
+                    <span className="typo-card-body text-text-secondary">
+                      {item.qty}
+                    </span>
                   </p>
-                  <p className="typo-card-title w-full text-right text-primary">
-                    {formatPrice(item.price * item.qty)}
+                  <p className="typo-card-body flex w-full justify-between gap-3 md:block md:text-right">
+                    <span className="text-text-secondary md:hidden">
+                      小計
+                    </span>
+                    <span className="typo-card-title text-primary">
+                      {formatPrice(item.price * item.qty)}
+                    </span>
                   </p>
                 </article>
               ))}
@@ -424,10 +487,10 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          <div className="mx-auto mt-6 flex max-w-[1020px] justify-between">
+          <div className="mx-auto mt-6 flex max-w-[1020px] flex-col gap-3 sm:flex-row sm:justify-between">
             <Link
               href="/cart"
-              className="back-button typo-tab inline-flex items-center gap-2"
+              className="back-button typo-tab inline-flex items-center justify-center gap-2"
             >
               <LuChevronLeft className="size-4" />
               返回購物車
@@ -435,7 +498,7 @@ export default function CheckoutPage() {
 
             <button
               type="button"
-              className="next-button typo-tab inline-flex items-center gap-2"
+              className="next-button typo-tab inline-flex items-center justify-center gap-2"
               onClick={goNext}
             >
               下一步：填寫收件資料
@@ -457,8 +520,11 @@ export default function CheckoutPage() {
               <label className="block">
                 <span className="typo-card-body mb-2 block text-text-secondary">
                   收件人姓名
+                  <span className="text-primary"> *</span>
                 </span>
                 <input
+                  ref={receiverNameRef}
+                  required
                   className="typo-card-body h-11 w-full rounded-xl border border-[rgba(26,22,18,0.12)] bg-card-primary px-4 text-text-primary outline-none focus:border-primary"
                   value={shippingInfo.receiverName}
                   onChange={(event) =>
@@ -470,8 +536,11 @@ export default function CheckoutPage() {
               <label className="block">
                 <span className="typo-card-body mb-2 block text-text-secondary">
                   聯絡手機
+                  <span className="text-primary"> *</span>
                 </span>
                 <input
+                  ref={receiverPhoneRef}
+                  required
                   className="typo-card-body h-11 w-full rounded-xl border border-[rgba(26,22,18,0.12)] bg-card-primary px-4 text-text-primary outline-none focus:border-primary"
                   value={shippingInfo.receiverPhone}
                   onChange={(event) =>
@@ -480,25 +549,14 @@ export default function CheckoutPage() {
                 />
               </label>
 
-              <label className="block md:col-span-1">
-                <span className="typo-card-body mb-2 block text-text-secondary">
-                  電子信箱
-                </span>
-                <input
-                  readOnly
-                  className="typo-card-body h-11 w-full rounded-xl border border-[rgba(26,22,18,0.12)] bg-card-primary px-4 text-text-secondary outline-none"
-                  value={shippingInfo.receiverEmail}
-                />
-                <span className="mt-2 block text-right text-sm leading-5 text-text-secondary">
-                  自動帶入註冊會員信箱，結帳時無法另外修改。
-                </span>
-              </label>
-
               <label className="block md:col-span-2">
                 <span className="typo-card-body mb-2 block text-text-secondary">
                   收件地址
+                  <span className="text-primary"> *</span>
                 </span>
                 <input
+                  ref={receiverAddressRef}
+                  required
                   className="typo-card-body h-11 w-full rounded-xl border border-[rgba(26,22,18,0.12)] bg-card-primary px-4 text-text-primary outline-none focus:border-primary"
                   value={shippingInfo.receiverAddress}
                   onChange={(event) =>
@@ -522,10 +580,16 @@ export default function CheckoutPage() {
               </label>
             </div>
 
-            <label className="mt-6 flex items-start gap-3 border-t border-[rgba(26,22,18,0.08)] pt-5">
+            <label
+              className={`mt-6 flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+                shouldUpdateMemberInfo
+                  ? 'border-primary bg-primary/10 shadow-[0_8px_20px_rgba(232,121,58,0.12)]'
+                  : 'border-primary/35 bg-primary/5 hover:border-primary hover:bg-primary/10'
+              }`}
+            >
               <input
                 type="checkbox"
-                className="checkbox mt-1 checkbox-sm"
+                className="mt-1 size-5 accent-primary"
                 checked={shouldUpdateMemberInfo}
                 onChange={(event) =>
                   setShouldUpdateMemberInfo(event.target.checked)
@@ -542,10 +606,10 @@ export default function CheckoutPage() {
             </label>
           </section>
 
-          <div className="mx-auto mt-6 flex max-w-[1020px] justify-between">
+          <div className="mx-auto mt-6 flex max-w-[1020px] flex-col gap-3 sm:flex-row sm:justify-between">
             <button
               type="button"
-              className="back-button typo-tab inline-flex items-center gap-2"
+              className="back-button typo-tab inline-flex items-center justify-center gap-2"
               onClick={goBack}
             >
               <LuChevronLeft className="size-4" />
@@ -554,7 +618,7 @@ export default function CheckoutPage() {
 
             <button
               type="button"
-              className="next-button typo-tab inline-flex items-center gap-2"
+              className="next-button typo-tab inline-flex items-center justify-center gap-2"
               onClick={goNext}
             >
               下一步：選擇付款方式
@@ -574,13 +638,13 @@ export default function CheckoutPage() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <label
-                className={`flex cursor-pointer items-start justify-between gap-4 rounded-2xl border p-5 ${
+                className={`flex cursor-pointer items-start justify-between gap-3 rounded-2xl border p-4 sm:gap-4 sm:p-5 ${
                   paymentMethod === 'credit'
                     ? 'border-primary bg-card-primary'
                     : 'border-[rgba(26,22,18,0.12)] bg-white text-text-secondary'
                 }`}
               >
-                <span className="flex gap-4">
+                <span className="flex min-w-0 gap-3 sm:gap-4">
                   <span
                     className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${
                       paymentMethod === 'credit'
@@ -590,7 +654,7 @@ export default function CheckoutPage() {
                   >
                     <FaRegCreditCard className="size-5" />
                   </span>
-                  <span>
+                  <span className="min-w-0">
                     <span className="typo-card-title block text-text-primary">
                       信用卡付款
                     </span>
@@ -625,13 +689,13 @@ export default function CheckoutPage() {
               </label>
 
               <label
-                className={`flex cursor-pointer items-start justify-between gap-4 rounded-2xl border p-5 ${
+                className={`flex cursor-pointer items-start justify-between gap-3 rounded-2xl border p-4 sm:gap-4 sm:p-5 ${
                   paymentMethod === 'linepay'
                     ? 'border-primary bg-card-primary'
                     : 'border-[rgba(26,22,18,0.12)] bg-white text-text-secondary'
                 }`}
               >
-                <span className="flex gap-4">
+                <span className="flex min-w-0 gap-3 sm:gap-4">
                   <span
                     className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${
                       paymentMethod === 'linepay'
@@ -641,7 +705,7 @@ export default function CheckoutPage() {
                   >
                     <FaLine className="size-5" />
                   </span>
-                  <span>
+                  <span className="min-w-0">
                     <span className="typo-card-title block text-text-primary">
                       LINE Pay 付款
                     </span>
