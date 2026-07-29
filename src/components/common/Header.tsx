@@ -516,7 +516,7 @@ export default function Header() {
                 </li>
                 <li>
                   <Link
-                    href="/"
+                    href="/member/pets/ai"
                     className="block rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -597,7 +597,7 @@ export default function Header() {
             <ul className="menu menu-horizontal gap-1 p-0">
               <li className="rounded-lg hover:bg-button-secondary-hover">
                 <Link
-                  href="/"
+                  href="/member/pets/ai"
                   className="px-4 py-0 text-text-primary hover:bg-transparent"
                 >
                   <div className="typo-body h-10 py-[5.5px]">AI 顧問</div>
@@ -605,7 +605,7 @@ export default function Header() {
               </li>
               <li className="rounded-lg hover:bg-button-secondary-hover">
                 <Link
-                  href="/"
+                  href="/member/pets/ai"
                   className="px-4 py-0 text-text-primary hover:bg-transparent"
                 >
                   <div className="typo-body h-10 py-[5.5px]">寵物百科</div>
