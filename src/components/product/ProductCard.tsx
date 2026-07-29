@@ -200,7 +200,7 @@ export function ProductCard({
         </div>
 
         <div className="flex flex-col gap-4 p-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-1 sm:gap-3">
             <h2 className="typo-card-title min-w-0 flex-1 truncate group-hover/card:underline">
               {product.name}
             </h2>

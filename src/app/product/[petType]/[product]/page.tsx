@@ -333,6 +333,8 @@ function ProductPageContent({
 
   const fromAllProducts = categoryParam === 'all-products';
   const productName = productDetail?.product.name || labels.product;
+  const petTypePageName =
+    productDetail?.product.petType?.tag_page || labels.breadcrumbHome;
   const categoryName = fromAllProducts
     ? labels.allProducts
     : productDetail?.product.category || labels.category;
@@ -359,113 +361,122 @@ function ProductPageContent({
   const maxWidth = 1280;
 
   return (
-    <div
-      className="flex flex-col gap-4 justify-self-center p-2 sm:gap-12 sm:p-0"
-      style={{ maxWidth }}
-    >
-      <nav
-        aria-label="Breadcrumb"
-        className="typo-body-medium breadcrumbs w-full text-sm"
-      >
-        <ul className="text-primary">
-          <li>
-            <Link href="/">{labels.breadcrumbHome}</Link>
-          </li>
-          <li>
-            <Link href={categoryHref}>{categoryName}</Link>
-          </li>
-          <li className="text-text-primary">{productName}</li>
-        </ul>
-      </nav>
-
-      {productResolveError && (
-        <p className="typo-body text-error" role="alert">
-          {productResolveError}
-        </p>
-      )}
-
-      {isPageLoading && (
-        <div className="flex min-h-40 items-center justify-center">
-          <span className="loading loading-md loading-spinner text-primary" />
-        </div>
-      )}
-
-      {productContent && (
-        <QuickShoppingSection
-          petTypeId={productContent.resolvedProductIds.petTypeId}
-          productId={productContent.resolvedProductIds.productId}
-          detail={productContent.productDetail}
-        />
-      )}
-
-      {productContent && descriptionImages.length > 0 && (
-        <section
-          id="product-description"
-          className="mx-auto flex w-full flex-col gap-5"
+    <div className="w-full bg-background">
+      <div className="mx-auto w-full max-w-[1520px] px-3 py-0 2xl:px-0">
+        <div
+          className="flex w-full flex-col gap-4 justify-self-center lg:gap-12"
+          style={{ maxWidth }}
         >
-          <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
-            {labels.description}
-          </h2>
-          <div
-            className={[
-              'relative overflow-hidden',
-              showAllDescriptions ? '' : 'max-h-[300px] sm:max-h-[600px]',
-            ].join(' ')}
+          <nav
+            aria-label="Breadcrumb"
+            className="typo-body-medium breadcrumbs min-w-0"
           >
-            {visibleDescriptionImages.map((src, index) => (
-              <Image
-                key={src}
-                src={src}
-                alt={`${productName} ${labels.description} ${index + 1}`}
-                width={maxWidth}
-                height={maxWidth}
-                sizes={`${maxWidth}px`}
-                className="h-auto w-full"
-              />
-            ))}
-            {canToggleDescriptions && (
-              <button
-                type="button"
-                className={`group absolute inset-x-0 bottom-0 flex h-24 cursor-pointer items-center justify-center gap-2 bg-linear-to-t from-black/85 to-transparent pt-7 transition-transform hover:scale-[1.05] ${
-                  showAllDescriptions ? 'pb-7' : 'pt-7'
-                }`}
-                onClick={() => setShowAllDescriptions((prev) => !prev)}
-              >
-                <span className="typo-tab text-text-button group-hover:underline">
-                  {showAllDescriptions
-                    ? labels.collapseDescription
-                    : labels.expandDescription}
-                </span>
-                <LuChevronRight
-                  className={`size-6 text-text-button ${showAllDescriptions ? '-rotate-90' : 'rotate-90'}`}
-                />
-              </button>
-            )}
-          </div>
-        </section>
-      )}
+            <ul className="min-w-0 text-primary">
+              <li className="hidden shrink-0 sm:block">
+                <Link href="/">{labels.breadcrumbHome}</Link>
+              </li>
+              <li className="shrink-0">
+                <Link href={`/product/${petType}`}>{petTypePageName}</Link>
+              </li>
+              <li className="shrink-0">
+                <Link href={categoryHref}>{categoryName}</Link>
+              </li>
+              <li className="min-w-0 flex-1 text-text-primary">
+                <span className="block min-w-0 truncate">{productName}</span>
+              </li>
+            </ul>
+          </nav>
 
-      {productContent && (
-        <section className="mx-auto flex w-full flex-col gap-6">
-          <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
-            {labels.recommendedProduct}
-          </h2>
-          {recommendedProducts.length > 0 ? (
-            <div className="grid grid-cols-2 gap-x-0 gap-y-6 sm:gap-8 xl:grid-cols-3 2xl:grid-cols-4">
-              {recommendedProducts.map((recommendedProduct) => (
-                <ProductCard
-                  key={recommendedProduct.id}
-                  product={recommendedProduct}
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="typo-body py-8 text-center text-text-secondary">
-              {labels.noSimilarProduct}
+          {productResolveError && (
+            <p className="typo-body text-error" role="alert">
+              {productResolveError}
             </p>
           )}
-        </section>
-      )}
+
+          {isPageLoading && (
+            <div className="flex min-h-40 items-center justify-center">
+              <span className="loading loading-md loading-spinner text-primary" />
+            </div>
+          )}
+
+          {productContent && (
+            <QuickShoppingSection
+              petTypeId={productContent.resolvedProductIds.petTypeId}
+              productId={productContent.resolvedProductIds.productId}
+              detail={productContent.productDetail}
+            />
+          )}
+
+          {productContent && descriptionImages.length > 0 && (
+            <section
+              id="product-description"
+              className="mx-auto flex w-full flex-col gap-5"
+            >
+              <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
+                {labels.description}
+              </h2>
+              <div
+                className={[
+                  'relative overflow-hidden',
+                  showAllDescriptions ? '' : 'max-h-[300px] sm:max-h-[600px]',
+                ].join(' ')}
+              >
+                {visibleDescriptionImages.map((src, index) => (
+                  <Image
+                    key={src}
+                    src={src}
+                    alt={`${productName} ${labels.description} ${index + 1}`}
+                    width={maxWidth}
+                    height={maxWidth}
+                    sizes={`${maxWidth}px`}
+                    className="h-auto w-full"
+                  />
+                ))}
+                {canToggleDescriptions && (
+                  <button
+                    type="button"
+                    className={`group absolute inset-x-0 bottom-0 flex h-24 cursor-pointer items-center justify-center gap-2 bg-linear-to-t from-black/85 to-transparent pt-7 transition-transform hover:scale-[1.05] ${
+                      showAllDescriptions ? 'pb-7' : 'pt-7'
+                    }`}
+                    onClick={() => setShowAllDescriptions((prev) => !prev)}
+                  >
+                    <span className="typo-tab text-text-button group-hover:underline">
+                      {showAllDescriptions
+                        ? labels.collapseDescription
+                        : labels.expandDescription}
+                    </span>
+                    <LuChevronRight
+                      className={`size-6 text-text-button ${showAllDescriptions ? '-rotate-90' : 'rotate-90'}`}
+                    />
+                  </button>
+                )}
+              </div>
+            </section>
+          )}
+
+          {productContent && (
+            <section className="mx-auto flex w-full flex-col gap-6">
+              <h2 className="typo-body-medium border-b-2 border-secondary pb-2 text-text-primary">
+                {labels.recommendedProduct}
+              </h2>
+              {recommendedProducts.length > 0 ? (
+                <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 xl:grid-cols-4">
+                  {recommendedProducts.map((recommendedProduct) => (
+                    <ProductCard
+                      key={recommendedProduct.id}
+                      product={recommendedProduct}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="typo-body py-8 text-center text-text-secondary">
+                  {labels.noSimilarProduct}
+                </p>
+              )}
+            </section>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
