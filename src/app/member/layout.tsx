@@ -43,7 +43,7 @@ export default function MemberLayout({
           <Link
             key={`${href}${label}`}
             href={href}
-            className={`flex items-center font-bold whitespace-nowrap transition-all ${isMobile ? 'shrink-0 gap-2 rounded-full px-4 py-2.5 text-sm leading-none' : 'gap-3 rounded-2xl px-6 py-3 text-base'} ${active ? 'bg-primary text-white' : 'text-[#6B635C] hover:bg-base-200 hover:text-text-primary'}`}
+            className={`flex items-center font-bold whitespace-nowrap transition-all ${isMobile ? 'shrink-0 gap-2 rounded-full px-4 py-2.5 text-sm leading-none' : 'gap-3 rounded-2xl px-6 py-3 text-base'} ${active ? 'bg-primary text-white' : 'text-[#6B635C] hover:bg-[#F4EEE8] hover:text-text-primary'}`}
             style={{
               fontFamily:
                 "'Noto Sans TC', 'Noto Sans JP', 'DM Sans', sans-serif",

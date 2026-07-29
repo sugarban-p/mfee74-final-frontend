@@ -104,7 +104,7 @@ export default function PetsPage() {
              */}
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
-                href="/member/pets/ai/select-pet"
+                href="/member/pets/ai"
                 className="typo-tab rounded-full border border-white px-5 py-2 text-white transition hover:bg-white hover:text-primary"
               >
                 開始 AI 導購

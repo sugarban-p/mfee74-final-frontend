@@ -308,6 +308,10 @@ export default function Header() {
     };
   }, [refreshAuthState]);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
   const handleMemberClick = () => {
     if (isAuthLoading) {
       return;
@@ -512,7 +516,7 @@ export default function Header() {
                 </li>
                 <li>
                   <Link
-                    href="/"
+                    href="/member/pets/ai"
                     className="block rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -521,11 +525,11 @@ export default function Header() {
                 </li>
                 <li>
                   <Link
-                    href="/"
+                    href="/#contact"
                     className="block rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    寵物百科
+                    聯繫我們
                   </Link>
                 </li>
               </ul>
@@ -593,7 +597,7 @@ export default function Header() {
             <ul className="menu menu-horizontal gap-1 p-0">
               <li className="rounded-lg hover:bg-button-secondary-hover">
                 <Link
-                  href="/"
+                  href="/member/pets/ai"
                   className="px-4 py-0 text-text-primary hover:bg-transparent"
                 >
                   <div className="typo-body h-10 py-[5.5px]">AI 顧問</div>
@@ -601,10 +605,10 @@ export default function Header() {
               </li>
               <li className="rounded-lg hover:bg-button-secondary-hover">
                 <Link
-                  href="/"
+                  href="/#contact"
                   className="px-4 py-0 text-text-primary hover:bg-transparent"
                 >
-                  <div className="typo-body h-10 py-[5.5px]">寵物百科</div>
+                  <div className="typo-body h-10 py-[5.5px]">聯繫我們</div>
                 </Link>
               </li>
             </ul>
@@ -791,6 +795,40 @@ export default function Header() {
             )}
           </div>
         </div>
+
+        {isMobileMenuOpen && (
+          <div
+            id="mobile-main-menu"
+            className="border-t border-border bg-card-primary px-4 py-3 lg:hidden"
+          >
+            <nav className="grid gap-2" aria-label="主導覽">
+              <Link
+                href="/product"
+                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
+              >
+                所有商品
+              </Link>
+              <Link
+                href="/event"
+                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
+              >
+                所有活動
+              </Link>
+              <Link
+                href="/support/chat"
+                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
+              >
+                AI 顧問
+              </Link>
+              <Link
+                href="/member/dashboard"
+                className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
+              >
+                會員中心
+              </Link>
+            </nav>
+          </div>
+        )}
       </header>
     </>
   );

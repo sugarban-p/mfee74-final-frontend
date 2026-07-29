@@ -47,6 +47,7 @@ interface OrderDetail {
 }
 
 const formatPrice = (price: number) => `NT$${price.toLocaleString('zh-TW')}`;
+const pendingPaymentKey = 'mofu-pending-payment';
 
 export default function MemberOrderDetailPage() {
   const router = useRouter();
@@ -56,6 +57,10 @@ export default function MemberOrderDetailPage() {
 
   useEffect(() => {
     if (!params.orderId) return;
+
+    if (sessionStorage.getItem(pendingPaymentKey) === params.orderId) {
+      sessionStorage.removeItem(pendingPaymentKey);
+    }
 
     fetch(`/api/orders/list/${params.orderId}`, { credentials: 'include' })
       .then((response) => {
@@ -69,6 +74,7 @@ export default function MemberOrderDetailPage() {
         return response.json();
       })
       .then((data) => setOrder(data?.order ?? null))
+      .catch(() => setOrder(null))
       .finally(() => setIsLoading(false));
   }, [params.orderId, router]);
 
@@ -111,17 +117,16 @@ export default function MemberOrderDetailPage() {
 
   return (
     <section className="w-full">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="typo-h3 text-text-primary">訂單明細</h1>
+      <div className="mb-6">
+        <Link
+          href="/member/orders"
+          className="back-button typo-tab mb-4 inline-flex items-center justify-center gap-2"
+        >
+          <LuChevronLeft className="size-4" />
+          返回訂單列表
+        </Link>
 
-        <div className="flex gap-2">
-          <span className="rounded-full bg-info px-3 py-1 text-xs font-medium text-[#4f8aa8]">
-            已出貨
-          </span>
-          <span className="rounded-full bg-success px-3 py-1 text-xs font-medium text-[#5f9d63]">
-            已付款
-          </span>
-        </div>
+        <h1 className="typo-h3 text-text-primary">訂單明細</h1>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -168,14 +173,21 @@ export default function MemberOrderDetailPage() {
                     </div>
                   </div>
 
-                  <p className="typo-card-body text-right text-text-secondary">
-                    {formatPrice(item.price)}
+                  <p className="typo-card-body flex w-full justify-between gap-3 text-text-secondary md:block md:text-right">
+                    <span className="md:hidden">單價</span>
+                    <span>{formatPrice(item.price)}</span>
                   </p>
-                  <p className="typo-card-title text-center text-text-primary">
-                    {item.qty}
+                  <p className="typo-card-body flex w-full justify-between gap-3 text-text-secondary md:block md:text-center">
+                    <span className="md:hidden">數量</span>
+                    <span>{item.qty}</span>
                   </p>
-                  <p className="typo-card-title text-right text-primary">
-                    {formatPrice(item.price * item.qty)}
+                  <p className="typo-card-body flex w-full justify-between gap-3 md:block md:text-right">
+                    <span className="text-text-secondary md:hidden">
+                      小計
+                    </span>
+                    <span className="typo-card-title text-primary">
+                      {formatPrice(item.price * item.qty)}
+                    </span>
                   </p>
                 </article>
               ))}
@@ -256,7 +268,9 @@ export default function MemberOrderDetailPage() {
             <dl className="typo-card-body space-y-3">
               <div className="flex justify-between gap-4">
                 <dt className="text-text-secondary">訂單編號</dt>
-                <dd className="text-right text-text-primary">{order.id}</dd>
+                <dd className="min-w-0 truncate text-right text-sm text-text-primary sm:text-base">
+                  {order.id}
+                </dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-text-secondary">成立時間</dt>
@@ -306,13 +320,6 @@ export default function MemberOrderDetailPage() {
             </div>
           </section>
 
-          <Link
-            href="/member/orders"
-            className="back-button typo-tab flex w-full items-center justify-center gap-2"
-          >
-            <LuChevronLeft className="size-4" />
-            返回訂單列表
-          </Link>
         </aside>
       </div>
     </section>
