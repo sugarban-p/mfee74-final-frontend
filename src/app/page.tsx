@@ -80,6 +80,17 @@ const testimonials = [
 ];
 
 const faqs = [
+  // 第一題：直接提供客服聯繫資訊。
+  {
+    question: '如何聯繫 MOFU 客服？',
+    answer:
+      '客服電話：0800-XXX-XXX，服務時間為週一至週五 09:00–18:00；電子郵件：support@petfull.com，我們會在收到來信後盡快回覆。',
+  },
+  // 第二題：說明登入後可以使用的客服中心。
+  {
+    question: '客服中心可以協助處理哪些問題？',
+    answer: '登入會員後可以前往客服中心，詢問商品、付款、訂單配送等問題。',
+  },
   {
     question: '第一次購買，該怎麼選擇適合毛孩的商品？',
     answer:
@@ -99,11 +110,6 @@ const faqs = [
     question: 'AI 顧問會直接替我決定要買哪一項商品嗎？',
     answer:
       '不會。AI 顧問會依毛孩資料與商品資訊提供選購參考，最後仍由會員自行閱讀商品內容並決定是否購買。',
-  },
-  {
-    question: '還有其他商品或訂單問題，該去哪裡詢問？',
-    answer:
-      '登入會員後可前往客服中心提出問題，AI與人工客服都可以協助回答您訂單的配送、付款說明。',
   },
 ];
 
@@ -733,7 +739,13 @@ export default function HomePage() {
             const answerId = `home-faq-answer-${index}`;
 
             return (
-              <div key={faq.question} className="border-b border-border">
+              <div
+                key={faq.question}
+                // 只有第一題設定 contact 錨點。
+                id={index === 0 ? 'contact' : undefined}
+                // 避免固定 Header 遮住第一題。
+                className="scroll-mt-24 border-b border-border"
+              >
                 <button
                   type="button"
                   aria-expanded={isOpen}
