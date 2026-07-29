@@ -93,7 +93,7 @@ const faqs = [
   {
     question: '訂單成立後，大約多久會出貨？',
     answer:
-      '一般訂單會於付款確認後依序處理。實際出貨與配送時間會依訂單內容、物流狀況及收件地區而有所不同。',
+      '一般訂單會於付款確認後依序處理。訂單確認後 1 到 3 個工作日內出貨，使用黑貓宅急便或新竹物流配送。',
   },
   {
     question: 'AI 顧問會直接替我決定要買哪一項商品嗎？',
@@ -103,7 +103,7 @@ const faqs = [
   {
     question: '還有其他商品或訂單問題，該去哪裡詢問？',
     answer:
-      '登入會員後可前往客服中心提出問題；若目前沒有登入，也可以先瀏覽常見問題與網站上的配送、付款說明。',
+      '登入會員後可前往客服中心提出問題，AI與人工客服都可以協助回答您訂單的配送、付款說明。',
   },
 ];
 
@@ -258,63 +258,70 @@ export default function HomePage() {
 
       {/* 1. Hero Section：四張活動輪播 */}
       <section
-        className="relative h-[620px] w-full overflow-hidden md:h-[680px]"
+        className="relative h-[620px] w-full overflow-hidden bg-card-secondary sm:h-[720px] md:h-[820px] lg:h-[930px] xl:h-[1280px] 2xl:h-[1340px]"
         aria-label="MOFU 最新活動"
       >
         {heroSlides.map((slide, index) => (
           <div
             key={slide.title}
-            className={`absolute inset-0 transition-opacity duration-700 ${
+            className={`absolute inset-0 flex flex-col transition-opacity duration-700 ${
               index === activeSlide
                 ? 'opacity-100'
                 : 'pointer-events-none opacity-0'
             }`}
             aria-hidden={index !== activeSlide}
           >
-            <Image
-              src={slide.image}
-              alt=""
-              fill
-              priority={index === 0}
-              sizes="100vw"
-              className={`object-cover ${
-                index === activeSlide ? 'home-hero-breathe' : ''
-              }`}
-              style={{ objectPosition: slide.imagePosition }}
-            />
+            {/*
+             * 活動圖片本身已是完整 Banner，使用 object-contain 呈現全圖，
+             * 周圍留白則由品牌主題色自然填滿，不再使用深色遮罩。
+             */}
+            <div className="mx-auto mt-4 aspect-[1520/855] h-auto w-full max-w-[1920px] shrink-0">
+              <div className="relative h-full w-full overflow-hidden">
+                <Image
+                  src={slide.image}
+                  alt={`${slide.title}活動 Banner`}
+                  fill
+                  loading="eager"
+                  sizes="(max-width: 1920px) 100vw, 1920px"
+                  className={`object-contain ${
+                    index === activeSlide ? 'home-hero-breathe' : ''
+                  }`}
+                  style={{ objectPosition: slide.imagePosition }}
+                />
+              </div>
+            </div>
 
-            {/* 單色遮罩讓文字在不同照片上都清楚，不另外新增色碼。 */}
-            <div className="absolute inset-0 bg-text-primary/55" />
-
-            <div className="relative mx-auto flex h-full w-full max-w-[1520px] items-end px-5 pb-28 sm:px-8 md:px-12 lg:px-16">
-              <div className="max-w-[780px] text-white">
-                <div className="mb-5 flex items-center gap-4">
-                  <span className="h-px w-12 bg-white/60" aria-hidden="true" />
-                  <p className="typo-tab text-card-secondary">
-                    {slide.eyebrow}
-                  </p>
+            {/* 圖片下方保留真正的 HTML 標題與說明，兼顧 SEO 與可讀性。 */}
+            <div className="relative mx-auto flex w-full max-w-[1520px] flex-col items-center gap-5 px-5 pt-5 pb-28 text-center sm:px-8 md:px-12 lg:px-16">
+              <div className="max-w-[760px]">
+                <div className="mb-3 flex items-center justify-center gap-4">
+                  <span
+                    className="h-px w-12 bg-primary/60"
+                    aria-hidden="true"
+                  />
+                  <p className="typo-tab text-primary">{slide.eyebrow}</p>
                 </div>
 
-                <h1 className="typo-display text-white">
-                  {index === 0 ? 'MOFU 毛孩生活提案' : slide.title}
-                </h1>
-
-                {index === 0 && (
-                  <p className="typo-h3 mt-3 text-white">{slide.title}</p>
+                {/* 第一張是首頁主標題，其餘活動使用次標題，保留正確 SEO 層級。 */}
+                {index === 0 ? (
+                  <h1 className="typo-h3 text-text-primary">{slide.title}</h1>
+                ) : (
+                  <h2 className="typo-h3 text-text-primary">{slide.title}</h2>
                 )}
 
-                <p className="typo-body mt-4 max-w-[590px] text-white/85 md:mt-6">
+                {/* 活動說明保留為可讀取的 HTML 文字，不依賴圖片內嵌文字。 */}
+                <p className="typo-card-body mt-2 text-text-secondary">
                   {slide.description}
                 </p>
-
-                <Link
-                  href={slide.href}
-                  className="next-button typo-tab mt-6 inline-flex items-center gap-2 px-6 py-3 md:mt-8"
-                >
-                  查看活動
-                  <LuArrowRight className="size-4" aria-hidden="true" />
-                </Link>
               </div>
+
+              <Link
+                href={slide.href}
+                className="next-button inline-flex min-h-14 w-fit shrink-0 items-center gap-3 px-9 py-4 text-lg leading-6 font-semibold"
+              >
+                查看活動
+                <LuArrowRight className="size-5" aria-hidden="true" />
+              </Link>
             </div>
           </div>
         ))}
@@ -325,7 +332,7 @@ export default function HomePage() {
             type="button"
             aria-label="上一個活動"
             onClick={showPreviousSlide}
-            className="flex size-10 items-center justify-center rounded-full border border-white/40 bg-text-primary/30 text-white transition hover:bg-primary sm:size-11"
+            className="flex size-10 items-center justify-center rounded-full border border-primary/30 bg-background/80 text-text-secondary transition hover:bg-primary hover:text-white sm:size-11"
           >
             <LuChevronLeft className="size-5" aria-hidden="true" />
           </button>
@@ -334,26 +341,10 @@ export default function HomePage() {
             type="button"
             aria-label="下一個活動"
             onClick={showNextSlide}
-            className="flex size-10 items-center justify-center rounded-full border border-white/40 bg-text-primary/30 text-white transition hover:bg-primary sm:size-11"
+            className="flex size-10 items-center justify-center rounded-full border border-primary/30 bg-background/80 text-text-secondary transition hover:bg-primary hover:text-white sm:size-11"
           >
             <LuChevronRight className="size-5" aria-hidden="true" />
           </button>
-        </div>
-
-        {/* 輪播進度 */}
-        <div className="absolute bottom-14 left-5 z-20 flex gap-2 sm:left-1/2 sm:-translate-x-1/2 lg:bottom-16">
-          {heroSlides.map((slide, index) => (
-            <button
-              key={slide.title}
-              type="button"
-              aria-label={`切換到第 ${index + 1} 個活動`}
-              aria-current={index === activeSlide}
-              onClick={() => setActiveSlide(index)}
-              className={`h-1.5 transition-all ${
-                index === activeSlide ? 'w-10 bg-primary' : 'w-5 bg-white/60'
-              }`}
-            />
-          ))}
         </div>
 
         {/*
@@ -443,7 +434,7 @@ export default function HomePage() {
               href: '/product/cat?category=all-products',
             },
             {
-              title: '狗狗全系列',
+              title: '狗勾全系列',
               description: '從每日飲食到外出生活所需',
               image: '/dog-category.png',
               href: '/product/dog?category=all-products',
@@ -630,6 +621,7 @@ export default function HomePage() {
                 src="/cat.jpg"
                 alt="貓咪等待 MOFU AI 顧問整理合適的商品方向"
                 fill
+                loading="eager"
                 sizes="(max-width: 1023px) 100vw, 50vw"
                 className="object-cover object-[center_20%] lg:object-center"
               />
@@ -638,9 +630,13 @@ export default function HomePage() {
             {/* 右側保留目前已完成的 AI 導購功能內容。 */}
             <div className="flex items-center px-6 py-10 sm:px-10 sm:py-12 lg:px-16 lg:py-14">
               <div className="max-w-[600px]">
-                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-ai-link/20 bg-ai-link/10 px-5 py-2 text-ai-link md:mb-7">
-                  <LuSparkles className="size-4" aria-hidden="true" />
-                  <span className="typo-tab">AI POWERED</span>
+                <div className="mb-5 md:mb-7">
+                  <span
+                    className="font-serif text-[72px] leading-[0.78] font-bold text-primary/10 md:text-[88px] lg:text-[112px]"
+                    aria-hidden="true"
+                  >
+                    04
+                  </span>
                 </div>
 
                 <h2 className="typo-h2 text-text-primary">
