@@ -152,7 +152,7 @@ export default function PetAiChatPage() {
    */
   useEffect(() => {
     if (!Number.isInteger(petId) || petId <= 0) {
-      router.replace('/member/pets/ai/select-pet');
+      router.replace('/member/pets/ai');
       return;
     }
 
@@ -167,7 +167,7 @@ export default function PetAiChatPage() {
     return (
       <section className="w-full">
         <Link
-          href="/member/pets/ai/select-pet"
+          href="/member/pets/ai"
           className="back-button typo-tab inline-flex items-center gap-2"
         >
           <LuArrowLeft className="size-4" aria-hidden="true" />
@@ -213,7 +213,7 @@ export default function PetAiChatPage() {
       {/* 左側：目前正在替哪一隻毛孩導購 */}
       <aside className="w-full max-w-[280px] justify-self-center lg:max-w-none">
         <Link
-          href="/member/pets/ai/select-pet"
+          href="/member/pets/ai"
           className="back-button typo-tab inline-flex items-center gap-2"
         >
           <LuArrowLeft className="size-4" aria-hidden="true" />
