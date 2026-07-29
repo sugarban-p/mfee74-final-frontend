@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   LuPackage,
   LuHeart,
-  LuTicketPercent,
   LuPawPrint,
   LuMessageCircleQuestion,
   LuCircleCheck,
@@ -28,8 +28,18 @@ import {
   SuccessBox,
   ErrorBox,
   JP,
+  GoogleIcon,
 } from '@/src/components/ui';
 import type { AuthUser, DashboardStats, SecurityInfo } from '@/src/types';
+
+const GOOGLE_OAUTH_LOGIN_URL = 'http://localhost:3001/api/oauth/google/login';
+
+const DASHBOARD_TABS = ['overview', 'profile', 'security'] as const;
+
+type DashboardTab = (typeof DASHBOARD_TABS)[number];
+
+const isDashboardTab = (value: string | null): value is DashboardTab =>
+  DASHBOARD_TABS.some((tab) => tab === value);
 
 const MOCK_USER: AuthUser = {
   id: 'demo-user',
@@ -82,11 +92,13 @@ const MOCK_SECURITY: SecurityInfo = {
 };
 
 export default function DashboardPage() {
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab');
   const [user, setUser] = useState<AuthUser | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [security, setSecurity] = useState<SecurityInfo | null>(null);
-  const [tab, setTab] = useState<'overview' | 'profile' | 'security'>(
-    'overview'
+  const [tab, setTab] = useState<DashboardTab>(
+    isDashboardTab(initialTab) ? initialTab : 'overview'
   );
 
   useEffect(() => {
@@ -174,13 +186,19 @@ export default function DashboardPage() {
                 郵件已驗證
               </span>
             )}
+            {user.googleLinked && (
+              <span className="typo-tab flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-white 2xl:bg-white/24 2xl:py-1">
+                <GoogleIcon />
+                Google 已連結
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       {/* Tab switcher */}
       <div className="tabs-box tabs w-fit rounded-2xl border border-base-300 bg-base-200 p-1 2xl:rounded-2xl 2xl:border-[#E9DED3] 2xl:bg-transparent 2xl:shadow-none">
-        {(['overview', 'profile', 'security'] as const).map((t) => (
+        {DASHBOARD_TABS.map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -332,7 +350,7 @@ function OverviewTab({
                   {hint}
                 </div>
 
-                <div className="my-3 border-t border-gray-100" />
+                <div className="my-3 border-t border-[#F4EEE8]" />
 
                 {tags.length > 0 && (
                   <div className="flex items-center gap-2">
@@ -353,8 +371,8 @@ function OverviewTab({
                 )}
 
                 {tags.length === 0 && (
-                  <div className="rounded-xl bg-gray-100 px-2 py-1.5 text-center">
-                    <div className="typo-card-body leading-tight text-gray-400">
+                  <div className="rounded-xl bg-[#F4EEE8] px-2 py-1.5 text-center">
+                    <div className="typo-card-body leading-tight text-[#968880]">
                       前往查看完整{title}內容
                     </div>
                   </div>
@@ -495,6 +513,7 @@ function ProfileTab({
   onUpdate: (u: AuthUser) => void;
 }) {
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const avatarObjectUrlRef = useRef<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [f, setF] = useState({
     name: user.name ?? '',
@@ -509,24 +528,27 @@ function ProfileTab({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!avatarFile) {
-      setAvatarPreview(null);
-      return;
+    return () => {
+      if (avatarObjectUrlRef.current) {
+        URL.revokeObjectURL(avatarObjectUrlRef.current);
+      }
+    };
+  }, []);
+
+  const clearAvatarPreview = () => {
+    if (avatarObjectUrlRef.current) {
+      URL.revokeObjectURL(avatarObjectUrlRef.current);
+      avatarObjectUrlRef.current = null;
     }
 
-    const objectUrl = URL.createObjectURL(avatarFile);
-    setAvatarPreview(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [avatarFile]);
+    setAvatarPreview(null);
+  };
 
   const resetEditState = () => {
     setEditing(false);
     setError('');
     setAvatarFile(null);
-    setAvatarPreview(null);
+    clearAvatarPreview();
     setF({
       name: user.name ?? '',
       nickname: user.nickname ?? '',
@@ -556,8 +578,14 @@ function ProfileTab({
       return;
     }
 
+    clearAvatarPreview();
+
+    const objectUrl = URL.createObjectURL(file);
+    avatarObjectUrlRef.current = objectUrl;
+
     setError('');
     setAvatarFile(file);
+    setAvatarPreview(objectUrl);
   };
 
   const save = async () => {
@@ -585,7 +613,7 @@ function ProfileTab({
       }
       onUpdate({ ...user, ...data });
       setAvatarFile(null);
-      setAvatarPreview(null);
+      clearAvatarPreview();
       setEditing(false);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -868,6 +896,13 @@ function SecurityTab({
   user: AuthUser;
   security: SecurityInfo | null;
 }) {
+  const handleGoogleLink = () => {
+    const googleLoginUrl = new URL(GOOGLE_OAUTH_LOGIN_URL);
+
+    googleLoginUrl.searchParams.set('next', '/member/dashboard?tab=security');
+    window.location.href = googleLoginUrl.toString();
+  };
+
   if (!security)
     return (
       <div className="typo-card-body py-12 text-center text-text-primary/60">
@@ -909,6 +944,37 @@ function SecurityTab({
         </div>
       </div>
 
+      <div className="bg-[#FDFBF6]-100 card rounded-2xl border border-base-300">
+        <div className="card-body p-5">
+          <div className="flex items-center gap-3">
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-xl ${security.googleLinked ? 'border border-gray-300 bg-base-100' : 'bg-stone-100'}`}
+            >
+              <GoogleIcon />
+            </div>
+            <div className="flex-1">
+              <div className="typo-card-title text-text-primary">
+                Google 驗證
+              </div>
+              <div className="typo-card-body mt-0.5 text-text-primary/60">
+                {security.googleLinked
+                  ? '已連結 Google 帳號，可作為快速登入與額外驗證方式'
+                  : '尚未連結 Google 帳號，建議綁定以提升登入安全與備援能力'}
+              </div>
+            </div>
+            {security.googleLinked ? (
+              <span className="typo-tab badge gap-1 badge-outline px-2 py-2 badge-info">
+                已連結
+              </span>
+            ) : (
+              <Btn onClick={handleGoogleLink} variant="outline" sm>
+                立即連結
+              </Btn>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Login history */}
       <div className="bg-[#FDFBF6]-100 card overflow-hidden rounded-2xl border border-base-300">
         <div className="flex items-center justify-between border-b border-base-300 bg-base-200/50 px-5 py-3">
@@ -916,11 +982,11 @@ function SecurityTab({
             登入紀錄
           </h3>
           <span className="typo-tab badge badge-outline text-text-primary/60">
-            最近 10 筆
+            最近 5 筆
           </span>
         </div>
         <div className="divide-y divide-base-300">
-          {security.loginLogs.map((log) => (
+          {security.loginLogs.slice(0, 5).map((log) => (
             <div
               key={log.id}
               className="flex items-center gap-3 px-5 py-3.5 transition-colors hover:bg-base-200/40"
@@ -967,10 +1033,10 @@ function SecurityTab({
           </h3>
           <div className="space-y-3">
             {[
-              { label: 'JWT Token 有效期限', value: '1 小時', Icon: Clock },
+              { label: '自動登入時效', value: '1 小時', Icon: Clock },
               { label: '閒置自動登出', value: '30 分鐘', Icon: Activity },
               {
-                label: '登入失敗鎖定規則',
+                label: '登入安全防護',
                 value: '連續 5 次失敗 → 鎖定 30 分鐘',
                 Icon: Shield,
               },

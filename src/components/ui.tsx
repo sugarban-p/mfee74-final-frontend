@@ -23,12 +23,12 @@ export function PetLogo({ size = 'md' }: { size?: 'sm' | 'md' }) {
   return (
     <div className="flex items-center gap-2">
       <div
-        className={`${size === 'sm' ? 'w-7 h-7 text-sm' : 'w-9 h-9 text-base'} bg-primary rounded-xl flex items-center justify-center text-white shadow-[0_8px_18px_-10px_rgba(232,121,58,0.7)]`}
+        className={`${size === 'sm' ? 'h-7 w-7 text-sm' : 'h-9 w-9 text-base'} flex items-center justify-center rounded-xl bg-primary text-white shadow-[0_8px_18px_-10px_rgba(232,121,58,0.7)]`}
       >
         🐾
       </div>
       <span
-        className={`font-bold ${size === 'sm' ? 'text-base' : 'text-lg'} text-text-primary tracking-tight`}
+        className={`font-bold ${size === 'sm' ? 'text-base' : 'text-lg'} tracking-tight text-text-primary`}
         style={JP}
       >
         PetFull
@@ -101,7 +101,7 @@ export function FieldInput({
         className={`field-input-wrapper flex h-[46px] w-full items-center gap-3 rounded-xl border bg-[#F3EFEB] px-4 transition-all duration-200 focus-within:ring-2 ${wrapperTone}`}
       >
         {left && (
-          <span className="field-input-slot text-[#8D847D] shrink-0">
+          <span className="field-input-slot shrink-0 text-[#8D847D]">
             {left}
           </span>
         )}
@@ -112,17 +112,17 @@ export function FieldInput({
           autoComplete={autoComplete}
           onChange={(e) => onChange?.(e.target.value)}
           placeholder={placeholder}
-          className="field-input h-full w-full border-0 bg-transparent p-0 text-[14px] leading-[1.35] text-[#2F2A26] placeholder:text-[#AFA59D] focus:outline-none focus:ring-0"
+          className="field-input h-full w-full border-0 bg-transparent p-0 text-[14px] leading-[1.35] text-[#2F2A26] placeholder:text-[#AFA59D] focus:ring-0 focus:outline-none"
           style={AUTH_SANS_TC_MEDIUM}
         />
         {right && (
-          <span className="field-input-slot text-[#8D847D] shrink-0">
+          <span className="field-input-slot shrink-0 text-[#8D847D]">
             {right}
           </span>
         )}
       </div>
       {error && (
-        <p className="text-[14px] leading-[1.35] text-[#D95F5F] flex items-center gap-1.5">
+        <p className="flex items-center gap-1.5 text-[14px] leading-[1.35] text-[#D95F5F]">
           <AlertCircle size={14} />
           {error}
         </p>
@@ -166,8 +166,8 @@ export function PwBar({ password }: { password: string }) {
   if (!password) return null;
   const s = passwordStrength(password);
   return (
-    <div className="flex items-center gap-2 mt-1.5">
-      <div className="flex-1 h-1.5 bg-base-200 rounded-lg overflow-hidden">
+    <div className="mt-1.5 flex items-center gap-2">
+      <div className="h-1.5 flex-1 overflow-hidden rounded-lg bg-base-200">
         <div
           className={`h-full rounded-full transition-all duration-300 ${s.color} ${s.w}`}
         />
@@ -242,7 +242,7 @@ export function Btn({
           : AUTH_SANS_TC_MEDIUM
       }
     >
-      {loading && <span className="loading loading-spinner loading-xs" />}
+      {loading && <span className="loading loading-xs loading-spinner" />}
       {children}
     </button>
   );
@@ -252,7 +252,7 @@ export function Btn({
 
 export function ErrorBox({ message }: { message: string }) {
   return (
-    <div className="alert alert-error rounded-xl text-sm">
+    <div className="alert rounded-xl text-sm alert-error">
       <AlertCircle size={16} className="shrink-0" />
       <span>{message}</span>
     </div>
@@ -261,7 +261,7 @@ export function ErrorBox({ message }: { message: string }) {
 
 export function SuccessBox({ message }: { message: string }) {
   return (
-    <div className="alert alert-success rounded-xl text-sm">
+    <div className="alert rounded-xl text-sm alert-success">
       <CheckCircle size={16} className="shrink-0" />
       <span>{message}</span>
     </div>
@@ -285,26 +285,26 @@ export function Divider({ label = '或' }: { label?: string }) {
 
 export function Stepper({ step, labels }: { step: number; labels: string[] }) {
   return (
-    <div className="flex items-center justify-center gap-3 mb-7">
+    <div className="mb-7 flex items-center justify-center gap-3">
       {labels.map((label, i) => {
         const s = i + 1;
         return (
           <div key={s} className="flex items-center gap-3">
             <div className="flex flex-col items-center gap-1.5">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-[15px] font-bold transition-all ${step > s ? 'bg-green-500 text-white' : step === s ? 'bg-primary text-primary-content' : 'bg-base-200 text-text-primary/50'}`}
+                className={`flex h-10 w-10 items-center justify-center rounded-full text-[15px] font-bold transition-all ${step > s ? 'bg-green-500 text-white' : step === s ? 'bg-primary text-primary-content' : 'bg-base-200 text-text-primary/50'}`}
               >
                 {step > s ? <Check size={14} /> : s}
               </div>
               <span
-                className={`text-[14px] leading-none whitespace-nowrap ${step === s ? 'text-primary font-medium' : 'text-text-primary/50'}`}
+                className={`text-[14px] leading-none whitespace-nowrap ${step === s ? 'font-medium text-primary' : 'text-text-primary/50'}`}
               >
                 {label}
               </span>
             </div>
             {i < labels.length - 1 && (
               <div
-                className={`w-14 h-0.5 mb-5 transition-all ${step > s ? 'bg-green-500' : 'bg-base-200'}`}
+                className={`mb-5 h-0.5 w-14 transition-all ${step > s ? 'bg-green-500' : 'bg-base-200'}`}
               />
             )}
           </div>
@@ -326,10 +326,10 @@ export function AuthShell({
   subtitle?: string;
 }) {
   return (
-    <div className="w-full max-w-[456px] page-enter">
-      <div className="card w-full bg-[#FFFEFC] border border-[#F0B28D] rounded-3xl overflow-hidden shadow-[0_12px_28px_-16px_rgba(66,52,41,0.28)]">
+    <div className="page-enter w-full max-w-[456px]">
+      <div className="card w-full overflow-hidden rounded-3xl border border-[#F0B28D] bg-[#FFFEFC] shadow-[0_12px_28px_-16px_rgba(66,52,41,0.28)]">
         <div
-          className="text-center px-7 py-5 text-white"
+          className="px-7 py-5 text-center text-white"
           style={{ backgroundColor: '#E97C37' }}
         >
           <h1
@@ -340,7 +340,7 @@ export function AuthShell({
           </h1>
           {subtitle && (
             <p
-              className="text-[16px] leading-[1.4] mt-2 text-[#FFE4CF]"
+              className="mt-2 text-[16px] leading-[1.4] text-[#FFE4CF]"
               style={AUTH_SANS_TC_MEDIUM}
             >
               {subtitle}
@@ -402,7 +402,7 @@ export function PasswordInput({
           type="button"
           onClick={() => setShow((s) => !s)}
           aria-label={show ? '隱藏密碼' : '顯示密碼'}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[#8D847D] hover:bg-[#EDE6DE] hover:text-[#3D3732] transition-colors"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[#8D847D] transition-colors hover:bg-[#EDE6DE] hover:text-[#3D3732]"
         >
           {show ? <EyeOff size={14} /> : <Eye size={14} />}
         </button>
