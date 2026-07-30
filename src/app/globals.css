@@ -44,9 +44,16 @@
   /* Common */
   --white: #ffffff;
   --border: #f5e6d3;
+  --font-noto-sans-tc: "Noto Sans TC", "Noto Sans JP", "DM Sans", system-ui,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-noto-serif-tc: "Noto Serif TC", "Noto Serif", "Source Han Serif TC",
+    serif;
 }
 
 @theme inline {
+  --font-sans: var(--font-noto-sans-tc);
+  --font-serif: var(--font-noto-serif-tc);
+
   /* Brand */
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
