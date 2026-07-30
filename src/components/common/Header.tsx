@@ -25,6 +25,7 @@ import {
   type ProductMegaMenuCard,
   type ProductMegaMenuResponse,
 } from '@/src/services/product-mega-menu';
+import { takePendingCartAction } from '@/src/services/pending-cart-action';
 
 interface CartItem {
   cart_id: number;
@@ -134,6 +135,48 @@ export default function Header() {
       setMemberAvatar(null);
     } finally {
       setIsAuthLoading(false);
+    }
+  }, []);
+
+  const replayPendingCartAction = useCallback(async () => {
+    const pendingAction = takePendingCartAction();
+
+    if (!pendingAction) return;
+
+    try {
+      const cartResponse = await fetch('/api/products/getCart');
+
+      if (!cartResponse.ok) throw new Error();
+
+      const cartData: CartResponse = await cartResponse.json();
+
+      if (!cartData.success) throw new Error();
+
+      const currentCartQuantity =
+        cartData.cartItems.find(
+          (cartItem) => cartItem.item_id === pendingAction.itemId
+        )?.quantity ?? 0;
+
+      const response = await fetch(
+        `/api/products/updateCart/${pendingAction.itemId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            qty: currentCartQuantity + pendingAction.quantity,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error();
+
+      toast.success(
+        `${pendingAction.productName} ${pendingAction.itemName} 已加入購物車`
+      );
+    } catch {
+      toast.error('加入購物車失敗，請稍後再試');
     }
   }, []);
 
@@ -307,6 +350,12 @@ export default function Header() {
       window.removeEventListener('auth-state-changed', handleAuthStateChanged);
     };
   }, [refreshAuthState]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    void replayPendingCartAction();
+  }, [isAuthenticated, replayPendingCartAction]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -671,7 +720,7 @@ export default function Header() {
                               isRemoving ? 'bg-warning' : '',
                             ].join(' ')}
                           >
-                            <div className="flex w-[60%] min-w-50 gap-1">
+                            <div className="flex w-[60%] min-w-50 gap-2.5">
                               {cartItem.avatar ? (
                                 <Image
                                   src={toPublicImagePath(cartItem.avatar)}
@@ -719,7 +768,7 @@ export default function Header() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex max-w-[35%] min-w-35 items-center justify-between">
+                              <div className="flex max-w-[35%] min-w-35 items-center justify-end">
                                 <ProductQuantitySelector
                                   usage="Header"
                                   quantity={cartItem.quantity}
@@ -733,7 +782,7 @@ export default function Header() {
                                 <button
                                   type="button"
                                   aria-label="移除商品"
-                                  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-secondary hover:bg-button-secondary-hover"
+                                  className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-secondary hover:bg-button-secondary-hover"
                                   onClick={() =>
                                     setRemovingCartItemId(cartItem.item_id)
                                   }

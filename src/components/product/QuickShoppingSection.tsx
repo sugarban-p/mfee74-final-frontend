@@ -8,6 +8,7 @@ import { LuShoppingCart } from 'react-icons/lu';
 import { RiHeartFill, RiHeartLine } from 'react-icons/ri';
 
 import { ProductQuantitySelector } from '@/src/components/product/ProductQuantitySelector';
+import { savePendingCartAction } from '@/src/services/pending-cart-action';
 
 export interface QuickShoppingItem {
   id: number;
@@ -402,15 +403,23 @@ export function QuickShoppingSection({
     if (addCartTimeoutRef.current) clearTimeout(addCartTimeoutRef.current);
     setIsAddingCart(true);
 
+    const redirectToLogin = () => {
+      savePendingCartAction({
+        itemId: selectedItem.id,
+        quantity,
+        productName: currentProduct.name,
+        itemName: selectedItem.item_name,
+      });
+      router.push(`/auth/login?next=${encodeURIComponent(loginNextPath)}`);
+    };
+
     addCartTimeoutRef.current = setTimeout(() => {
       void (async () => {
         try {
           const cartResponse = await fetch('/api/products/getCart');
 
           if (cartResponse.status === 401) {
-            router.push(
-              `/auth/login?next=${encodeURIComponent(loginNextPath)}`
-            );
+            redirectToLogin();
             return;
           }
 
@@ -437,9 +446,7 @@ export function QuickShoppingSection({
           );
 
           if (response.status === 401) {
-            router.push(
-              `/auth/login?next=${encodeURIComponent(loginNextPath)}`
-            );
+            redirectToLogin();
             return;
           }
 
