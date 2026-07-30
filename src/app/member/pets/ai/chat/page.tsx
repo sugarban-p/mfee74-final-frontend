@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LuArrowLeft, LuCircleCheck, LuSparkles } from 'react-icons/lu';
 
@@ -93,7 +93,7 @@ function toPublicImagePath(path: string | null): string {
   return `/${path.replace(/^\/+/, '')}`;
 }
 
-export default function PetAiChatPage() {
+function PetAiChatContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -447,5 +447,13 @@ export default function PetAiChatPage() {
         </div>
       </section>
     </section>
+  );
+}
+
+export default function PetAiChatPage() {
+  return (
+    <Suspense fallback={null}>
+      <PetAiChatContent />
+    </Suspense>
   );
 }
