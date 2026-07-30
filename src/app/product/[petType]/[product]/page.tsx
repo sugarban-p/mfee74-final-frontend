@@ -29,7 +29,7 @@ const labels = {
 } as const;
 
 const loadErrorText = '商品資料載入失敗';
-const MIN_PRODUCT_DETAIL_LOADING_MS = 300;
+const MIN_PRODUCT_DETAIL_LOADING_MS = 800;
 const DESCRIPTION_PREVIEW_COUNT = 2;
 
 export default function ProductPage() {
