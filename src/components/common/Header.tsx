@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   LuHeart,
@@ -76,10 +76,64 @@ const toPublicImagePath = (path?: string) => {
   return `/${path.replace(/^\/+/, '')}`;
 };
 
+const mobileSubmenuLinkClassName = (isActive: boolean) =>
+  isActive
+    ? 'block rounded-lg bg-primary px-4 py-1 text-text-button'
+    : 'block rounded-lg px-4 py-1 text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover';
+
+interface MobileProductSubmenuLinksProps {
+  card: ProductMegaMenuCard;
+  pathname: string;
+  onNavigate: () => void;
+}
+
+function MobileProductSubmenuLinks({
+  card,
+  pathname,
+  onNavigate,
+}: MobileProductSubmenuLinksProps) {
+  const searchParams = useSearchParams();
+  const activeCategory = searchParams.get('category') ?? 'all-products';
+  const isActiveProductLink = (href: string) => {
+    const url = new URL(href, 'http://localhost');
+
+    return (
+      pathname === url.pathname &&
+      (url.searchParams.get('category') ?? 'all-products') === activeCategory
+    );
+  };
+
+  return (
+    <>
+      <li>
+        <Link
+          href={card.href}
+          className={mobileSubmenuLinkClassName(isActiveProductLink(card.href))}
+          onClick={onNavigate}
+        >
+          所有商品
+        </Link>
+      </li>
+      {card.items.map((item) => (
+        <li key={item.id}>
+          <Link
+            href={item.href}
+            className={mobileSubmenuLinkClassName(
+              isActiveProductLink(item.href)
+            )}
+            onClick={onNavigate}
+          >
+            {item.title}
+          </Link>
+        </li>
+      ))}
+    </>
+  );
+}
+
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartLoginRequired, setIsCartLoginRequired] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -408,21 +462,8 @@ export default function Header() {
     }
   };
 
-  const activeCategory = searchParams.get('category') ?? 'all-products';
-  const isActiveProductLink = (href: string) => {
-    const url = new URL(href, 'http://localhost');
-
-    return (
-      pathname === url.pathname &&
-      (url.searchParams.get('category') ?? 'all-products') === activeCategory
-    );
-  };
   const activeProductCardId =
     productMegaMenuCards.find((card) => pathname === card.href)?.id ?? null;
-  const mobileSubmenuLinkClassName = (isActive: boolean) =>
-    isActive
-      ? 'block rounded-lg bg-primary px-4 py-1 text-text-button'
-      : 'block rounded-lg px-4 py-1 text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover';
 
   return (
     <>
@@ -499,30 +540,13 @@ export default function Header() {
                     </button>
                     {openMobileProductCardId === card.id && (
                       <ul className="mt-1 pl-3">
-                        <li>
-                          <Link
-                            href={card.href}
-                            className={mobileSubmenuLinkClassName(
-                              isActiveProductLink(card.href)
-                            )}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                          >
-                            所有商品
-                          </Link>
-                        </li>
-                        {card.items.map((item) => (
-                          <li key={item.id}>
-                            <Link
-                              href={item.href}
-                              className={mobileSubmenuLinkClassName(
-                                isActiveProductLink(item.href)
-                              )}
-                              onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                              {item.title}
-                            </Link>
-                          </li>
-                        ))}
+                        <Suspense fallback={null}>
+                          <MobileProductSubmenuLinks
+                            card={card}
+                            pathname={pathname}
+                            onNavigate={() => setIsMobileMenuOpen(false)}
+                          />
+                        </Suspense>
                       </ul>
                     )}
                   </li>
