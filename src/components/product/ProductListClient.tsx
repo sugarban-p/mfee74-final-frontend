@@ -2,7 +2,13 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type KeyboardEvent, type SyntheticEvent, useState } from 'react';
+import {
+  type SyntheticEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import {
   LuSearch,
@@ -170,7 +176,10 @@ export function ProductListClient({
     slug: String(tag.id),
   }));
   const selectedCategory = selectedCategoryParam;
-  const selectedTags = params.tags?.split(',').filter(Boolean) ?? [];
+  const selectedTags = useMemo(
+    () => params.tags?.split(',').filter(Boolean) ?? [],
+    [params.tags]
+  );
   const search = params.search ?? '';
   const minPrice = params['min-value'] ?? '';
   const maxPrice = params['max-value'] ?? '';
@@ -194,38 +203,44 @@ export function ProductListClient({
   );
   const displayedProducts: CardProduct[] = mapProducts(productData.products);
   const searchDisabled = keywordInput.trim() === search;
-  const createHref = ({
-    category = selectedCategory,
-    tagSlugs = selectedTags,
-    nextSearch = search,
-    minPriceValue = minPrice,
-    maxPriceValue = maxPrice,
-    sort = selectedSort,
-    page,
-  }: {
-    category?: string;
-    tagSlugs?: string[];
-    nextSearch?: string;
-    minPriceValue?: string;
-    maxPriceValue?: string;
-    sort?: string;
-    page?: number;
-  }) => {
-    const nextParams = new URLSearchParams({ category });
+  const createHref = useCallback(
+    ({
+      category = selectedCategory,
+      tagSlugs = selectedTags,
+      nextSearch = search,
+      minPriceValue = minPrice,
+      maxPriceValue = maxPrice,
+      sort = selectedSort,
+      page,
+    }: {
+      category?: string;
+      tagSlugs?: string[];
+      nextSearch?: string;
+      minPriceValue?: string;
+      maxPriceValue?: string;
+      sort?: string;
+      page?: number;
+    }) => {
+      const nextParams = new URLSearchParams({ category });
 
-    if (tagSlugs.length) nextParams.set('tags', tagSlugs.join(','));
-    if (nextSearch) nextParams.set('search', nextSearch);
-    if (minPriceValue) nextParams.set('min-value', minPriceValue);
-    if (maxPriceValue) nextParams.set('max-value', maxPriceValue);
-    if (sort) nextParams.set('sort', sort);
-    if (page) nextParams.set('page', String(page));
+      if (tagSlugs.length) nextParams.set('tags', tagSlugs.join(','));
+      if (nextSearch) nextParams.set('search', nextSearch);
+      if (minPriceValue) nextParams.set('min-value', minPriceValue);
+      if (maxPriceValue) nextParams.set('max-value', maxPriceValue);
+      if (sort) nextParams.set('sort', sort);
+      if (page) nextParams.set('page', String(page));
 
-    return `?${nextParams.toString()}`;
-  };
-  const pushHref = (href: string) => {
-    setIsNavigating(true);
-    router.push(href, { scroll: false });
-  };
+      return `?${nextParams.toString()}`;
+    },
+    [maxPrice, minPrice, search, selectedCategory, selectedSort, selectedTags]
+  );
+  const pushHref = useCallback(
+    (href: string) => {
+      setIsNavigating(true);
+      router.push(href, { scroll: false });
+    },
+    [router]
+  );
   const handleNavigate = () => {
     setIsNavigating(true);
   };
@@ -259,65 +274,46 @@ export function ProductListClient({
   const handleSortChange = (event: SyntheticEvent<HTMLSelectElement>) => {
     pushHref(createHref({ sort: event.currentTarget.value }));
   };
-  const handlePriceSubmit = (param: PriceParam, value: string) => {
-    const nextValue = value.replace(/\D/g, '');
-
-    if (!nextValue) return;
-
-    if (param === 'min-value') {
-      setMinPriceInput(nextValue);
-      pushHref(createHref({ minPriceValue: nextValue }));
-      return;
-    }
-
-    setMaxPriceInput(nextValue);
-    pushHref(createHref({ maxPriceValue: nextValue }));
-  };
   const handlePriceClear = (param: PriceParam) => {
     if (param === 'min-value') {
       setMinPriceInput('');
-      if (!minPrice) return;
-
-      pushHref(createHref({ minPriceValue: '' }));
       return;
     }
 
     setMaxPriceInput('');
-    if (!maxPrice) return;
-
-    pushHref(createHref({ maxPriceValue: '' }));
   };
-  const handlePriceKeyDown = (
-    event: KeyboardEvent<HTMLInputElement>,
-    param: PriceParam,
-    value: string
-  ) => {
-    if (event.key !== 'Enter') return;
+  useEffect(() => {
+    if (minPriceInput === minPrice && maxPriceInput === maxPrice) return;
 
-    event.preventDefault();
-    handlePriceSubmit(param, value);
-  };
+    const timeoutId = window.setTimeout(() => {
+      pushHref(
+        createHref({
+          minPriceValue: minPriceInput,
+          maxPriceValue: maxPriceInput,
+        })
+      );
+    }, 800);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [createHref, maxPrice, maxPriceInput, minPrice, minPriceInput, pushHref]);
   const priceFilters = [
     {
       label: '最低金額',
       param: 'min-value',
       value: minPriceInput,
       onChange: setMinPriceInput,
-      ariaLabel: '套用最低金額',
     },
     {
       label: '最高金額',
       param: 'max-value',
       value: maxPriceInput,
       onChange: setMaxPriceInput,
-      ariaLabel: '套用最高金額',
     },
   ] satisfies {
     label: string;
     param: PriceParam;
     value: string;
     onChange: (value: string) => void;
-    ariaLabel: string;
   }[];
 
   return (
@@ -421,53 +417,42 @@ export function ProductListClient({
 
             <section className="flex flex-col gap-3 border-t border-secondary py-4">
               <h4 className="typo-body-medium text-text-primary">價格區間</h4>
-              {priceFilters.map(
-                ({ label, param, value, onChange, ariaLabel }) => (
-                  <label
-                    key={label}
-                    className="typo-tab flex flex-col gap-1 text-[#3d4451]"
-                  >
-                    {label}
-                    <span className="flex h-8 items-center gap-2 rounded border border-secondary bg-transparent px-4 text-[#3d4451]">
-                      <input
-                        type="text"
-                        name={param}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        className="typo-card-body min-w-0 grow bg-transparent outline-none placeholder:text-[#3d4451]"
-                        placeholder="輸入數字"
-                        value={value}
-                        onChange={(event) =>
-                          onChange(event.currentTarget.value.replace(/\D/g, ''))
-                        }
-                        onKeyDown={(event) =>
-                          handlePriceKeyDown(event, param, value)
-                        }
-                      />
-                      {value !== '' && (
-                        <button
-                          type="button"
-                          aria-label={`清除${label}`}
-                          className="group cursor-pointer"
-                          onClick={() => handlePriceClear(param)}
-                        >
-                          <RiCloseCircleLine className="size-4 shrink-0 group-hover:hidden" />
-                          <RiCloseCircleFill className="hidden size-4 shrink-0 group-hover:block" />
-                        </button>
-                      )}
+              {priceFilters.map(({ label, param, value, onChange }) => (
+                <label
+                  key={label}
+                  className="typo-tab flex flex-col gap-1 text-[#3d4451]"
+                >
+                  {label}
+                  <span className="flex h-8 items-center gap-2 rounded border border-secondary bg-transparent px-4 text-[#3d4451]">
+                    <input
+                      type="text"
+                      name={param}
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      className="typo-card-body min-w-0 grow bg-transparent outline-none placeholder:text-[#3d4451]"
+                      placeholder="輸入數字"
+                      value={value}
+                      onChange={(event) =>
+                        onChange(event.currentTarget.value.replace(/\D/g, ''))
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') event.preventDefault();
+                      }}
+                    />
+                    {value !== '' && (
                       <button
                         type="button"
-                        aria-label={ariaLabel}
-                        disabled={value === ''}
-                        className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-                        onClick={() => handlePriceSubmit(param, value)}
+                        aria-label={`清除${label}`}
+                        className="group cursor-pointer"
+                        onClick={() => handlePriceClear(param)}
                       >
-                        <LuSendHorizontal className="size-4 shrink-0" />
+                        <RiCloseCircleLine className="size-4 shrink-0 group-hover:hidden" />
+                        <RiCloseCircleFill className="hidden size-4 shrink-0 group-hover:block" />
                       </button>
-                    </span>
-                  </label>
-                )
-              )}
+                    )}
+                  </span>
+                </label>
+              ))}
             </section>
           </form>
         </aside>
