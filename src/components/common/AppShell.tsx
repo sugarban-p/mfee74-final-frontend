@@ -20,7 +20,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         reverseOrder={false}
         toastOptions={{
           className: '',
-          duration: 5000,
+          duration: 3000,
           removeDelay: 1000,
         }}
       />

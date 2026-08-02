@@ -64,7 +64,7 @@ const labels = {
   title: '收藏清單',
 } as const;
 
-const MIN_FAVORITES_LOADING_MS = 300;
+const MIN_FAVORITES_LOADING_MS = 800;
 
 const mapFavoriteProducts = (
   products: ApiFavoriteProduct[]

@@ -29,7 +29,7 @@ const labels = {
 } as const;
 
 const loadErrorText = '商品資料載入失敗';
-const MIN_PRODUCT_DETAIL_LOADING_MS = 300;
+const MIN_PRODUCT_DETAIL_LOADING_MS = 800;
 const DESCRIPTION_PREVIEW_COUNT = 2;
 
 export default function ProductPage() {
@@ -382,7 +382,9 @@ function ProductPageContent({
                 <Link href={categoryHref}>{categoryName}</Link>
               </li>
               <li className="min-w-0 flex-1 text-text-primary">
-                <span className="block min-w-0 truncate">{productName}</span>
+                <span className="block min-w-0 cursor-default truncate no-underline">
+                  {productName}
+                </span>
               </li>
             </ul>
           </nav>
