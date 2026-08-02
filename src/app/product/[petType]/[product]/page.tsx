@@ -382,7 +382,9 @@ function ProductPageContent({
                 <Link href={categoryHref}>{categoryName}</Link>
               </li>
               <li className="min-w-0 flex-1 text-text-primary">
-                <span className="block min-w-0 truncate">{productName}</span>
+                <span className="block min-w-0 cursor-default truncate no-underline">
+                  {productName}
+                </span>
               </li>
             </ul>
           </nav>

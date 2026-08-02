@@ -365,7 +365,7 @@ export function ProductListClient({
 
             <section className="flex flex-col gap-3">
               <h4 className="typo-tab text-text-primary">商品類別</h4>
-              <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-1">
                 {categories.map(({ category, count, slug }) => {
                   const active = selectedCategory === slug;
 
@@ -557,7 +557,7 @@ export function ProductListClient({
                   <Link
                     key={page}
                     href={createHref({ page })}
-                    scroll={false}
+                    scroll={true}
                     onNavigate={handleNavigate}
                     className="text-primary"
                   >
