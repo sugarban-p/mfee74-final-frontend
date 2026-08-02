@@ -8,10 +8,10 @@ import Header from '@/src/components/common/Header';
 import { Footer } from '@/src/components/common/Footer';
 import IdleLogoutGuard from '@/src/components/common/IdleLogoutGuard';
 
-const TITLE_PREFIX = 'MOFU | ';
+const TITLE_PREFIX = ' | MOFU';
 
 const ROUTE_TITLE_RULES: Array<{ pattern: RegExp; title: string }> = [
-  { pattern: /^\/$/, title: '首頁' },
+  { pattern: /^\/$/, title: '陪毛孩過好每一天' },
   { pattern: /^\/event\/?$/, title: '活動總覽' },
   { pattern: /^\/activity\/free-shipping-1500\/?$/, title: '滿 1500 免運活動' },
   { pattern: /^\/activity\/new-arrival-season\/?$/, title: '新品嚐鮮季' },
@@ -65,7 +65,8 @@ const ROUTE_TITLE_RULES: Array<{ pattern: RegExp; title: string }> = [
   { pattern: /^\/member\/support\/?$/, title: '客服中心' },
   { pattern: /^\/member\/support\/history\/?$/, title: '客服聊天紀錄' },
   { pattern: /^\/member\/support\/chat\/?$/, title: '客服即時聊天' },
-  { pattern: /^\/product\/[^/]+\/?$/, title: '商品列表' },
+  { pattern: /^\/product\/cat\/?$/, title: '貓咪專區' },
+  { pattern: /^\/product\/dog\/?$/, title: '狗勾專區' },
   { pattern: /^\/product\/[^/]+\/[^/]+\/?$/, title: '商品詳情' },
 ];
 
@@ -75,10 +76,10 @@ function resolvePageTitle(pathname: string): string {
   );
 
   if (matchedRule) {
-    return `${TITLE_PREFIX}${matchedRule.title}`;
+    return `${matchedRule.title}${TITLE_PREFIX}`;
   }
 
-  return `${TITLE_PREFIX}毛孩生活商城`;
+  return 'MOFU｜陪毛孩過好每一天';
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
