@@ -84,7 +84,7 @@ const faqs = [
   {
     question: '如何聯繫 MOFU 客服？',
     answer:
-      '客服電話：0800-XXX-XXX，服務時間為週一至週五 09:00–18:00；電子郵件：support@petfull.com，我們會在收到來信後盡快回覆。',
+      '客服電話：0800-XXX-XXX，服務時間為週一至週五 09:00–18:00；電子郵件：support@mofu.com，我們會在收到來信後盡快回覆。',
   },
   // 第二題：說明登入後可以使用的客服中心。
   {
@@ -142,10 +142,11 @@ export default function HomePage() {
   return (
     /**
      * AppShell 的一般頁面內容寬度是 1520px。
-     * 首頁需要滿版，因此用 w-screen 延伸到視窗寬度，
+     * 首頁需要滿版，因此用 100dvw 延伸到動態視窗寬度，
+     * overflow-x-clip 避免輪播與動畫裝飾產生水平捲軸，
      * -my-16 則抵消 AppShell 為一般頁面保留的上下間距。
      */
-    <div className="home-page relative left-1/2 -my-16 w-screen -translate-x-1/2 overflow-hidden bg-background">
+    <div className="home-page relative left-1/2 -my-16 w-[100dvw] max-w-[100dvw] -translate-x-1/2 overflow-x-clip bg-background">
       {/*
        * 首頁專用的緩慢漂浮效果。
        * 裝飾只做小幅位移與旋轉，並尊重使用者的減少動態設定。
@@ -173,61 +174,12 @@ export default function HomePage() {
           }
         }
 
-        @keyframes home-hero-breathe {
-          0% {
-            transform: scale(1);
-          }
-          100% {
-            transform: scale(1.06);
-          }
-        }
-
-        /*
-         * 暫用貓咪會定時從 Hero 波浪後方探頭。
-         * 未來換成正式角色圖片時，可以沿用同一個動畫容器。
-         */
-        @keyframes home-pet-peek {
-          0%,
-          14%,
-          100% {
-            transform: translateY(58px) rotate(-4deg);
-          }
-          26%,
-          68% {
-            transform: translateY(0) rotate(0deg);
-          }
-          38% {
-            transform: translateY(-5px) rotate(4deg);
-          }
-          48% {
-            transform: translateY(0) rotate(-2deg);
-          }
-          78% {
-            transform: translateY(12px) rotate(3deg);
-          }
-        }
-
         .home-float {
           animation: home-float 7s ease-in-out infinite;
         }
 
         .home-drift {
           animation: home-drift 9s ease-in-out infinite;
-        }
-
-        .home-hero-breathe {
-          animation: home-hero-breathe 12s ease-out forwards;
-        }
-
-        .home-pet-peek {
-          animation: home-pet-peek 8s ease-in-out infinite;
-          transform-origin: bottom center;
-        }
-
-        /* 狗狗稍微晚一點探頭，兩隻角色一起出現在 Hero 右側。 */
-        .home-pet-peek-dog {
-          animation: home-pet-peek 8s ease-in-out -0.35s infinite;
-          transform-origin: bottom center;
         }
 
         /*
@@ -253,134 +205,157 @@ export default function HomePage() {
 
         @media (prefers-reduced-motion: reduce) {
           .home-float,
-          .home-drift,
-          .home-hero-breathe,
-          .home-pet-peek,
-          .home-pet-peek-dog {
+          .home-drift {
             animation: none;
           }
         }
       `}</style>
 
-      {/* 1. Hero Section：四張活動輪播 */}
+      {/* 1. Hero Section：品牌主視覺與活動快訊 */}
       <section
-        className="relative h-[620px] w-full overflow-hidden bg-card-secondary sm:h-[720px] md:h-[820px] lg:h-[930px] xl:h-[1280px] 2xl:h-[1340px]"
-        aria-label="MOFU 最新活動"
+        className="relative w-full overflow-hidden bg-card-secondary"
+        aria-labelledby="home-hero-title"
       >
-        {heroSlides.map((slide, index) => (
-          <div
-            key={slide.title}
-            className={`absolute inset-0 flex flex-col transition-opacity duration-700 ${
-              index === activeSlide
-                ? 'opacity-100'
-                : 'pointer-events-none opacity-0'
-            }`}
-            aria-hidden={index !== activeSlide}
-          >
-            {/*
-             * 活動圖片本身已是完整 Banner，使用 object-contain 呈現全圖，
-             * 周圍留白則由品牌主題色自然填滿，不再使用深色遮罩。
-             */}
-            <div className="mx-auto mt-4 aspect-[1520/855] h-auto w-full max-w-[1920px] shrink-0">
-              <div className="relative h-full w-full overflow-hidden">
-                <Image
-                  src={slide.image}
-                  alt={`${slide.title}活動 Banner`}
-                  fill
-                  loading="eager"
-                  sizes="(max-width: 1920px) 100vw, 1920px"
-                  className={`object-contain ${
-                    index === activeSlide ? 'home-hero-breathe' : ''
-                  }`}
-                  style={{ objectPosition: slide.imagePosition }}
-                />
-              </div>
+        {/* 有機背景圖形只建立層次，不影響主內容的整齊排列。 */}
+        <div
+          className="home-float pointer-events-none absolute top-[9%] right-[5%] h-52 w-64 rounded-[58%_42%_36%_64%/44%_61%_39%_56%] bg-background/60 sm:h-72 sm:w-96 lg:h-[460px] lg:w-[600px]"
+          aria-hidden="true"
+        />
+        <div
+          className="home-drift pointer-events-none absolute top-[17%] right-[30%] hidden h-32 w-24 rounded-[38%_62%_55%_45%/52%_40%_60%_48%] border border-primary/25 sm:block"
+          aria-hidden="true"
+        />
+
+        <div className="relative z-10 mx-auto grid min-h-[620px] w-full max-w-[1720px] grid-cols-1 items-center gap-8 px-5 pt-16 pb-10 sm:min-h-[680px] sm:px-8 md:grid-cols-[minmax(0,0.9fr)_minmax(360px,1.1fr)] md:gap-10 md:pt-20 md:pb-12 lg:min-h-[720px] lg:px-12 xl:gap-16 2xl:min-h-[760px] 2xl:px-16">
+          {/* 首屏由可讀 HTML 建立品牌主張與 SEO 主標題。 */}
+          <div className="relative z-20 max-w-[720px] text-center md:text-left">
+            <div className="mb-5 flex items-center justify-center gap-4 md:justify-start">
+              <span className="h-px w-12 bg-primary" aria-hidden="true" />
+              <p className="typo-tab text-primary">MOFU PET LIFE</p>
             </div>
 
-            {/* 圖片下方保留真正的 HTML 標題與說明，兼顧 SEO 與可讀性。 */}
-            <div className="relative mx-auto flex w-full max-w-[1520px] flex-col items-center gap-5 px-5 pt-5 pb-28 text-center sm:px-8 md:px-12 lg:px-16">
-              <div className="max-w-[760px]">
-                <div className="mb-3 flex items-center justify-center gap-4">
-                  <span
-                    className="h-px w-12 bg-primary/60"
-                    aria-hidden="true"
-                  />
-                  <p className="typo-tab text-primary">{slide.eyebrow}</p>
+            <h1 id="home-hero-title" className="typo-display text-text-primary">
+              MOFU陪主人，
+              <br />
+              把毛孩們照顧得更好
+            </h1>
+
+            <p className="typo-body mx-auto mt-6 max-w-[620px] text-text-secondary md:mx-0 md:mt-8">
+              從安心選品、日常照護到個人化導購，陪您更清楚地找到毛孩所需。
+            </p>
+          </div>
+
+          {/* 貓狗角色取代活動海報，讓首屏先建立 MOFU 的品牌記憶。 */}
+          <div className="relative mx-auto h-[340px] w-full max-w-[700px] self-end sm:h-[420px] md:h-[560px] lg:h-[640px] lg:max-w-[900px]">
+            <div
+              className="absolute right-[1%] bottom-[3%] h-[88%] w-[92%] rounded-[58%_42%_48%_52%/46%_60%_40%_54%] border border-primary/20 bg-background/70"
+              aria-hidden="true"
+            />
+
+            <Image
+              src="/petdog.png"
+              alt=""
+              width={2000}
+              height={2000}
+              aria-hidden="true"
+              className="home-drift absolute bottom-0 -left-[3%] z-10 h-auto w-[57%] drop-shadow-md sm:w-[59%]"
+            />
+
+            <Image
+              src="/petcat.png"
+              alt=""
+              width={2000}
+              height={2000}
+              aria-hidden="true"
+              className="home-float absolute -right-[3%] bottom-0 z-20 h-auto w-[62%] drop-shadow-md sm:w-[64%]"
+            />
+
+            <p className="typo-tab absolute top-[12%] right-[5%] z-30 rotate-6 text-primary sm:right-[10%]">
+              GOOD DAYS, TOGETHER.
+            </p>
+          </div>
+        </div>
+
+        {/* 四個活動保留在首屏底部，以快訊形式自動輪播。 */}
+        <div className="relative z-30 mx-auto w-full max-w-[1520px] px-5 pb-28 sm:px-8 lg:px-10">
+          <div className="grid min-h-[196px] grid-cols-[160px_1fr] items-center gap-4 border-y border-primary/25 py-5 sm:min-h-[236px] sm:grid-cols-[260px_1fr_auto] sm:gap-6 lg:min-h-[280px] lg:grid-cols-[380px_minmax(0,1fr)_auto] lg:gap-8 xl:min-h-[320px] xl:grid-cols-[460px_minmax(0,1fr)_auto]">
+            <div className="relative aspect-[16/9] overflow-hidden bg-background">
+              {heroSlides.map((slide, index) => (
+                <Image
+                  key={slide.image}
+                  src={slide.image}
+                  alt=""
+                  fill
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  sizes="180px"
+                  aria-hidden="true"
+                  className={`object-cover transition-opacity duration-500 ${
+                    index === activeSlide ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+              ))}
+            </div>
+
+            <div className="grid min-w-0">
+              {heroSlides.map((slide, index) => (
+                <div
+                  key={slide.title}
+                  className={`col-start-1 row-start-1 min-w-0 transition-opacity duration-500 ${
+                    index === activeSlide
+                      ? 'opacity-100'
+                      : 'pointer-events-none opacity-0'
+                  }`}
+                  aria-hidden={index !== activeSlide}
+                >
+                  <div className="flex items-center gap-3">
+                    <p className="typo-tab text-primary">最新活動</p>
+                    <span className="typo-tab text-text-secondary">
+                      {String(index + 1).padStart(2, '0')} /{' '}
+                      {String(heroSlides.length).padStart(2, '0')}
+                    </span>
+                  </div>
+
+                  <Link
+                    href={slide.href}
+                    className="typo-card-title mt-2 line-clamp-1 text-text-primary transition hover:text-primary"
+                  >
+                    {slide.title}
+                  </Link>
+                  <p className="typo-card-body mt-1 line-clamp-1 hidden text-text-secondary lg:block">
+                    {slide.description}
+                  </p>
                 </div>
+              ))}
+            </div>
 
-                {/* 第一張是首頁主標題，其餘活動使用次標題，保留正確 SEO 層級。 */}
-                {index === 0 ? (
-                  <h1 className="typo-h3 text-text-primary">{slide.title}</h1>
-                ) : (
-                  <h2 className="typo-h3 text-text-primary">{slide.title}</h2>
-                )}
+            <div className="col-span-2 flex items-center justify-end gap-3 sm:col-span-1">
+              <button
+                type="button"
+                aria-label="上一個活動"
+                onClick={showPreviousSlide}
+                className="flex size-11 items-center justify-center rounded-full border border-primary/30 bg-background text-text-secondary transition hover:bg-primary hover:text-white"
+              >
+                <LuChevronLeft className="size-5" aria-hidden="true" />
+              </button>
 
-                {/* 活動說明保留為可讀取的 HTML 文字，不依賴圖片內嵌文字。 */}
-                <p className="typo-card-body mt-2 text-text-secondary">
-                  {slide.description}
-                </p>
-              </div>
+              <button
+                type="button"
+                aria-label="下一個活動"
+                onClick={showNextSlide}
+                className="flex size-11 items-center justify-center rounded-full border border-primary/30 bg-background text-text-secondary transition hover:bg-primary hover:text-white"
+              >
+                <LuChevronRight className="size-5" aria-hidden="true" />
+              </button>
 
               <Link
-                href={slide.href}
-                className="next-button inline-flex min-h-14 w-fit shrink-0 items-center gap-3 px-9 py-4 text-lg leading-6 font-semibold"
+                href={heroSlides[activeSlide].href}
+                className="hover:bg-primary-hover hidden min-h-11 items-center gap-2 rounded-full bg-primary px-6 text-white transition md:inline-flex"
               >
                 查看活動
-                <LuArrowRight className="size-5" aria-hidden="true" />
+                <LuArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </div>
           </div>
-        ))}
-
-        {/* 左右切換按鈕 */}
-        <div className="absolute right-5 bottom-14 z-20 flex items-center gap-2 sm:right-8 sm:gap-3 lg:right-16 lg:bottom-16">
-          <button
-            type="button"
-            aria-label="上一個活動"
-            onClick={showPreviousSlide}
-            className="flex size-10 items-center justify-center rounded-full border border-primary/30 bg-background/80 text-text-secondary transition hover:bg-primary hover:text-white sm:size-11"
-          >
-            <LuChevronLeft className="size-5" aria-hidden="true" />
-          </button>
-
-          <button
-            type="button"
-            aria-label="下一個活動"
-            onClick={showNextSlide}
-            className="flex size-10 items-center justify-center rounded-full border border-primary/30 bg-background/80 text-text-secondary transition hover:bg-primary hover:text-white sm:size-11"
-          >
-            <LuChevronRight className="size-5" aria-hidden="true" />
-          </button>
-        </div>
-
-        {/*
-         * 首頁暫用角色：從區塊交界的波浪後方探頭。
-         * aria-hidden 代表它只是裝飾，不會干擾螢幕閱讀器。
-         */}
-        <div
-          aria-hidden="true"
-          className="home-pet-peek pointer-events-none absolute right-[24%] bottom-1 z-20 sm:right-[18%] lg:right-[14%]"
-        >
-          <Image
-            src="/petcat.png"
-            alt=""
-            width={2000}
-            height={2000}
-            className="h-auto w-28 drop-shadow-sm sm:w-32 lg:w-40"
-          />
-        </div>
-
-        <div
-          aria-hidden="true"
-          className="home-pet-peek-dog pointer-events-none absolute right-[46%] bottom-1 z-20 sm:right-[31%] lg:right-[21%]"
-        >
-          <Image
-            src="/petdog.png"
-            alt=""
-            width={2000}
-            height={2000}
-            className="h-auto w-28 drop-shadow-sm sm:w-32 lg:w-40"
-          />
         </div>
 
         {/* 平滑曲線取代僵硬的水平分隔線。 */}
@@ -459,9 +434,7 @@ export default function HomePage() {
                 className="object-cover transition duration-500 group-hover:scale-[1.03]"
               />
 
-              <div className="absolute inset-0 bg-text-primary/30 transition group-hover:bg-text-primary/40" />
-
-              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 text-white sm:p-8">
+              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.75)] sm:p-8">
                 <div>
                   <h3 className="typo-h3 text-white">{category.title}</h3>
                   <p className="typo-card-body mt-2 text-white/80">

@@ -20,8 +20,9 @@ const notoSerifTc = Noto_Serif_TC({
 });
 
 export const metadata: Metadata = {
-  title: 'Team3 專題',
-  description: '',
+  title: 'MOFU｜陪毛孩過好每一天',
+  description:
+    'MOFU 提供貓狗主食、零食、保健與生活用品，並依毛孩資料提供 AI 商品選購建議。',
 };
 
 export default function RootLayout({

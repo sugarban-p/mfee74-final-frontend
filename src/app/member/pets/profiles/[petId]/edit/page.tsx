@@ -9,13 +9,13 @@ import type { PetDetail, PetFormOptions } from '@/src/types/pet';
 export default function EditPetProfilePage() {
   const { petId } = useParams<{ petId: string }>();
   const numericPetId = Number(petId);
+  const hasValidPetId = Number.isInteger(numericPetId) && numericPetId > 0;
   const [pet, setPet] = useState<PetDetail | null>(null);
   const [options, setOptions] = useState<PetFormOptions | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    if (!Number.isInteger(numericPetId) || numericPetId <= 0) {
-      setErrorMessage('寵物編號格式不正確');
+    if (!hasValidPetId) {
       return;
     }
 
@@ -31,7 +31,15 @@ export default function EditPetProfilePage() {
             : '目前無法取得毛孩資料，請稍後再試'
         );
       });
-  }, [numericPetId]);
+  }, [hasValidPetId, numericPetId]);
+
+  if (!hasValidPetId) {
+    return (
+      <p className="typo-card-body text-red-700" role="alert">
+        寵物編號格式不正確
+      </p>
+    );
+  }
 
   if (errorMessage) {
     return (
