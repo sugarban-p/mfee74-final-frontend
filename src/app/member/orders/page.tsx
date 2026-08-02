@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   LuChevronRight,
   LuClock,
@@ -132,8 +133,6 @@ export default function MemberOrdersPage() {
   };
 
   const cancelOrder = async (orderId: string) => {
-    if (!window.confirm('確定要取消這筆訂單嗎？')) return;
-
     setCancelingOrderId(orderId);
 
     try {
@@ -151,10 +150,45 @@ export default function MemberOrdersPage() {
 
       loadOrders();
     } catch {
-      window.alert('取消訂單失敗，請稍後再試。');
+      toast.error('取消訂單失敗，請稍後再試。');
     } finally {
       setCancelingOrderId('');
     }
+  };
+
+  const confirmCancelOrder = (orderId: string) => {
+    toast.custom(
+      (toastItem) => (
+        <div className="w-[min(calc(100vw-2rem),360px)] rounded-2xl border border-[rgba(26,22,18,0.12)] bg-white p-4 shadow-[0_8px_28px_rgba(45,31,14,0.14)]">
+          <p className="typo-card-title text-text-primary">
+            確定要取消這筆訂單嗎？
+          </p>
+          <p className="typo-card-body mt-2 text-text-secondary">
+            取消後，這筆訂單將無法重新付款。
+          </p>
+          <div className="mt-4 flex justify-end gap-2">
+            <button
+              type="button"
+              className="back-button typo-tab px-4"
+              onClick={() => toast.dismiss(toastItem.id)}
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              className="danger-button typo-tab px-4"
+              onClick={() => {
+                toast.dismiss(toastItem.id);
+                void cancelOrder(orderId);
+              }}
+            >
+              確定
+            </button>
+          </div>
+        </div>
+      ),
+      { duration: Infinity }
+    );
   };
 
   return (
@@ -297,7 +331,7 @@ export default function MemberOrdersPage() {
                           type="button"
                           disabled={cancelingOrderId === order.id}
                           className="danger-button typo-tab inline-flex items-center justify-center gap-2 px-5 disabled:cursor-not-allowed disabled:opacity-50"
-                          onClick={() => void cancelOrder(order.id)}
+                          onClick={() => confirmCancelOrder(order.id)}
                         >
                           {cancelingOrderId === order.id
                             ? '取消中...'
