@@ -156,8 +156,34 @@ function PetAiChatContent() {
       return;
     }
 
-    void loadRecommendations('health_based');
-  }, [loadRecommendations, petId, router]);
+    let isCancelled = false;
+
+    getPetAiRecommendations({
+      petId,
+      needCode: 'health_based',
+    })
+      .then((row) => {
+        if (!isCancelled) {
+          setRecommendation(row);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!isCancelled) {
+          setErrorMessage(
+            error instanceof Error ? error.message : '目前無法取得 AI 推薦'
+          );
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [petId, router]);
 
   /**
    * 第一次 API 還沒完成時，尚未取得寵物資料，
@@ -391,59 +417,63 @@ function PetAiChatContent() {
             )}
 
           {/* 推薦商品卡 */}
-          {!errorMessage && recommendation.products.length > 0 && (
-            <div className="mt-6 flex items-stretch gap-5 overflow-x-auto pb-3">
-              {recommendation.products.map((product) => (
-                <div
-                  key={product.productId}
-                  className="flex w-[270px] shrink-0 flex-col"
-                >
-                  <ProductCard
-                    product={{
-                      id: product.productId,
-                      avatar: {
-                        thumbnail: toPublicImagePath(product.image),
-                      },
-                      tags: product.tags.map((tag, index) => ({
-                        id: index + 1,
-                        tag_ch: tag,
-                      })),
-                      name: product.name,
+          {!isLoading &&
+            !errorMessage &&
+            recommendation.products.length > 0 && (
+              <div className="mt-6 flex items-stretch gap-5 overflow-x-auto pb-3">
+                {recommendation.products.map((product) => (
+                  <div
+                    key={product.productId}
+                    className="flex w-[270px] shrink-0 flex-col"
+                  >
+                    <ProductCard
+                      product={{
+                        id: product.productId,
+                        avatar: {
+                          thumbnail: toPublicImagePath(product.image),
+                        },
+                        tags: product.tags.map((tag, index) => ({
+                          id: index + 1,
+                          tag_ch: tag,
+                        })),
+                        name: product.name,
 
-                      // 商品卡顯示正式商品簡介。
-                      intro: {
-                        slogan: product.slogan || product.description,
-                      },
+                        // 商品卡顯示正式商品簡介。
+                        intro: {
+                          slogan: product.slogan || product.description,
+                        },
 
-                      price: `NT$${product.price.toLocaleString('zh-TW')}`,
-                      slug: product.slug,
-                      isFavorite: product.isFavorite,
-                      petType: {
-                        id: product.petTypeId,
-                        tag_slug: product.petType,
-                      },
-                    }}
-                    allergyWarning={{
-                      petName: pet.name,
-                      items: product.allergyRiskItems,
-                    }}
-                  />
+                        price: `NT$${product.price.toLocaleString('zh-TW')}`,
+                        slug: product.slug,
+                        isFavorite: product.isFavorite,
+                        petType: {
+                          id: product.petTypeId,
+                          tag_slug: product.petType,
+                        },
+                      }}
+                      allergyWarning={{
+                        petName: pet.name,
+                        items: product.allergyRiskItems,
+                      }}
+                    />
 
-                  {/*
-                   * ProductCard 的 description 只有一行，
-                   * 因此 AI 推薦理由另外完整顯示。
-                   */}
-                  <div className="mt-3 flex-1 rounded-lg border border-secondary/20 bg-card-secondary p-3">
-                    <p className="typo-tab text-text-secondary">AI 推薦理由</p>
+                    {/*
+                     * ProductCard 的 description 只有一行，
+                     * 因此 AI 推薦理由另外完整顯示。
+                     */}
+                    <div className="mt-3 flex-1 rounded-lg border border-secondary/20 bg-card-secondary p-3">
+                      <p className="typo-tab text-text-secondary">
+                        AI 推薦理由
+                      </p>
 
-                    <p className="typo-card-body mt-1 text-text-primary">
-                      {product.reason}
-                    </p>
+                      <p className="typo-card-body mt-1 text-text-primary">
+                        {product.reason}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
         </div>
       </section>
     </section>

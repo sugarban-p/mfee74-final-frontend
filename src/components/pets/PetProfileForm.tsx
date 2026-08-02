@@ -35,6 +35,17 @@ const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png'];
 const ALLOWED_AVATAR_EXTENSIONS = ['jpg', 'jpeg', 'png'];
 
+/** 產生使用者所在地的今天日期，提供原生 date input 限制未來生日。 */
+const getTodayDate = () => {
+  const today = new Date();
+
+  return [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, '0'),
+    String(today.getDate()).padStart(2, '0'),
+  ].join('-');
+};
+
 export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
   const router = useRouter();
   const isViewMode = mode === 'view';
@@ -341,7 +352,7 @@ export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
             onClick={() => router.back()}
             className="back-button typo-tab"
           >
-            取消
+            {isViewMode ? '返回' : '取消'}
           </button>
         </div>
       </div>
@@ -400,8 +411,7 @@ export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
             </div>
 
             <p className="typo-card-body text-text-secondary">
-              健康情況會對應到商品標籤，例如皮膚敏感會對應 skin-care 與
-              hypoallergenic。
+              毛孩的健康情況與過敏食材會作為 AI 導購的商品篩選依據。
             </p>
           </div>
         </aside>
@@ -428,6 +438,7 @@ export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
                 <input
                   name="name"
                   required
+                  maxLength={50}
                   disabled={isViewMode}
                   defaultValue={pet?.name ?? ''}
                   placeholder="例：Momo、毛毛"
@@ -462,6 +473,7 @@ export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
 
                 <input
                   name="breed"
+                  maxLength={100}
                   disabled={isViewMode}
                   defaultValue={pet?.breed ?? ''}
                   placeholder="例：米克斯、英國短毛貓"
@@ -520,6 +532,7 @@ export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
                   required
                   disabled={isViewMode}
                   type="date"
+                  max={getTodayDate()}
                   defaultValue={pet?.birthday ?? ''}
                   className={inputClass}
                 />
