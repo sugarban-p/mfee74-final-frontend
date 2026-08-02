@@ -5,7 +5,10 @@ import './globals-extra.css';
 import AppShell from '@/src/components/common/AppShell';
 
 export const metadata: Metadata = {
-  title: 'Team3 專題',
+  title: 'MOFU | 毛孩生活商城',
+  icons: {
+    icon: '/images/logo/mofu_logo.svg',
+  },
   description: '',
 };
 
