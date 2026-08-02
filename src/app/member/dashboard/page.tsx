@@ -20,6 +20,8 @@ import {
   Activity,
   Clock,
 } from 'lucide-react';
+import Cropper from 'react-easy-crop';
+import type { Area } from 'react-easy-crop';
 import {
   Btn,
   FieldInput,
@@ -90,6 +92,64 @@ const MOCK_SECURITY: SecurityInfo = {
     },
   ],
 };
+
+async function createImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('IMAGE_LOAD_FAILED'));
+    image.src = src;
+  });
+}
+
+async function buildCroppedAvatarFile({
+  src,
+  pixelCrop,
+  outputMimeType,
+  outputFileName,
+}: {
+  src: string;
+  pixelCrop: Area;
+  outputMimeType: 'image/jpeg' | 'image/webp';
+  outputFileName: string;
+}): Promise<File> {
+  const image = await createImage(src);
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('CANVAS_CONTEXT_FAILED');
+  }
+
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = 'high';
+  context.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    512,
+    512
+  );
+
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, outputMimeType, 0.92);
+  });
+
+  if (!blob) {
+    throw new Error('CROP_EXPORT_FAILED');
+  }
+
+  return new File([blob], outputFileName, {
+    type: outputMimeType,
+    lastModified: Date.now(),
+  });
+}
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
@@ -514,6 +574,7 @@ function ProfileTab({
 }) {
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const avatarObjectUrlRef = useRef<string | null>(null);
+  const cropObjectUrlRef = useRef<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [f, setF] = useState({
     name: user.name ?? '',
@@ -523,6 +584,15 @@ function ProfileTab({
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarCropSource, setAvatarCropSource] = useState<string | null>(null);
+  const [avatarCropName, setAvatarCropName] = useState('avatar.jpg');
+  const [avatarCropMimeType, setAvatarCropMimeType] = useState<
+    'image/jpeg' | 'image/webp'
+  >('image/jpeg');
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [isCropSaving, setIsCropSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -531,6 +601,9 @@ function ProfileTab({
     return () => {
       if (avatarObjectUrlRef.current) {
         URL.revokeObjectURL(avatarObjectUrlRef.current);
+      }
+      if (cropObjectUrlRef.current) {
+        URL.revokeObjectURL(cropObjectUrlRef.current);
       }
     };
   }, []);
@@ -555,6 +628,30 @@ function ProfileTab({
       phone: user.phone ?? '',
       address: user.address ?? '',
     });
+    if (cropObjectUrlRef.current) {
+      URL.revokeObjectURL(cropObjectUrlRef.current);
+      cropObjectUrlRef.current = null;
+    }
+    setAvatarCropSource(null);
+    setCroppedAreaPixels(null);
+    setZoom(1);
+    setCrop({ x: 0, y: 0 });
+  };
+
+  const closeCropModal = () => {
+    if (cropObjectUrlRef.current) {
+      URL.revokeObjectURL(cropObjectUrlRef.current);
+      cropObjectUrlRef.current = null;
+    }
+
+    setAvatarCropSource(null);
+    setCroppedAreaPixels(null);
+    setZoom(1);
+    setCrop({ x: 0, y: 0 });
+
+    if (avatarInputRef.current) {
+      avatarInputRef.current.value = '';
+    }
   };
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -578,21 +675,81 @@ function ProfileTab({
       return;
     }
 
-    clearAvatarPreview();
+    if (cropObjectUrlRef.current) {
+      URL.revokeObjectURL(cropObjectUrlRef.current);
+    }
 
     const objectUrl = URL.createObjectURL(file);
-    avatarObjectUrlRef.current = objectUrl;
+    cropObjectUrlRef.current = objectUrl;
 
+    const baseName = String(file.name || 'avatar')
+      .replace(/\.[^/.]+$/, '')
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-\u4e00-\u9fa5]/g, '')
+      .slice(0, 40);
+    const outputMimeType: 'image/jpeg' | 'image/webp' =
+      file.type === 'image/webp' ? 'image/webp' : 'image/jpeg';
+    const extension = outputMimeType === 'image/webp' ? 'webp' : 'jpg';
+
+    setAvatarCropName(`${baseName || 'avatar'}.${extension}`);
+    setAvatarCropMimeType(outputMimeType);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
     setError('');
-    setAvatarFile(file);
-    setAvatarPreview(objectUrl);
+    setAvatarCropSource(objectUrl);
+  };
+
+  const applyAvatarCrop = async () => {
+    if (!avatarCropSource || !croppedAreaPixels) {
+      setError('請先調整裁切範圍。');
+      return;
+    }
+
+    setIsCropSaving(true);
+    setError('');
+    try {
+      const croppedFile = await buildCroppedAvatarFile({
+        src: avatarCropSource,
+        pixelCrop: croppedAreaPixels,
+        outputMimeType: avatarCropMimeType,
+        outputFileName: avatarCropName,
+      });
+
+      clearAvatarPreview();
+      const previewUrl = URL.createObjectURL(croppedFile);
+      avatarObjectUrlRef.current = previewUrl;
+
+      setAvatarFile(croppedFile);
+      setAvatarPreview(previewUrl);
+      closeCropModal();
+    } catch {
+      setError('頭像裁切失敗，請重新選擇圖片。');
+    } finally {
+      setIsCropSaving(false);
+    }
   };
 
   const save = async () => {
     setLoading(true);
     setError('');
+
+    const isUnchanged =
+      f.name === (user.name ?? '') &&
+      f.nickname === (user.nickname ?? '') &&
+      f.phone === (user.phone ?? '') &&
+      f.address === (user.address ?? '') &&
+      !avatarFile;
+
+    if (isUnchanged) {
+      setError('資料沒有變更。');
+      setLoading(false);
+      return;
+    }
+
     try {
       const formData = new FormData();
+
       formData.append('name', f.name);
       formData.append('nickname', f.nickname);
       formData.append('phone', f.phone);
@@ -606,17 +763,25 @@ function ProfileTab({
         method: 'PATCH',
         body: formData,
       });
+
       const data = await res.json();
+
       if (!res.ok) {
         setError(data.message ?? '更新失敗。');
         return;
       }
+
       onUpdate({ ...user, ...data });
+
       setAvatarFile(null);
       clearAvatarPreview();
       setEditing(false);
+
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+
+      setTimeout(() => {
+        setSuccess(false);
+      }, 3000);
     } catch {
       setError('網路錯誤。');
     } finally {
@@ -626,6 +791,66 @@ function ProfileTab({
 
   return (
     <div className="space-y-5">
+      {avatarCropSource && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
+            <div className="border-b border-base-300 px-5 py-4">
+              <h3 className="typo-card-title text-text-primary">裁切頭像</h3>
+              <p className="typo-card-body mt-1 text-text-primary/60">
+                請拖曳與縮放圖片，輸出為 1:1 頭像（512x512）。
+              </p>
+            </div>
+
+            <div className="p-5">
+              <div className="relative h-72 overflow-hidden rounded-2xl bg-black/90 sm:h-80">
+                <Cropper
+                  image={avatarCropSource}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={1}
+                  cropShape="rect"
+                  showGrid={false}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={(_, areaPixels) =>
+                    setCroppedAreaPixels(areaPixels)
+                  }
+                />
+              </div>
+
+              <div className="mt-4 space-y-2">
+                <label className="typo-card-body block text-text-primary/70">
+                  縮放
+                </label>
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.01}
+                  value={zoom}
+                  onChange={(event) => setZoom(Number(event.target.value))}
+                  className="range w-full range-primary range-sm"
+                />
+              </div>
+
+              <div className="mt-5 flex gap-2">
+                <Btn
+                  variant="outline"
+                  sm
+                  onClick={closeCropModal}
+                  disabled={isCropSaving}
+                >
+                  取消
+                </Btn>
+                <Btn sm onClick={applyAvatarCrop} loading={isCropSaving}>
+                  套用裁切
+                </Btn>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {success && <SuccessBox message="個人資料已成功更新。" />}
 
       <div className="bg-[#FDFBF6]-100 card rounded-2xl border border-base-300">
@@ -706,7 +931,7 @@ function ProfileTab({
               ) : (
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <h2 className="typo-h4 text-text-primary" style={JP}>
+                    <h2 className="text-xl text-text-primary" style={JP}>
                       {user.name ?? '未設定'}
                     </h2>
                     <Btn onClick={() => setEditing(true)} variant="outline" sm>
@@ -788,17 +1013,23 @@ function ChangePasswordSection() {
 
   const change = async () => {
     if (!pw.old || !pw.next || !pw.confirm) {
-      setError('請填寫所有欄位。');
+      setError('請填寫所有欄位');
+      return;
+    }
+    if (pw.next.length < 8) {
+      setError('新密碼長度不可少於 8 個字元');
       return;
     }
     if (pw.next !== pw.confirm) {
-      setError('兩次輸入的新密碼不一致。');
+      setError('兩次輸入的新密碼不一致');
       return;
     }
     if (pw.old === pw.next) {
-      setError('新密碼不可與目前密碼相同。');
+      setError('新密碼不可與目前密碼相同');
       return;
     }
+
+
     setError('');
     setLoading(true);
     try {

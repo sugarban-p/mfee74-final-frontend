@@ -125,7 +125,7 @@ export default function RegisterPage() {
             style={AUTH_TEXT}
           >
             <span className="text-[#8A7F77]" style={AUTH_TEXT}>
-              <span className="text-[#E77721]">v</span> 長度 12 字元以上
+              <span className="text-[#E77721]">v</span> 長度 8 字元以上
             </span>
             <span className="text-[#8A7F77]" style={AUTH_TEXT}>
               <span className="text-[#E77721]">v</span> 包含大寫字母
