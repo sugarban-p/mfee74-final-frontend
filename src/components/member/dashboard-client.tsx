@@ -896,25 +896,26 @@ function ProfileTab({
                     label="姓名"
                     value={f.name}
                     onChange={(v) => setF((p) => ({ ...p, name: v }))}
-                    placeholder="林 小花"
+                    placeholder="請輸入您的真實姓名"
                   />
                   <FieldInput
                     label="暱稱"
                     value={f.nickname}
                     onChange={(v) => setF((p) => ({ ...p, nickname: v }))}
-                    placeholder="小花"
+                    placeholder="設定一個大家稱呼您的名字，可使用中文或英文
+"
                   />
                   <FieldInput
                     label="手機"
                     value={f.phone}
                     onChange={(v) => setF((p) => ({ ...p, phone: v }))}
-                    placeholder="0912-345-678"
+                    placeholder="請輸入您的手機號碼"
                   />
                   <FieldInput
                     label="地址"
                     value={f.address}
                     onChange={(v) => setF((p) => ({ ...p, address: v }))}
-                    placeholder="台北市中山區..."
+                    placeholder="請輸入您的收件地址"
                   />
                   <p className="text-xs text-text-primary/60">
                     頭像格式僅支援 JPG、PNG、WEBP，大小上限 2MB。
