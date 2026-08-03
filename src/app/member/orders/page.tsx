@@ -149,6 +149,7 @@ export default function MemberOrdersPage() {
       if (!response.ok) throw new Error();
 
       loadOrders();
+      toast.success(`已成功取消訂單\n訂單編號：${orderId} `);
     } catch {
       toast.error('取消訂單失敗，請稍後再試。');
     } finally {
@@ -242,7 +243,7 @@ export default function MemberOrdersPage() {
             >
               <header className="flex flex-col gap-3 border-b border-[rgba(26,22,18,0.08)] px-5 py-4 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-start justify-between gap-3 md:items-center">
-                  <span className="min-w-0 truncate text-xs font-bold text-text-primary sm:typo-tab">
+                  <span className="sm:typo-tab min-w-0 truncate text-xs font-bold text-text-primary">
                     {order.id}
                   </span>
                   <span className="flex shrink-0 flex-wrap justify-end gap-2">
@@ -318,42 +319,44 @@ export default function MemberOrdersPage() {
                       <LuChevronRight className="size-4" />
                     </Link>
 
-                    {order.status !== 'canceled' && order.paymentStatus === 'pending' && (
-                      <>
-                        <a
-                          href={getPaymentHref(order)}
-                          className="next-button typo-tab inline-flex items-center justify-center gap-2 px-5"
-                        >
-                          重新付款
-                          <LuRotateCcw className="size-4" />
-                        </a>
+                    {order.status !== 'canceled' &&
+                      order.paymentStatus === 'pending' && (
+                        <>
+                          <a
+                            href={getPaymentHref(order)}
+                            className="next-button typo-tab inline-flex items-center justify-center gap-2 px-5"
+                          >
+                            重新付款
+                            <LuRotateCcw className="size-4" />
+                          </a>
+                          <button
+                            type="button"
+                            disabled={cancelingOrderId === order.id}
+                            className="danger-button typo-tab inline-flex items-center justify-center gap-2 px-5 disabled:cursor-not-allowed disabled:opacity-50"
+                            onClick={() => confirmCancelOrder(order.id)}
+                          >
+                            {cancelingOrderId === order.id
+                              ? '取消中...'
+                              : '取消訂單'}
+                            <LuX className="size-4" />
+                          </button>
+                        </>
+                      )}
+
+                    {order.status !== 'canceled' &&
+                      order.paymentStatus !== 'pending' && (
                         <button
                           type="button"
-                          disabled={cancelingOrderId === order.id}
-                          className="danger-button typo-tab inline-flex items-center justify-center gap-2 px-5 disabled:cursor-not-allowed disabled:opacity-50"
-                          onClick={() => confirmCancelOrder(order.id)}
+                          disabled={rebuyingOrderId === order.id}
+                          className="next-button typo-tab inline-flex items-center justify-center gap-2 px-5 disabled:cursor-not-allowed disabled:opacity-50"
+                          onClick={() => void rebuyOrder(order.id)}
                         >
-                          {cancelingOrderId === order.id
-                            ? '取消中...'
-                            : '取消訂單'}
-                          <LuX className="size-4" />
+                          {rebuyingOrderId === order.id
+                            ? '加入中...'
+                            : '再買一次'}
+                          <LuRotateCcw className="size-4" />
                         </button>
-                      </>
-                    )}
-
-                    {order.status !== 'canceled' && order.paymentStatus !== 'pending' && (
-                      <button
-                        type="button"
-                        disabled={rebuyingOrderId === order.id}
-                        className="next-button typo-tab inline-flex items-center justify-center gap-2 px-5 disabled:cursor-not-allowed disabled:opacity-50"
-                        onClick={() => void rebuyOrder(order.id)}
-                      >
-                        {rebuyingOrderId === order.id
-                          ? '加入中...'
-                          : '再買一次'}
-                        <LuRotateCcw className="size-4" />
-                      </button>
-                    )}
+                      )}
                   </div>
                 </div>
               </div>
