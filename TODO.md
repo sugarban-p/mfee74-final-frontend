@@ -1,9 +1,3 @@
-## 首頁
-
-1. 常見問題
-
-"如何聯繫 MOFU 客服？" 目前預設為展開狀態
-
 ## 頁面標籤設定
 
 在 Next.js App Router 裡，業界比較常見的是「各自 route 設定 metadata」。
