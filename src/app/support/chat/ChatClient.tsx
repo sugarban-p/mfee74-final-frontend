@@ -89,6 +89,9 @@ const SUPPORT_QUICK_REPLIES = [
 const SUPPORT_ROLE_CACHE_KEY = 'chat:is-support';
 const SUPPORT_PRESENCE_CACHE_KEY = 'chat:support-presence-count';
 const PRODUCT_SEARCH_PET_TYPE_IDS = [1, 2] as const;
+const PRODUCT_FACTS_HEADER = '【商品資料庫校正】';
+const PRODUCT_FACTS_PROMPT =
+  '以下是目前資料庫的商品規格，請嚴格以此為準，不要捏造不存在的口味或規格：';
 
 type ProductListApiRow = {
   id?: number | string;
@@ -257,10 +260,66 @@ async function enrichQuestionWithProductFacts(
   return [
     question,
     '',
-    '【商品資料庫校正】',
-    '以下是目前資料庫的商品規格，請嚴格以此為準，不要捏造不存在的口味或規格：',
+    PRODUCT_FACTS_HEADER,
+    PRODUCT_FACTS_PROMPT,
     ...factLines,
   ].join('\n');
+}
+
+function stripInjectedProductFacts(content: string): string {
+  const marker = `\n${PRODUCT_FACTS_HEADER}`;
+  const markerIndex = content.indexOf(marker);
+  if (markerIndex >= 0) {
+    return content.slice(0, markerIndex).trimEnd();
+  }
+
+  // Fallback for any persisted message that may not contain a leading newline.
+  if (content.startsWith(PRODUCT_FACTS_HEADER)) {
+    return '';
+  }
+
+  return content;
+}
+
+function normalizeAiCapabilityClaims(content: string): string {
+  const hasCartClaim =
+    content.includes('加入購物車') &&
+    /(已經|已為您|已幫您|幫您|為您).*(加入|放入)|加入購物車囉|已加入/.test(
+      content
+    );
+
+  if (!hasCartClaim) return content;
+
+  const nextContent = content
+    .replace(
+      /(?:好的，?\s*)?(?:沒問題，?\s*)?已[^。！？\n]*(加入|放入)[^。！？\n]*[。！？]?/g,
+      ''
+    )
+    .replace(
+      /這就為您前往結帳[^。！？\n]*[。！？]?/g,
+      '目前聊天功能無法直接操作購物車或代為結帳，請您到商品頁手動點選「加入購物車」。'
+    )
+    .trim();
+
+  return (
+    nextContent ||
+    '目前聊天功能無法直接操作購物車或代為結帳，請您到商品頁手動點選「加入購物車」。'
+  );
+}
+
+function normalizeAiStockClaims(content: string): string {
+  const stockClaimRegex =
+    /[^。！？\n]*(缺貨|售完|暫時缺貨|目前缺貨|補貨中|斷貨)[^。！？\n]*[。！？]?/g;
+
+  if (!stockClaimRegex.test(content)) return content;
+
+  const stripped = content.replace(stockClaimRegex, '').trim();
+  const stockGuidance = '實際庫存請以商品頁顯示為準。';
+
+  if (!stripped) return stockGuidance;
+  if (stripped.includes(stockGuidance)) return stripped;
+
+  return `${stripped}\n\n${stockGuidance}`;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -288,11 +347,18 @@ function normalizeApiMessage(value: unknown): UIMessage | null {
     return null;
   }
 
+  const normalizedContent =
+    senderRaw === 'USER'
+      ? stripInjectedProductFacts(content)
+      : senderRaw === 'AI'
+        ? normalizeAiStockClaims(normalizeAiCapabilityClaims(content))
+        : content;
+
   return {
     id,
     sender: toSender(senderRaw),
     type: 'TEXT',
-    content,
+    content: normalizedContent,
     createdAt,
   };
 }
