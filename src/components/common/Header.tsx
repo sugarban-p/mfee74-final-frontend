@@ -69,6 +69,32 @@ const ACTIVITY_MENU_ITEMS = [
   },
 ];
 
+const toastStyleAddCart = {
+  style: {
+    border: '1px solid var(--button-secondary-border)',
+    padding: '16px',
+    color: 'var(--text-primary)',
+    backgroundColor: 'var(--success)',
+  },
+  iconTheme: {
+    primary: 'var(--success)',
+    secondary: 'green',
+  },
+};
+
+const toastStyleRemoveCart = {
+  style: {
+    border: '1px solid var(--button-secondary-border)',
+    padding: '16px',
+    color: 'var(--text-primary)',
+    backgroundColor: '#eee9e9',
+  },
+  iconTheme: {
+    primary: 'var(--success)',
+    secondary: 'green',
+  },
+};
+
 const toPublicImagePath = (path?: string) => {
   if (!path) return '';
   if (/^https?:\/\//.test(path)) return path;
@@ -227,7 +253,8 @@ export default function Header() {
       if (!response.ok) throw new Error();
 
       toast.success(
-        `${pendingAction.productName} ${pendingAction.itemName} 已加入購物車`
+        `${pendingAction.productName} ${pendingAction.itemName} 已加入購物車`,
+        toastStyleAddCart
       );
     } catch {
       toast.error('加入購物車失敗，請稍後再試');
@@ -380,7 +407,8 @@ export default function Header() {
       );
       setRemovingCartItemId(null);
       toast.success(
-        `${cartItem.prod_name} ${cartItem.item_name} 已從購物車移除`
+        `${cartItem.prod_name} ${cartItem.item_name} 已從購物車移除`,
+        toastStyleRemoveCart
       );
     } catch {
       toast.error('移除購物車商品失敗，請稍後再試');

@@ -55,12 +55,25 @@ const labels = {
   soldOut: '已售完',
 } as const;
 
-const toastStyle = {
+const toastStyleAddFavorite = {
   style: {
     border: '1px solid var(--button-secondary-border)',
     padding: '16px',
     color: 'var(--text-primary)',
     backgroundColor: 'var(--success)',
+  },
+  iconTheme: {
+    primary: 'var(--success)',
+    secondary: 'green',
+  },
+};
+
+const toastStyleRemoveFavorite = {
+  style: {
+    border: '1px solid var(--button-secondary-border)',
+    padding: '16px',
+    color: 'var(--text-primary)',
+    backgroundColor: '#eee9e9',
   },
   iconTheme: {
     primary: 'var(--success)',
@@ -151,7 +164,7 @@ export function ProductCard({
         `${product.name} ${
           nextIsFavorite ? labels.addedFavorite : labels.removedFavorite
         }`,
-        toastStyle
+        nextIsFavorite ? toastStyleAddFavorite : toastStyleRemoveFavorite
       );
     } catch {
       setFavoriteOverride({ productId: product.id, isFavorite });
