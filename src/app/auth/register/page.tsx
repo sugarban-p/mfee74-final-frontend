@@ -19,9 +19,16 @@ const AUTH_TEXT: React.CSSProperties = {
   fontWeight: 500,
 };
 
+const DEFAULT_REGISTER_EMAIL = 'kml586183@gmail.com';
+const DEFAULT_REGISTER_PASSWORD = 'ttb123123';
+
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ email: '', password: '', confirm: '' });
+  const [form, setForm] = useState({
+    email: DEFAULT_REGISTER_EMAIL,
+    password: DEFAULT_REGISTER_PASSWORD,
+    confirm: DEFAULT_REGISTER_PASSWORD,
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
