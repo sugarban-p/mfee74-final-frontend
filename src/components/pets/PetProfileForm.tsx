@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { LuImagePlus, LuInfo, LuSparkles } from 'react-icons/lu';
@@ -49,6 +49,7 @@ const getTodayDate = () => {
 export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
   const router = useRouter();
   const isViewMode = mode === 'view';
+  const formRef = useRef<HTMLFormElement>(null);
 
   /**
    * selectedAvatarFile 是準備送往後端的新檔案；
@@ -102,11 +103,75 @@ export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
       ? '填寫越完整，AI 商品推薦會越準確。'
       : '查看毛孩的基本資料、健康情況與照護偏好。';
 
+  /**
+   * Demo 快速填入：只在新增模式生效。
+   * 使用穩定的 option code 尋找選項，不寫死可能變動的資料庫 id。
+   * 照片基於瀏覽器安全限制，仍需由使用者手動選擇。
+   */
+  const handleDemoPrefill = () => {
+    if (mode !== 'create' || !formRef.current) {
+      return;
+    }
+
+    const setFieldValue = (name: string, value: string | number) => {
+      const field = formRef.current?.elements.namedItem(name);
+
+      if (
+        field instanceof HTMLInputElement ||
+        field instanceof HTMLSelectElement ||
+        field instanceof HTMLTextAreaElement
+      ) {
+        field.value = String(value);
+      }
+    };
+
+    const findOptionId = (
+      group: keyof PetFormOptions,
+      code: string
+    ): number | undefined =>
+      options[group].options.find((option) => option.code === code)?.id;
+
+    setFieldValue('name', 'Nono');
+    setFieldValue('breed', '米克斯');
+    setFieldValue('birthday', '2022-05-08');
+    setFieldValue('weight', '4.8');
+
+    const singleSelectValues = [
+      ['speciesOptionId', findOptionId('species', 'cat')],
+      ['genderOptionId', findOptionId('gender', 'female')],
+      ['neuteredOptionId', findOptionId('neutered', 'neutered')],
+      ['activityLevelOptionId', findOptionId('activity_level', 'medium')],
+    ] as const;
+
+    singleSelectValues.forEach(([name, optionId]) => {
+      if (optionId !== undefined) {
+        setFieldValue(name, optionId);
+      }
+    });
+
+    const healthConditionId = findOptionId(
+      'health_condition',
+      'sensitive_stomach'
+    );
+    const allergyIngredientId = findOptionId('allergy_ingredient', 'chicken');
+
+    setSelectedHealthConditionIds(
+      healthConditionId === undefined ? [] : [healthConditionId]
+    );
+    setSelectedAllergyIngredientIds(
+      allergyIngredientId === undefined ? [] : [allergyIngredientId]
+    );
+    setHealthConditionError('');
+    setAllergyIngredientError('');
+
+    toast.success('已填入 Demo 資料');
+  };
+
   const inputClass =
     'mt-2 h-11 w-full rounded-full border border-border bg-white px-4 text-sm text-text-primary outline-none placeholder:text-text-secondary/50 disabled:bg-muted disabled:text-text-secondary';
 
   const selectClass =
-    'mt-2 h-11 w-full rounded-full border border-border bg-white px-4 text-sm text-text-primary outline-none disabled:bg-muted disabled:text-text-secondary';
+    'mt-2 h-11 w-full cursor-pointer rounded-full border border-border bg-white px-4 text-sm text-text-primary outline-none disabled:cursor-not-allowed disabled:bg-muted disabled:text-text-secondary';
 
   /**
    * 健康情況 checkbox：
@@ -418,6 +483,7 @@ export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
 
         {/* 右側主要表單 */}
         <form
+          ref={formRef}
           id="pet-profile-form"
           onSubmit={handleSubmit}
           className="rounded-2xl border border-border bg-card-primary p-8"
@@ -427,7 +493,19 @@ export function PetProfileForm({ mode, pet, options }: PetProfileFormProps) {
             <div className="mb-8 flex items-center gap-2">
               <LuInfo className="h-5 w-5 text-primary" aria-hidden="true" />
 
-              <h2 className="typo-h3 text-text-primary">基本資料</h2>
+              {mode === 'create' ? (
+                <button
+                  type="button"
+                  onClick={handleDemoPrefill}
+                  className="typo-h3 cursor-pointer text-left text-text-primary"
+                  aria-label="填入 Demo 寵物資料"
+                  title="點擊快速填入 Demo 資料"
+                >
+                  基本資料
+                </button>
+              ) : (
+                <h2 className="typo-h3 text-text-primary">基本資料</h2>
+              )}
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">

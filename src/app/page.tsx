@@ -337,7 +337,7 @@ export default function HomePage() {
                 type="button"
                 aria-label="上一個活動"
                 onClick={showPreviousSlide}
-                className="flex size-11 items-center justify-center rounded-full border border-primary/30 bg-background text-text-secondary transition hover:bg-primary hover:text-white"
+                className="flex size-11 cursor-pointer items-center justify-center rounded-full border border-primary/30 bg-background text-text-secondary transition hover:bg-primary hover:text-white"
               >
                 <LuChevronLeft className="size-5" aria-hidden="true" />
               </button>
@@ -346,7 +346,7 @@ export default function HomePage() {
                 type="button"
                 aria-label="下一個活動"
                 onClick={showNextSlide}
-                className="flex size-11 items-center justify-center rounded-full border border-primary/30 bg-background text-text-secondary transition hover:bg-primary hover:text-white"
+                className="flex size-11 cursor-pointer items-center justify-center rounded-full border border-primary/30 bg-background text-text-secondary transition hover:bg-primary hover:text-white"
               >
                 <LuChevronRight className="size-5" aria-hidden="true" />
               </button>
@@ -728,7 +728,7 @@ export default function HomePage() {
                   aria-expanded={isOpen}
                   aria-controls={answerId}
                   onClick={() => setOpenFaq(isOpen ? null : index)}
-                  className="flex w-full items-center justify-between gap-4 py-6 text-left sm:gap-8"
+                  className="flex w-full cursor-pointer items-center justify-between gap-4 py-6 text-left sm:gap-8"
                 >
                   <span className="grid flex-1 grid-cols-[40px_1fr] items-center gap-2 sm:grid-cols-[64px_1fr] sm:gap-4">
                     <span className="typo-card-title text-primary/45">
