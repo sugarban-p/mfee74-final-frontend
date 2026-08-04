@@ -1,14 +1,19 @@
-// import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import '@radix-ui/themes/styles.css';
 import './globals.css';
 import './globals-extra.css';
 import AppShell from '@/src/components/common/AppShell';
 
-// export const metadata: Metadata = {
-//   title: 'MOFU｜陪毛孩過好每一天',
-//   description:
-//     'MOFU 提供貓狗主食、零食、保健與生活用品，並依毛孩資料提供 AI 商品選購建議。',
-// };
+export const metadata: Metadata = {
+  title: 'MOFU | 毛孩生活商城',
+  description:
+    'MOFU 提供貓狗主食、零食、保健與生活用品，並依毛孩資料提供 AI 商品選購建議。',
+  icons: {
+    icon: '/images/logo/mofu-logo.png?v=20260804',
+    shortcut: '/images/logo/mofu-logo.png?v=20260804',
+    apple: '/images/logo/mofu-logo.png?v=20260804',
+  },
+};
 
 export default function RootLayout({
   children,
