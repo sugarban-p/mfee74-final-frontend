@@ -146,7 +146,7 @@ export default function HomePage() {
      * overflow-x-clip 避免輪播與動畫裝飾產生水平捲軸，
      * -my-16 則抵消 AppShell 為一般頁面保留的上下間距。
      */
-    <div className="home-page relative left-1/2 -my-16 w-[100dvw] max-w-[100dvw] -translate-x-1/2 overflow-x-clip bg-background">
+    <div className="home-page relative left-1/2 -my-16 max-w-[100dvw] -translate-x-1/2 overflow-x-clip bg-background">
       {/*
        * 首頁專用的緩慢漂浮效果。
        * 裝飾只做小幅位移與旋轉，並尊重使用者的減少動態設定。
@@ -286,8 +286,12 @@ export default function HomePage() {
                   src={slide.image}
                   alt=""
                   fill
-                  loading={index === 0 ? 'eager' : 'lazy'}
-                  sizes="180px"
+                  // 四張活動圖會自動輪播，預先載入可避免切換時短暫模糊。
+                  loading="eager"
+                  // 活動 Banner 含有大量文字，提高最佳化後的輸出品質。
+                  quality={90}
+                  // 對應外層在不同斷點設定的 160、260、380、460px 欄寬。
+                  sizes="(max-width: 639px) 160px, (max-width: 1023px) 260px, (max-width: 1279px) 380px, 460px"
                   aria-hidden="true"
                   className={`object-cover transition-opacity duration-500 ${
                     index === activeSlide ? 'opacity-100' : 'opacity-0'

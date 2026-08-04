@@ -324,7 +324,7 @@ function PetAiChatContent() {
                 type="button"
                 aria-pressed={isSelected}
                 disabled={isLoading}
-                className={`rounded-lg border p-4 text-left transition disabled:cursor-wait disabled:opacity-60 ${
+                className={`cursor-pointer rounded-lg border p-4 text-left transition disabled:cursor-wait disabled:opacity-60 ${
                   isSelected
                     ? 'border-primary bg-card-secondary'
                     : 'border-border bg-white hover:border-primary'
@@ -356,7 +356,7 @@ function PetAiChatContent() {
          */}
         <Link
           href="/member/support"
-          className="typo-card-body mt-3 flex w-full items-center justify-center rounded-lg border border-border bg-white p-4 text-text-secondary transition hover:border-primary hover:text-primary"
+          className="typo-card-body mt-3 flex w-full cursor-pointer items-center justify-center rounded-lg border border-border bg-white p-4 text-text-secondary transition hover:border-primary hover:text-primary"
         >
           以上都不是我想找的，聯絡客服
         </Link>
