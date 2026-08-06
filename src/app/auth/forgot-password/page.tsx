@@ -11,9 +11,11 @@ import {
   Stepper,
 } from '@/src/components/ui';
 
+const DEFAULT_FORGOT_PASSWORD_EMAIL = 'kml586183@gmail.com';
+
 export default function ForgotPasswordPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(DEFAULT_FORGOT_PASSWORD_EMAIL);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,7 +51,7 @@ export default function ForgotPasswordPage() {
         </p>
       </div>
 
-      <div className="px-7 py-7 space-y-4">
+      <div className="space-y-4 px-7 py-7">
         <Stepper step={1} labels={['輸入信箱', '驗證身份', '設定新密碼']} />
 
         <p className="typo-card-body text-text-primary/60">
@@ -74,7 +76,7 @@ export default function ForgotPasswordPage() {
 
         <Link
           href="/auth/login"
-          className="flex items-center gap-1 typo-tab text-text-primary/60 hover:text-text-primary mx-auto w-fit transition-colors"
+          className="typo-tab mx-auto flex w-fit items-center gap-1 text-text-primary/60 transition-colors hover:text-text-primary"
         >
           <ArrowLeft size={12} />
           返回登入

@@ -3,25 +3,16 @@ import '@radix-ui/themes/styles.css';
 import './globals.css';
 import './globals-extra.css';
 import AppShell from '@/src/components/common/AppShell';
-import { Noto_Sans_TC, Noto_Serif_TC } from 'next/font/google';
-
-const notoSansTc = Noto_Sans_TC({
-  weight: ['400', '500', '700'],
-  subsets: ['latin'],
-  variable: '--font-noto-sans-tc',
-  display: 'swap',
-});
-
-const notoSerifTc = Noto_Serif_TC({
-  weight: ['700'],
-  subsets: ['latin'],
-  variable: '--font-noto-serif-tc',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
-  title: 'Team3 專題',
-  description: '',
+  title: 'MOFU | 毛孩生活商城',
+  description:
+    'MOFU 提供貓狗主食、零食、保健與生活用品，並依毛孩資料提供 AI 商品選購建議。',
+  icons: {
+    icon: '/images/logo/mofu-logo.png?v=20260804',
+    shortcut: '/images/logo/mofu-logo.png?v=20260804',
+    apple: '/images/logo/mofu-logo.png?v=20260804',
+  },
 };
 
 export default function RootLayout({
@@ -31,10 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-theme="light" style={{ colorScheme: 'light' }}>
-      <body
-        suppressHydrationWarning
-        className={`${notoSansTc.variable} ${notoSerifTc.variable} flex min-h-full flex-col`}
-      >
+      <body suppressHydrationWarning className="flex min-h-full flex-col">
         <AppShell>{children}</AppShell>
       </body>
     </html>

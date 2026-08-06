@@ -88,6 +88,239 @@ const SUPPORT_QUICK_REPLIES = [
 
 const SUPPORT_ROLE_CACHE_KEY = 'chat:is-support';
 const SUPPORT_PRESENCE_CACHE_KEY = 'chat:support-presence-count';
+const PRODUCT_SEARCH_PET_TYPE_IDS = [1, 2] as const;
+const PRODUCT_FACTS_HEADER = '【商品資料庫校正】';
+const PRODUCT_FACTS_PROMPT =
+  '以下是目前資料庫的商品規格，請嚴格以此為準，不要捏造不存在的口味或規格：';
+
+type ProductListApiRow = {
+  id?: number | string;
+  prod_name?: string;
+};
+
+type ProductListApiResponse = {
+  success?: boolean;
+  petTypeId?: number | string;
+  products?: ProductListApiRow[];
+};
+
+type ProductDetailApiResponse = {
+  items?: Array<{
+    item_name?: string;
+  }>;
+};
+
+type ProductFact = {
+  productName: string;
+  specs: string[];
+};
+
+function toPositiveInteger(value: unknown): number {
+  const num = Number(value);
+  return Number.isInteger(num) && num > 0 ? num : 0;
+}
+
+function toProductKeyword(value: string): string {
+  return value
+    .replace(/[「」"'`]/g, '')
+    .replace(/\s+/g, '')
+    .trim();
+}
+
+function extractProductKeywordsFromQuestion(text: string): string[] {
+  const result = new Set<string>();
+  const addCandidate = (value: string) => {
+    const normalized = toProductKeyword(value);
+    if (normalized.length < 2 || normalized.length > 30) return;
+    result.add(normalized);
+  };
+
+  const quotedMatches = text.matchAll(/[「"]([^」"\n]{2,30})[」"]/g);
+  for (const match of quotedMatches) {
+    addCandidate(match[1] || '');
+  }
+
+  const askMatch = text.match(/問\s*([A-Za-z0-9%\u4e00-\u9fff-]{2,30})/);
+  if (askMatch?.[1]) addCandidate(askMatch[1]);
+
+  const productLikeMatches = text.matchAll(
+    /([A-Za-z0-9%\u4e00-\u9fff-]{2,30}(?:主食餐包|主食罐|主食|餐包|飼料|罐頭|凍乾|肉泥|保健品|潔牙骨|貓砂))/g
+  );
+  for (const match of productLikeMatches) {
+    addCandidate(match[1] || '');
+  }
+
+  return [...result].sort((a, b) => b.length - a.length).slice(0, 5);
+}
+
+async function fetchProductFactByKeyword(
+  keyword: string
+): Promise<ProductFact | null> {
+  const normalizedKeyword = toProductKeyword(keyword);
+  if (!normalizedKeyword) return null;
+
+  for (const fallbackPetTypeId of PRODUCT_SEARCH_PET_TYPE_IDS) {
+    try {
+      const listResponse = await fetch(
+        `/api/products/${fallbackPetTypeId}?search=${encodeURIComponent(normalizedKeyword)}`,
+        {
+          credentials: 'include',
+          cache: 'no-store',
+        }
+      );
+      if (!listResponse.ok) continue;
+
+      const listPayload: unknown = await listResponse.json();
+      const listRecord = asRecord(listPayload) as ProductListApiResponse | null;
+      const rows = Array.isArray(listRecord?.products)
+        ? listRecord.products
+        : [];
+      if (!rows.length) continue;
+
+      const exactRow = rows.find((row) => {
+        const name = typeof row?.prod_name === 'string' ? row.prod_name : '';
+        return toProductKeyword(name) === normalizedKeyword;
+      });
+
+      const fuzzyRow = rows.find((row) => {
+        const name = typeof row?.prod_name === 'string' ? row.prod_name : '';
+        const normalizedName = toProductKeyword(name);
+        return (
+          normalizedName.includes(normalizedKeyword) ||
+          normalizedKeyword.includes(normalizedName)
+        );
+      });
+
+      const targetRow = exactRow || fuzzyRow;
+      if (!targetRow) continue;
+
+      const productId = toPositiveInteger(targetRow.id);
+      if (!productId) continue;
+
+      const petTypeId =
+        toPositiveInteger(listRecord?.petTypeId) || fallbackPetTypeId;
+      const detailResponse = await fetch(
+        `/api/products/${petTypeId}/${productId}/buy`,
+        {
+          credentials: 'include',
+          cache: 'no-store',
+        }
+      );
+      if (!detailResponse.ok) continue;
+
+      const detailPayload: unknown = await detailResponse.json();
+      const detailRecord = asRecord(
+        detailPayload
+      ) as ProductDetailApiResponse | null;
+      const specs = Array.isArray(detailRecord?.items)
+        ? detailRecord.items
+            .map((item) =>
+              typeof item?.item_name === 'string' ? item.item_name.trim() : ''
+            )
+            .filter((name) => Boolean(name))
+        : [];
+
+      if (!specs.length) continue;
+
+      return {
+        productName:
+          typeof targetRow.prod_name === 'string'
+            ? targetRow.prod_name
+            : normalizedKeyword,
+        specs: [...new Set(specs)],
+      };
+    } catch {
+      // Ignore API failure for this keyword and continue with next candidate.
+    }
+  }
+
+  return null;
+}
+
+async function enrichQuestionWithProductFacts(
+  question: string
+): Promise<string> {
+  const keywords = extractProductKeywordsFromQuestion(question);
+  if (!keywords.length) return question;
+
+  const facts: ProductFact[] = [];
+  for (const keyword of keywords) {
+    const fact = await fetchProductFactByKeyword(keyword);
+    if (!fact) continue;
+    if (facts.some((item) => item.productName === fact.productName)) continue;
+    facts.push(fact);
+  }
+
+  if (!facts.length) return question;
+
+  const factLines = facts.map(
+    (item) => `- ${item.productName}：${item.specs.join('、')}`
+  );
+
+  return [
+    question,
+    '',
+    PRODUCT_FACTS_HEADER,
+    PRODUCT_FACTS_PROMPT,
+    ...factLines,
+  ].join('\n');
+}
+
+function stripInjectedProductFacts(content: string): string {
+  const marker = `\n${PRODUCT_FACTS_HEADER}`;
+  const markerIndex = content.indexOf(marker);
+  if (markerIndex >= 0) {
+    return content.slice(0, markerIndex).trimEnd();
+  }
+
+  // Fallback for any persisted message that may not contain a leading newline.
+  if (content.startsWith(PRODUCT_FACTS_HEADER)) {
+    return '';
+  }
+
+  return content;
+}
+
+function normalizeAiCapabilityClaims(content: string): string {
+  const hasCartClaim =
+    content.includes('加入購物車') &&
+    /(已經|已為您|已幫您|幫您|為您).*(加入|放入)|加入購物車囉|已加入/.test(
+      content
+    );
+
+  if (!hasCartClaim) return content;
+
+  const nextContent = content
+    .replace(
+      /(?:好的，?\s*)?(?:沒問題，?\s*)?已[^。！？\n]*(加入|放入)[^。！？\n]*[。！？]?/g,
+      ''
+    )
+    .replace(
+      /這就為您前往結帳[^。！？\n]*[。！？]?/g,
+      '目前聊天功能無法直接操作購物車或代為結帳，請您到商品頁手動點選「加入購物車」。'
+    )
+    .trim();
+
+  return (
+    nextContent ||
+    '目前聊天功能無法直接操作購物車或代為結帳，請您到商品頁手動點選「加入購物車」。'
+  );
+}
+
+function normalizeAiStockClaims(content: string): string {
+  const stockClaimRegex =
+    /[^。！？\n]*(缺貨|售完|暫時缺貨|目前缺貨|補貨中|斷貨)[^。！？\n]*[。！？]?/g;
+
+  if (!stockClaimRegex.test(content)) return content;
+
+  const stripped = content.replace(stockClaimRegex, '').trim();
+  const stockGuidance = '實際庫存請以商品頁顯示為準。';
+
+  if (!stripped) return stockGuidance;
+  if (stripped.includes(stockGuidance)) return stripped;
+
+  return `${stripped}\n\n${stockGuidance}`;
+}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -114,11 +347,18 @@ function normalizeApiMessage(value: unknown): UIMessage | null {
     return null;
   }
 
+  const normalizedContent =
+    senderRaw === 'USER'
+      ? stripInjectedProductFacts(content)
+      : senderRaw === 'AI'
+        ? normalizeAiStockClaims(normalizeAiCapabilityClaims(content))
+        : content;
+
   return {
     id,
     sender: toSender(senderRaw),
     type: 'TEXT',
-    content,
+    content: normalizedContent,
     createdAt,
   };
 }
@@ -463,13 +703,15 @@ export default function ChatClient() {
         setMessages((prev) => appendUniqueMessage(prev, seededQuestion));
 
         try {
+          const enrichedInitialQuestion =
+            await enrichQuestionWithProductFacts(initialQuestion);
           const response = await fetch('/api/chat/send', {
             method: 'POST',
             credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ content: initialQuestion }),
+            body: JSON.stringify({ content: enrichedInitialQuestion }),
           });
 
           if (!response.ok) {
@@ -840,6 +1082,11 @@ export default function ChatClient() {
     const text = rawText.trim();
     if (!text || isSending) return;
 
+    if (isConversationClosed) {
+      setErrorMessage('此諮詢已結案，無法繼續對話。');
+      return;
+    }
+
     const optimisticUserMessageId = `tmp-user-${Date.now()}`;
 
     setIsSending(true);
@@ -915,6 +1162,8 @@ export default function ChatClient() {
       setMessages((prev) => appendUniqueMessage(prev, optimisticUserMessage));
       setInput('');
 
+      const enrichedText = await enrichQuestionWithProductFacts(text);
+
       const response = await fetch('/api/chat/send', {
         method: 'POST',
         credentials: 'include',
@@ -922,7 +1171,7 @@ export default function ChatClient() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          content: text,
+          content: enrichedText,
           ...(selectedCaseId ? { caseId: selectedCaseId } : {}),
         }),
       });
@@ -988,6 +1237,9 @@ export default function ChatClient() {
   const isMemberCaseClosed = !isSupport && memberCaseStatus === 'CLOSED';
   const isSupportCaseClosed =
     isSupport && selectedSupportCase?.status === 'CLOSED';
+  const isConversationClosed = isMemberCaseClosed || isSupportCaseClosed;
+  const isComposerDisabled =
+    isConversationClosed || (isSupport && !selectedCaseId);
   const quickReplies = isSupport ? SUPPORT_QUICK_REPLIES : MEMBER_QUICK_REPLIES;
   const userMessageLabel = isSupport
     ? selectedSupportCase?.user?.name ||
@@ -1079,6 +1331,11 @@ export default function ChatClient() {
 
     if (isSupport && !selectedCaseId) {
       setErrorMessage('請先從右側選擇一筆案件。');
+      return;
+    }
+
+    if (isConversationClosed) {
+      setErrorMessage('此諮詢已結案，無法上傳附件。');
       return;
     }
 
@@ -1325,7 +1582,12 @@ export default function ChatClient() {
                 <button
                   key={quickReply}
                   onClick={() => void send(quickReply)}
-                  className="shrink-0 rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-medium text-orange-500 transition-colors hover:bg-orange-100"
+                  disabled={isComposerDisabled}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    isComposerDisabled
+                      ? 'border-gray-200 bg-gray-100 text-gray-400'
+                      : 'border-orange-200 bg-orange-50 text-orange-500 hover:bg-orange-100'
+                  }`}
                 >
                   {quickReply}
                 </button>
@@ -1337,15 +1599,26 @@ export default function ChatClient() {
             <div className="flex items-center gap-2 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-2.5 transition-colors focus-within:border-orange-200 focus-within:bg-white">
               <input
                 value={input}
+                disabled={isComposerDisabled}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={(event) => {
                   const isComposing =
                     event.nativeEvent.isComposing || event.keyCode === 229;
-                  if (event.key === 'Enter' && !isComposing) {
+                  if (
+                    event.key === 'Enter' &&
+                    !isComposing &&
+                    !isComposerDisabled
+                  ) {
                     void send(input);
                   }
                 }}
-                placeholder={isSupport ? '輸入客服回覆...' : '請輸入訊息...'}
+                placeholder={
+                  isConversationClosed
+                    ? '此諮詢已結案，無法輸入訊息'
+                    : isSupport
+                      ? '輸入客服回覆...'
+                      : '請輸入訊息...'
+                }
                 className="flex-1 bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-300"
               />
               <div className="flex items-center gap-2">
@@ -1361,15 +1634,9 @@ export default function ChatClient() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={
-                    isUploading ||
-                    (isSupport && !selectedCaseId) ||
-                    isMemberCaseClosed
-                  }
+                  disabled={isUploading || isComposerDisabled}
                   className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-                    isUploading ||
-                    (isSupport && !selectedCaseId) ||
-                    isMemberCaseClosed
+                    isUploading || isComposerDisabled
                       ? 'border-gray-200 bg-gray-100 text-gray-400'
                       : 'border-orange-200 bg-orange-50 text-orange-500 hover:bg-orange-100'
                   }`}
@@ -1382,14 +1649,9 @@ export default function ChatClient() {
                   type="button"
                   onClick={() => void send(input)}
                   aria-label="送出訊息"
-                  disabled={
-                    (isSupport && !selectedCaseId) || isMemberCaseClosed
-                  }
+                  disabled={isComposerDisabled}
                   className={`flex h-7 w-7 items-center justify-center rounded-xl transition-colors ${
-                    input.trim() &&
-                    !isSending &&
-                    (!isSupport || Boolean(selectedCaseId)) &&
-                    !isMemberCaseClosed
+                    input.trim() && !isSending && !isComposerDisabled
                       ? 'bg-orange-400 text-white'
                       : 'bg-gray-200 text-gray-400'
                   }`}

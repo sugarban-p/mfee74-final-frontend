@@ -130,7 +130,7 @@ export default function PetAiPage() {
           {/* 沒有毛孩或想新增資料時，沿用既有新增寵物流程。 */}
           <Link
             href="/member/pets/profiles/new"
-            className="flex w-[260px] flex-col rounded-2xl bg-white p-4 text-center shadow-sm transition hover:-translate-y-1"
+            className="flex w-[260px] cursor-pointer flex-col rounded-2xl bg-white p-4 text-center shadow-sm transition hover:-translate-y-1"
           >
             <div className="flex h-[140px] w-full items-center justify-center rounded-xl bg-card-secondary text-primary">
               <LuCirclePlus className="h-8 w-8" aria-hidden="true" />

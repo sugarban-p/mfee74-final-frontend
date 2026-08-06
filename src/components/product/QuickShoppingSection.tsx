@@ -8,6 +8,7 @@ import { LuShoppingCart } from 'react-icons/lu';
 import { RiHeartFill, RiHeartLine } from 'react-icons/ri';
 
 import { ProductQuantitySelector } from '@/src/components/product/ProductQuantitySelector';
+import { savePendingCartAction } from '@/src/services/pending-cart-action';
 
 export interface QuickShoppingItem {
   id: number;
@@ -157,6 +158,32 @@ const toastStyle = {
     padding: '16px',
     color: 'var(--text-primary)',
     backgroundColor: 'var(--success)',
+  },
+  iconTheme: {
+    primary: 'var(--success)',
+    secondary: 'green',
+  },
+};
+
+const toastStyleAddFavorite = {
+  style: {
+    border: '1px solid var(--button-secondary-border)',
+    padding: '16px',
+    color: 'var(--text-primary)',
+    backgroundColor: 'var(--success)',
+  },
+  iconTheme: {
+    primary: 'var(--success)',
+    secondary: 'green',
+  },
+};
+
+const toastStyleRemoveFavorite = {
+  style: {
+    border: '1px solid var(--button-secondary-border)',
+    padding: '16px',
+    color: 'var(--text-primary)',
+    backgroundColor: '#eee9e9',
   },
   iconTheme: {
     primary: 'var(--success)',
@@ -379,7 +406,7 @@ export function QuickShoppingSection({
         `${currentProduct.name} ${
           nextIsFavorite ? labels.addedFavorite : labels.removedFavorite
         }`,
-        toastStyle
+        nextIsFavorite ? toastStyleAddFavorite : toastStyleRemoveFavorite
       );
     } catch {
       setFavoriteOverride({
@@ -402,15 +429,23 @@ export function QuickShoppingSection({
     if (addCartTimeoutRef.current) clearTimeout(addCartTimeoutRef.current);
     setIsAddingCart(true);
 
+    const redirectToLogin = () => {
+      savePendingCartAction({
+        itemId: selectedItem.id,
+        quantity,
+        productName: currentProduct.name,
+        itemName: selectedItem.item_name,
+      });
+      router.push(`/auth/login?next=${encodeURIComponent(loginNextPath)}`);
+    };
+
     addCartTimeoutRef.current = setTimeout(() => {
       void (async () => {
         try {
           const cartResponse = await fetch('/api/products/getCart');
 
           if (cartResponse.status === 401) {
-            router.push(
-              `/auth/login?next=${encodeURIComponent(loginNextPath)}`
-            );
+            redirectToLogin();
             return;
           }
 
@@ -437,9 +472,7 @@ export function QuickShoppingSection({
           );
 
           if (response.status === 401) {
-            router.push(
-              `/auth/login?next=${encodeURIComponent(loginNextPath)}`
-            );
+            redirectToLogin();
             return;
           }
 

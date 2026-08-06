@@ -1,6 +1,6 @@
 'use client';
 export const dynamic = 'force-dynamic';
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail } from 'lucide-react';
@@ -22,14 +22,17 @@ const AUTH_TEXT: React.CSSProperties = {
 const isSafeReturnPath = (path: string) =>
   path.startsWith('/') && !path.startsWith('//') && !path.includes('\\');
 
+const DEFAULT_LOGIN_EMAIL = 'kml586183@gmail.com';
+const DEFAULT_LOGIN_PASSWORD = 'ttb123123';
+
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get('next');
   const returnPath =
     nextPath && isSafeReturnPath(nextPath) ? nextPath : '/member/dashboard';
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(DEFAULT_LOGIN_EMAIL);
+  const [password, setPassword] = useState(DEFAULT_LOGIN_PASSWORD);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState(
     searchParams.get('error') === 'oauth_failed'
@@ -37,6 +40,11 @@ export default function LoginPage() {
       : ''
   );
   const [loading, setLoading] = useState(false);
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void submit();
+  };
 
   const submit = async () => {
     if (!email || !password) {
@@ -96,12 +104,17 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <div className="space-y-4 px-6 pb-6">
+      <form
+        className="space-y-4 px-6 pb-6"
+        autoComplete="on"
+        onSubmit={handleSubmit}
+      >
         <FieldInput
           label="電子郵件"
           type="email"
           value={email}
           onChange={setEmail}
+          name="email"
           placeholder="test@pet.local"
           autoComplete="email"
           left={<Mail size={15} />}
@@ -111,6 +124,7 @@ export default function LoginPage() {
           label="密碼"
           value={password}
           onChange={setPassword}
+          name="password"
           placeholder="Password123!"
           autoComplete="current-password"
         />
@@ -142,7 +156,7 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <Btn onClick={submit} loading={loading} full>
+        <Btn type="submit" loading={loading} full>
           登入
         </Btn>
 
@@ -180,7 +194,7 @@ export default function LoginPage() {
             立即註冊
           </Link>
         </p>
-      </div>
+      </form>
     </AuthShell>
   );
 }

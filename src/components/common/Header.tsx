@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   LuHeart,
@@ -25,6 +25,7 @@ import {
   type ProductMegaMenuCard,
   type ProductMegaMenuResponse,
 } from '@/src/services/product-mega-menu';
+import { takePendingCartAction } from '@/src/services/pending-cart-action';
 
 interface CartItem {
   cart_id: number;
@@ -68,6 +69,32 @@ const ACTIVITY_MENU_ITEMS = [
   },
 ];
 
+const toastStyleAddCart = {
+  style: {
+    border: '1px solid var(--button-secondary-border)',
+    padding: '16px',
+    color: 'var(--text-primary)',
+    backgroundColor: 'var(--success)',
+  },
+  iconTheme: {
+    primary: 'var(--success)',
+    secondary: 'green',
+  },
+};
+
+const toastStyleRemoveCart = {
+  style: {
+    border: '1px solid var(--button-secondary-border)',
+    padding: '16px',
+    color: 'var(--text-primary)',
+    backgroundColor: '#eee9e9',
+  },
+  iconTheme: {
+    primary: 'var(--success)',
+    secondary: 'green',
+  },
+};
+
 const toPublicImagePath = (path?: string) => {
   if (!path) return '';
   if (/^https?:\/\//.test(path)) return path;
@@ -75,10 +102,64 @@ const toPublicImagePath = (path?: string) => {
   return `/${path.replace(/^\/+/, '')}`;
 };
 
+const mobileSubmenuLinkClassName = (isActive: boolean) =>
+  isActive
+    ? 'block rounded-lg bg-primary px-4 py-1 text-text-button'
+    : 'block rounded-lg px-4 py-1 text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover';
+
+interface MobileProductSubmenuLinksProps {
+  card: ProductMegaMenuCard;
+  pathname: string;
+  onNavigate: () => void;
+}
+
+function MobileProductSubmenuLinks({
+  card,
+  pathname,
+  onNavigate,
+}: MobileProductSubmenuLinksProps) {
+  const searchParams = useSearchParams();
+  const activeCategory = searchParams.get('category') ?? 'all-products';
+  const isActiveProductLink = (href: string) => {
+    const url = new URL(href, 'http://localhost');
+
+    return (
+      pathname === url.pathname &&
+      (url.searchParams.get('category') ?? 'all-products') === activeCategory
+    );
+  };
+
+  return (
+    <>
+      <li>
+        <Link
+          href={card.href}
+          className={mobileSubmenuLinkClassName(isActiveProductLink(card.href))}
+          onClick={onNavigate}
+        >
+          所有商品
+        </Link>
+      </li>
+      {card.items.map((item) => (
+        <li key={item.id}>
+          <Link
+            href={item.href}
+            className={mobileSubmenuLinkClassName(
+              isActiveProductLink(item.href)
+            )}
+            onClick={onNavigate}
+          >
+            {item.title}
+          </Link>
+        </li>
+      ))}
+    </>
+  );
+}
+
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCartLoginRequired, setIsCartLoginRequired] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -134,6 +215,49 @@ export default function Header() {
       setMemberAvatar(null);
     } finally {
       setIsAuthLoading(false);
+    }
+  }, []);
+
+  const replayPendingCartAction = useCallback(async () => {
+    const pendingAction = takePendingCartAction();
+
+    if (!pendingAction) return;
+
+    try {
+      const cartResponse = await fetch('/api/products/getCart');
+
+      if (!cartResponse.ok) throw new Error();
+
+      const cartData: CartResponse = await cartResponse.json();
+
+      if (!cartData.success) throw new Error();
+
+      const currentCartQuantity =
+        cartData.cartItems.find(
+          (cartItem) => cartItem.item_id === pendingAction.itemId
+        )?.quantity ?? 0;
+
+      const response = await fetch(
+        `/api/products/updateCart/${pendingAction.itemId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            qty: currentCartQuantity + pendingAction.quantity,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error();
+
+      toast.success(
+        `${pendingAction.productName} ${pendingAction.itemName} 已加入購物車`,
+        toastStyleAddCart
+      );
+    } catch {
+      toast.error('加入購物車失敗，請稍後再試');
     }
   }, []);
 
@@ -283,7 +407,8 @@ export default function Header() {
       );
       setRemovingCartItemId(null);
       toast.success(
-        `${cartItem.prod_name} ${cartItem.item_name} 已從購物車移除`
+        `${cartItem.prod_name} ${cartItem.item_name} 已從購物車移除`,
+        toastStyleRemoveCart
       );
     } catch {
       toast.error('移除購物車商品失敗，請稍後再試');
@@ -307,6 +432,12 @@ export default function Header() {
       window.removeEventListener('auth-state-changed', handleAuthStateChanged);
     };
   }, [refreshAuthState]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    void replayPendingCartAction();
+  }, [isAuthenticated, replayPendingCartAction]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -359,21 +490,8 @@ export default function Header() {
     }
   };
 
-  const activeCategory = searchParams.get('category') ?? 'all-products';
-  const isActiveProductLink = (href: string) => {
-    const url = new URL(href, 'http://localhost');
-
-    return (
-      pathname === url.pathname &&
-      (url.searchParams.get('category') ?? 'all-products') === activeCategory
-    );
-  };
   const activeProductCardId =
     productMegaMenuCards.find((card) => pathname === card.href)?.id ?? null;
-  const mobileSubmenuLinkClassName = (isActive: boolean) =>
-    isActive
-      ? 'block rounded-lg bg-primary px-4 py-1 text-text-button'
-      : 'block rounded-lg px-4 py-1 text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover';
 
   return (
     <>
@@ -450,30 +568,13 @@ export default function Header() {
                     </button>
                     {openMobileProductCardId === card.id && (
                       <ul className="mt-1 pl-3">
-                        <li>
-                          <Link
-                            href={card.href}
-                            className={mobileSubmenuLinkClassName(
-                              isActiveProductLink(card.href)
-                            )}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                          >
-                            所有商品
-                          </Link>
-                        </li>
-                        {card.items.map((item) => (
-                          <li key={item.id}>
-                            <Link
-                              href={item.href}
-                              className={mobileSubmenuLinkClassName(
-                                isActiveProductLink(item.href)
-                              )}
-                              onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                              {item.title}
-                            </Link>
-                          </li>
-                        ))}
+                        <Suspense fallback={null}>
+                          <MobileProductSubmenuLinks
+                            card={card}
+                            pathname={pathname}
+                            onNavigate={() => setIsMobileMenuOpen(false)}
+                          />
+                        </Suspense>
                       </ul>
                     )}
                   </li>
@@ -520,7 +621,7 @@ export default function Header() {
                     className="block rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    AI 顧問
+                    AI 導購
                   </Link>
                 </li>
                 <li>
@@ -600,7 +701,7 @@ export default function Header() {
                   href="/member/pets/ai"
                   className="px-4 py-0 text-text-primary hover:bg-transparent"
                 >
-                  <div className="typo-body h-10 py-[5.5px]">AI 顧問</div>
+                  <div className="typo-body h-10 py-[5.5px]">AI 導購</div>
                 </Link>
               </li>
               <li className="rounded-lg hover:bg-button-secondary-hover">
@@ -671,7 +772,7 @@ export default function Header() {
                               isRemoving ? 'bg-warning' : '',
                             ].join(' ')}
                           >
-                            <div className="flex w-[60%] min-w-50 gap-1">
+                            <div className="flex w-[60%] min-w-50 gap-2.5">
                               {cartItem.avatar ? (
                                 <Image
                                   src={toPublicImagePath(cartItem.avatar)}
@@ -719,7 +820,7 @@ export default function Header() {
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex max-w-[35%] min-w-35 items-center justify-between">
+                              <div className="flex max-w-[35%] min-w-35 items-center justify-end">
                                 <ProductQuantitySelector
                                   usage="Header"
                                   quantity={cartItem.quantity}
@@ -733,7 +834,7 @@ export default function Header() {
                                 <button
                                   type="button"
                                   aria-label="移除商品"
-                                  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-secondary hover:bg-button-secondary-hover"
+                                  className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-secondary hover:bg-button-secondary-hover"
                                   onClick={() =>
                                     setRemovingCartItemId(cartItem.item_id)
                                   }
@@ -818,7 +919,7 @@ export default function Header() {
                 href="/support/chat"
                 className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
               >
-                AI 顧問
+                AI 導購
               </Link>
               <Link
                 href="/member/dashboard"

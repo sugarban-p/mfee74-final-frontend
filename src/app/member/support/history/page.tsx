@@ -69,6 +69,33 @@ function filterCasesByRange(
   return source.filter((item) => new Date(item.lastMessageAt) >= start);
 }
 
+function buildUnreadCountsFromCases(
+  source: unknown[]
+): Record<string, number> | null {
+  const hasUnreadCountField = source.some((item) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
+    return typeof (item as Record<string, unknown>).unreadCount === 'number';
+  });
+
+  if (!hasUnreadCountField) return null;
+
+  return source.reduce<Record<string, number>>((acc, item) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return acc;
+
+    const row = item as Record<string, unknown>;
+    const caseId = typeof row.caseId === 'string' ? row.caseId : '';
+    if (!caseId) return acc;
+
+    const unreadCount =
+      typeof row.unreadCount === 'number' && Number.isFinite(row.unreadCount)
+        ? Math.max(0, Math.floor(row.unreadCount))
+        : 0;
+
+    acc[caseId] = unreadCount;
+    return acc;
+  }, {});
+}
+
 export default function MemberSupportHistoryPage() {
   type HistoryFilter = 'today' | 'week' | 'all' | 'open' | 'closed';
 
@@ -116,6 +143,7 @@ export default function MemberSupportHistoryPage() {
         const supportCases: unknown[] = Array.isArray(supportData?.cases)
           ? supportData.cases
           : [];
+        const nextUnreadCounts = buildUnreadCountsFromCases(supportCases);
 
         const normalized: ChatCaseSummary[] = supportCases
           .filter((item: unknown): item is Record<string, unknown> => {
@@ -152,6 +180,9 @@ export default function MemberSupportHistoryPage() {
         }
         setHasResolvedViewerRole(true);
         setCases(normalized);
+        if (nextUnreadCounts) {
+          setUnreadCounts(nextUnreadCounts);
+        }
         return;
       }
 
@@ -173,7 +204,15 @@ export default function MemberSupportHistoryPage() {
       if (!memberResponse.ok) throw new Error('api unavailable');
 
       const memberData = await memberResponse.json();
+      const memberCases: unknown[] = Array.isArray(memberData?.cases)
+        ? memberData.cases
+        : [];
+      const nextUnreadCounts = buildUnreadCountsFromCases(memberCases);
+
       setCases(memberData.cases ?? []);
+      if (nextUnreadCounts) {
+        setUnreadCounts(nextUnreadCounts);
+      }
     } catch {
       setIsSupportViewer(false);
       setHasResolvedViewerRole(true);
