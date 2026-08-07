@@ -19,9 +19,16 @@ const AUTH_TEXT: React.CSSProperties = {
   fontWeight: 500,
 };
 
+const DEFAULT_REGISTER_EMAIL = 'kml586183@gmail.com';
+const DEFAULT_REGISTER_PASSWORD = 'ttb123123';
+
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ email: '', password: '', confirm: '' });
+  const [form, setForm] = useState({
+    email: DEFAULT_REGISTER_EMAIL,
+    password: DEFAULT_REGISTER_PASSWORD,
+    confirm: DEFAULT_REGISTER_PASSWORD,
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
@@ -125,7 +132,7 @@ export default function RegisterPage() {
             style={AUTH_TEXT}
           >
             <span className="text-[#8A7F77]" style={AUTH_TEXT}>
-              <span className="text-[#E77721]">v</span> 長度 12 字元以上
+              <span className="text-[#E77721]">v</span> 長度 8 字元以上
             </span>
             <span className="text-[#8A7F77]" style={AUTH_TEXT}>
               <span className="text-[#E77721]">v</span> 包含大寫字母

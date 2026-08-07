@@ -204,6 +204,19 @@ export default function PetsPage() {
             </p>
           ) : isLoading ? (
             <p className="typo-card-body text-text-secondary">讀取中...</p>
+          ) : pets.length === 0 ? (
+            <div className="w-full py-8 text-center">
+              <p className="typo-card-body text-text-secondary">
+                目前還沒有毛孩資料。
+              </p>
+
+              <Link
+                href="/member/pets/profiles/new"
+                className="link-button typo-tab mt-4 inline-flex"
+              >
+                新增第一隻毛孩
+              </Link>
+            </div>
           ) : (
             pets.map((pet) => <PetProfileCard key={pet.id} pet={pet} />)
           )}

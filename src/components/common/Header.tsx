@@ -69,6 +69,32 @@ const ACTIVITY_MENU_ITEMS = [
   },
 ];
 
+const toastStyleAddCart = {
+  style: {
+    border: '1px solid var(--button-secondary-border)',
+    padding: '16px',
+    color: 'var(--text-primary)',
+    backgroundColor: 'var(--success)',
+  },
+  iconTheme: {
+    primary: 'var(--success)',
+    secondary: 'green',
+  },
+};
+
+const toastStyleRemoveCart = {
+  style: {
+    border: '1px solid var(--button-secondary-border)',
+    padding: '16px',
+    color: 'var(--text-primary)',
+    backgroundColor: '#eee9e9',
+  },
+  iconTheme: {
+    primary: 'var(--success)',
+    secondary: 'green',
+  },
+};
+
 const toPublicImagePath = (path?: string) => {
   if (!path) return '';
   if (/^https?:\/\//.test(path)) return path;
@@ -227,7 +253,8 @@ export default function Header() {
       if (!response.ok) throw new Error();
 
       toast.success(
-        `${pendingAction.productName} ${pendingAction.itemName} 已加入購物車`
+        `${pendingAction.productName} ${pendingAction.itemName} 已加入購物車`,
+        toastStyleAddCart
       );
     } catch {
       toast.error('加入購物車失敗，請稍後再試');
@@ -380,7 +407,8 @@ export default function Header() {
       );
       setRemovingCartItemId(null);
       toast.success(
-        `${cartItem.prod_name} ${cartItem.item_name} 已從購物車移除`
+        `${cartItem.prod_name} ${cartItem.item_name} 已從購物車移除`,
+        toastStyleRemoveCart
       );
     } catch {
       toast.error('移除購物車商品失敗，請稍後再試');
@@ -593,7 +621,7 @@ export default function Header() {
                     className="block rounded-lg bg-secondary/10 px-3 py-3 font-bold text-text-primary active:bg-button-secondary-hover [@media(hover:hover)]:hover:bg-button-secondary-hover"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
-                    AI 顧問
+                    AI 導購
                   </Link>
                 </li>
                 <li>
@@ -673,7 +701,7 @@ export default function Header() {
                   href="/member/pets/ai"
                   className="px-4 py-0 text-text-primary hover:bg-transparent"
                 >
-                  <div className="typo-body h-10 py-[5.5px]">AI 顧問</div>
+                  <div className="typo-body h-10 py-[5.5px]">AI 導購</div>
                 </Link>
               </li>
               <li className="rounded-lg hover:bg-button-secondary-hover">
@@ -891,7 +919,7 @@ export default function Header() {
                 href="/support/chat"
                 className="rounded-xl px-4 py-2.5 text-text-primary hover:bg-button-secondary-hover"
               >
-                AI 顧問
+                AI 導購
               </Link>
               <Link
                 href="/member/dashboard"

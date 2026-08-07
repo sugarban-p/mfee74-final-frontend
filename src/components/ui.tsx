@@ -252,18 +252,32 @@ export function Btn({
 
 export function ErrorBox({ message }: { message: string }) {
   return (
-    <div className="alert rounded-xl text-sm alert-error">
-      <AlertCircle size={16} className="shrink-0" />
-      <span>{message}</span>
+    <div
+      role="alert"
+      className="flex items-start gap-3 rounded-2xl border border-[#F2C2C8] bg-[#FFF5F7] px-4 py-3 text-[#8F2E3C]"
+    >
+      <span className="mt-0.5 inline-flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full bg-[#F8D8DE]">
+        <AlertCircle size={14} />
+      </span>
+      <span className="text-[15px] leading-[1.45]" style={AUTH_SANS_TC_MEDIUM}>
+        {message}
+      </span>
     </div>
   );
 }
 
 export function SuccessBox({ message }: { message: string }) {
   return (
-    <div className="alert rounded-xl text-sm alert-success">
-      <CheckCircle size={16} className="shrink-0" />
-      <span>{message}</span>
+    <div
+      role="status"
+      className="flex items-start gap-3 rounded-2xl border border-[#CFE7CF] bg-[#F3FBF2] px-4 py-3 text-[#2F6A36]"
+    >
+      <span className="mt-0.5 inline-flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full bg-[#DDF0DC]">
+        <CheckCircle size={14} />
+      </span>
+      <span className="text-[15px] leading-[1.45]" style={AUTH_SANS_TC_MEDIUM}>
+        {message}
+      </span>
     </div>
   );
 }

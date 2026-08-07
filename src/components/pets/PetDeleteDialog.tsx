@@ -55,7 +55,7 @@ export function PetDeleteDialog({ petId, petName }: PetDeleteDialogProps) {
       <AlertDialog.Trigger asChild>
         <button
           type="button"
-          className="typo-body-medium flex min-h-14 w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-white transition-colors hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+          className="typo-body-medium flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-white transition-colors hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
         >
           <LuTrash2 className="h-5 w-5" aria-hidden="true" />
           刪除此寵物
@@ -105,7 +105,7 @@ export function PetDeleteDialog({ petId, petName }: PetDeleteDialogProps) {
                   event.preventDefault();
                   void handleDelete();
                 }}
-                className="typo-tab min-h-11 w-full rounded-full bg-red-600 px-5 py-2 text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-button-disabled disabled:text-text-button-disabled sm:w-auto sm:min-w-28"
+                className="typo-tab min-h-11 w-full cursor-pointer rounded-full bg-red-600 px-5 py-2 text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-button-disabled disabled:text-text-button-disabled sm:w-auto sm:min-w-28"
               >
                 {isDeleting ? '刪除中...' : '確認刪除'}
               </button>
