@@ -142,16 +142,28 @@ export default function HomePage() {
   return (
     /**
      * AppShell 的一般頁面內容寬度是 1520px。
-     * 首頁需要滿版，因此用 100dvw 延伸到動態視窗寬度，
-     * overflow-x-clip 避免輪播與動畫裝飾產生水平捲軸，
+     * 首頁需要滿版，因此用 100vw 延伸到視窗寬度，
+     * overflow-x-clip 搭配頁面層級裁切，避免輪播與動畫裝飾產生水平捲軸，
      * -my-16 則抵消 AppShell 為一般頁面保留的上下間距。
      */
-    <div className="home-page relative left-1/2 -my-16 max-w-[100dvw] -translate-x-1/2 overflow-x-clip bg-background">
+    <div className="home-page relative left-1/2 -my-16 w-[100vw] max-w-none -translate-x-1/2 overflow-x-clip bg-background">
       {/*
        * 首頁專用的緩慢漂浮效果。
        * 裝飾只做小幅位移與旋轉，並尊重使用者的減少動態設定。
        */}
       <style jsx global>{`
+        html,
+        body {
+          overflow-x: hidden;
+        }
+
+        @supports (overflow: clip) {
+          html,
+          body {
+            overflow-x: clip;
+          }
+        }
+
         @keyframes home-float {
           0%,
           100% {
