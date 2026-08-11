@@ -68,20 +68,9 @@
 
 首頁以滿版 hero、活動輪播、貓狗商品入口、AI 導購 CTA 與 FAQ 組成，讓使用者能從品牌頁快速進入商品、活動與會員導購流程。
 
-<table align="left">
-  <tr>
-    <th> PC </th>
-    <th> mobile </th>
-  </tr>
-  <tr>
-    <td>
-      <img src="./docs/readme/homepage.gif" alt="首頁展示(電腦版)" width=500/>
-    </td>
-    <td>
-      <img src="./docs/readme/homepage_mobile.gif" alt="首頁展示(手機版)" width=140/>
-    </td>
-  </tr>
-</table>
+| PC                                            | 其他工作                                             |
+| :-------------------------------------------- | :--------------------------------------------------- |
+| ![首頁展示(電腦版)](docs/readme/homepage.gif) | ![首頁展示(手機版)](docs/readme/homepage_mobile.gif) |
 
 ### 商品列表
 
