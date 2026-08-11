@@ -68,50 +68,180 @@
 
 首頁以滿版 hero、活動輪播、貓狗商品入口、AI 導購 CTA 與 FAQ 組成，讓使用者能從品牌頁快速進入商品、活動與會員導購流程。
 
-![首頁展示](docs/readme/homepage.gif)
+<table align="left">
+  <tr>
+    <th> PC </th>
+    <th> mobile </th>
+  </tr>
+  <tr>
+    <td>
+      <img src="./docs/readme/homepage.gif" alt="首頁展示(電腦版)" width=500/>
+    </td>
+    <td>
+      <img src="./docs/readme/homepage_mobile.gif" alt="首頁展示(手機版)" width=140/>
+    </td>
+  </tr>
+</table>
 
 ### 商品列表
 
 商品以卡片形式呈現，可進行收藏及快速購物功能；列表頁提供商品類別、商品標籤及價格範圍等篩選功能，並支援文字模糊搜尋、排序與分頁。
 
-![商品列表](docs/readme/product-list.png)
+<table align="left">
+  <tr>
+    <th> PC </th>
+    <th> mobile </th>
+  </tr>
+  <tr>
+    <td>
+      <img src="./docs/readme/product-list.png" alt="商品列表(電腦版)" width=500/>
+    </td>
+    <td>
+      <img src="./docs/readme/product-list_mobile.gif" alt="商品列表(手機版)" width=140/>
+    </td>
+  </tr>
+</table>
 
 ### 快速購物
 
 快速購物 modal 可從商品卡片直接選擇規格、調整數量、加入購物車，減少使用者進入詳情頁的步驟。
 
-![快速購物](docs/readme/quick-shopping.gif)
+<table align="left">
+  <tr>
+    <th> PC </th>
+    <th> mobile </th>
+  </tr>
+  <tr>
+    <td>
+      <img src="./docs/readme/quick-shopping.gif" alt="快速購物(電腦版)" width=500/>
+    </td>
+    <td>
+      <img src="./docs/readme/quick-shopping_mobile.gif" alt="快速購物(手機版)" width=140/>
+    </td>
+  </tr>
+</table>
 
 ### 商品詳情
 
 商品詳情頁整合商品圖片、規格、收藏狀態、加入購物車與推薦商品
 
-![商品詳情](docs/readme/product-detail.png)
+<table align="left">
+  <tr>
+    <th> PC </th>
+    <th> mobile </th>
+  </tr>
+  <tr>
+    <td>
+      <img src="./docs/readme/product-detail.gif" alt="商品詳情(電腦版)" width=500/>
+    </td>
+    <td>
+      <img src="./docs/readme/product-detail_mobile.gif" alt="商品詳情(手機版)" width=140/>
+    </td>
+  </tr>
+</table>
 
 ### 收藏清單
 
 收藏功能串接會員狀態與 `/api/products/updateFavorite`，並在會員收藏頁呈現已收藏商品。
 
-![收藏清單](docs/readme/favorites.gif)
+<table align="left">
+  <tr>
+    <th> PC </th>
+    <th> mobile </th>
+  </tr>
+  <tr>
+    <td>
+      <img src="./docs/readme/favorites.gif" alt="收藏清單(電腦版)" width=500/>
+    </td>
+    <td>
+      <img src="./docs/readme/favorites_mobile.gif" alt="收藏清單(手機版)" width=140/>
+    </td>
+  </tr>
+</table>
 
 ### 購物車、結帳與訂單
 
 購物車支援品項數量調整、優惠券選擇與訂單摘要；結帳流程包含訂購內容確認、收件資訊與付款方式；訂單頁提供狀態篩選、訂單詳情、取消與再次購買入口。
 
-![結帳流程](docs/readme/checkout.gif)
+<table align="left">
+  <tr>
+    <th> PC </th>
+    <th> mobile </th>
+  </tr>
+  <tr>
+    <td>
+      <img src="./docs/readme/checkout.gif" alt="收藏清單(電腦版)" width=500/>
+    </td>
+    <td>
+      <img src="./docs/readme/checkout_mobile.gif" alt="收藏清單(手機版)" width=140/>
+    </td>
+  </tr>
+</table>
 
-![訂單管理](docs/readme/orders.png)
+<table align="left">
+  <tr>
+    <th> PC </th>
+    <th> mobile </th>
+  </tr>
+  <tr>
+    <td>
+      <img src="./docs/readme/orders.png" alt="訂單管理(電腦版)" width=500/>
+    </td>
+    <td>
+      <img src="./docs/readme/orders_mobile.gif" alt="訂單管理(手機版)" width=140/>
+    </td>
+  </tr>
+</table>
 
 ### 會員、Auth 與寵物資料
 
 會員中心整合個人資料、帳號安全、訂單、收藏與寵物入口。Protected routes 會在未登入時導回 `/auth/login?next=...`，保留使用者原本要前往的路徑。
 
-![會員中心](docs/readme/member-dashboard.png)
+<table align="left">
+  <tr>
+    <th> PC </th>
+    <th> mobile </th>
+  </tr>
+  <tr>
+    <td>
+      <img src="./docs/readme/member-dashboard.png" alt="會員中心(電腦版)" width=500/>
+    </td>
+    <td>
+      <img src="./docs/readme/member-dashboard_mobile.gif" alt="會員中心(手機版)" width=140/>
+    </td>
+  </tr>
+</table>
 
 ### AI 推薦與客服聊天
 
 AI 導購會依寵物資料與需求類型建立推薦情境，並將推薦商品映射回共用 `ProductCard`。客服中心整合 AI 客服、人工客服入口、聊天紀錄與 Socket.IO 即時訊息。
 
-![AI 導購](docs/readme/ai-recommendation.gif)
+<table align="left">
+  <tr>
+    <th> PC </th>
+    <th> mobile </th>
+  </tr>
+  <tr>
+    <td>
+      <img src="./docs/readme/ai-recommendation.gif" alt="AI 推薦(電腦版)" width=500/>
+    </td>
+    <td>
+      <img src="./docs/readme/ai-recommendation_mobile.gif" alt="AI 推薦(手機版)" width=140/>
+    </td>
+  </tr>
+</table>
 
-![客服聊天](docs/readme/support-chat.png)
+<table align="left">
+  <tr>
+    <th> PC </th>
+    <th> mobile </th>
+  </tr>
+  <tr>
+    <td>
+      <img src="./docs/readme/support-chat.png" alt="客服聊天(電腦版)" width=500/>
+    </td>
+    <td>
+      <img src="./docs/readme/support-chat_mobile.png" alt="客服聊天(手機版)" width=140/>
+    </td>
+  </tr>
+</table>
